@@ -1,0 +1,59 @@
+#!/bin/sh
+
+# Run the user .bashrc.
+. $HOME/.bashrc
+
+# That may be overwritten by user scripts. Should always be run *after* user's bashrc.
+# CROSSROADS_PREFIX=$HOME/.local #TODO: use it for DEP_PREFIX...
+
+export DEP_PREFIX="${HOME}/cross-compile/deps/usr/${HOST}/sys-root/mingw/"
+export PREFIX="${HOME}/cross-compile/${PLATFORM}"
+
+# Reset pkg-config to search *ONLY* libraries compiled for the cross-compiled platform target.
+export PKG_CONFIG_LIBDIR=
+export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig:$DEP_PREFIX/lib/pkgconfig
+
+export LD_LIBRARY_PATH=$PREFIX/lib:$DEP_PREFIX/lib
+export PATH=$PREFIX/bin:$DEP_PREFIX/bin:$PATH
+
+export ACLOCAL_FLAGS="-I $DEP_PREFIX/share/aclocal"
+export CFLAGS="-I$DEP_PREFIX/include -I$PREFIX/include"
+export LDFLAGS="-L$DEP_PREFIX/lib -L$PREFIX/lib"
+#export CPATH=$DEP_PREFIX/include #??
+# http://gcc.gnu.org/onlinedocs/cpp/Environment-Variables.html
+# http://wiki.gimp.org/index.php/Hacking:Building/Windows
+
+# CHANGE the shell to show you are in cross-comp env.
+# XXX: list of colors: https://wiki.archlinux.org/index.php/Color_Bash_Prompt
+RED="\[\033[0;31m\]"
+NORMAL="\[\033[00m\]"
+# $PLATFORM is supposed to be always exported by the crossroads script.
+# Just in case, I set this to display something relevant in the resulting shell.
+if [ x"$PLATFORM"x == "xx" ]; then
+    $PLATFORM = "crossroads"
+fi;
+
+if [ x"$(locale charmap)"x == "xUTF-8x" ]; then
+    # I could echo -e this, wrapped in a function, but let's make it easy and use the symbol directly.
+    # SYMBOL="\xe2\x9c\x98"
+    SYMBOL="✘"
+else
+    SYMBOL="*"
+fi;
+# Leave the user override the default crossroads PS1.
+if [ x"${CROSSROADS_PS1}"x == "xx" ]; then
+    export PS1="${RED}[${PLATFORM}]${NORMAL} ${PS1}${RED}${SYMBOL} ${NORMAL}"
+else
+    export PS1="${CROSSROADS_PS1}"
+fi
+
+PRINT_PURPLE='\e[1;35m'
+PRINT_RESET='\e[0m'
+printf "${PRINT_PURPLE}You are now at the crossroads...${PRINT_RESET}\n\n"
+echo "Your environment has been set to cross-compile for the '$PLATFORM' environment, also known as '$PLATFORM_NICENAME'."
+echo "You have been automatically transported to the prefered cross-compilation prefix (${PREFIX})."
+echo "Use the \$PREFIX environment variable in your compilation scripts (for instance \`./configure --prefix=\$PREFIX\` for GNU-style projects)."
+echo "To exit this cross-compilation environment, simply \`exit\` the current shell session."
+
+#echo "full list of available environment variables as 'cross --env'" #TODO
+
