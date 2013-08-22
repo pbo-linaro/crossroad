@@ -3,3 +3,6 @@
 # Vim files.
 .*.swp
 *.vim
+
+# Some personal files.
+TODO

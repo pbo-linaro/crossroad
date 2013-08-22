@@ -1,0 +1,62 @@
+=========
+crossroad
+=========
+
+`crossroad` is a set of scripts implementing a command line tool to set up easily a cross-compilation environment on a GNU/Linux
+distribution.
+Two target environment are supported currently:
+
+- Windows 32 bits;
+- Windows 64 bits.
+
+*Note: no difference are done between Windows platform other than 32/64 bits. This is up to you to take care of available APIs in your code.*
+
+Usage
+=====
+
+From a command line, run::
+
+    $ crossroad w64
+
+This will set up a Windows 64 bits cross-compilation environment.
+
+Your prompt will also be slightly modified (only adding information. Whatever prompt hack you may have made — like displaying information on
+a git/svn/hg/whatever repository — will be untouched) to show you are in your working cross-compilation environment.
+*Note: only bash is supported right now.*
+
+You will also be moved to the root of this environment, under which a usual GNU style tree has been prepared. This includes a bin/, usr/,
+etc. All necessary environment variables, like PATH or LD_LIBRARY_PATH, etc., are set for you.
+Yet when you will compile your new software, you are obviously advised to use the crossroad environment prefix. For this, `crossroad`
+prepared an easy to remember, ready-to-use, environment variable: $CROSSROAD_PREFIX and $HOST.
+
+Let's imagine you want to compile GIMP or any other software with a typical GNU compilation system.
+After running crossroad, go into usr/src/, where you will download GIMP source code:
+$ cd usr/src/
+*[get some source code]*
+$ cd gimp
+$ ./configure --prefix=$CROSSROAD_PREFIX --host=$HOST
+$ make
+$ make install
+
+Of course this kind of compilation with prefix is not limited to autotools. It is pretty common. You see this with most Python tools:
+$ ./setup.py --prefix=$CROSSROAD_PREFIX
+
+Or cmake:
+$ cmake . -DCMAKE_INSTALL_PREFIX:PATH=$CROSSROAD_PREFIX
+
+*Note: cmake has a special logic for cross-compile and it is not just as simple as setting a target. TODO.*
+
+and so on.
+
+Installation
+============
+
+TODO
+
+About the name
+==============
+
+The name is a hommage to "cross road blues" by Robert Johnson, which itself spawned dozens, if not hundreds, of other versions by so many
+artists.
+I myself always play this song (or rather a version with modified lyrics adapted to my life) in concerts.
+
