@@ -1,26 +1,50 @@
 #!/usr/bin/python3
 #
 # Copyright (C) Maarten Bosmans 2011
+# Copyright (C) Jehan 2013
 #
 # The contents of this file are subject to the Mozilla Public License Version 1.1; you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at http://www.mozilla.org/MPL/
-#
+
 from urllib.request import urlretrieve, urlopen
 from logging import warning, error
 import logging
 import os.path
 import sys
+import shutil
+import re
+import zipfile 
+import mimetypes
+import subprocess
 
+# XXX 7z dependency!
 # TODO Jehan: make possibility to research amongst packages, and see version before installing.
 # Also full list visible?
+
 _packages = []
 
-_scriptDirectory = os.path.dirname(os.path.realpath(__file__))
-_packageCacheDirectory = os.path.join(_scriptDirectory, 'cache', 'package')
-_repositoryCacheDirectory = os.path.join(_scriptDirectory, 'cache', 'repository')
-_extractedCacheDirectory = os.path.join(_scriptDirectory, 'cache', 'extracted')
-_extractedFilesDirectory = _scriptDirectory
+xdg_cache_home = None
+try:
+    xdg_cache_home = os.environ['XDG_CACHE_HOME']
+except KeyError:
+    home_dir = os.path.expanduser('~')
+    if home_dir != '~':
+        xdg_cache_home = os.path.join(home_dir, '.cache')
+    else:
+        sys.stderr.write('$XDG_CACHE_HOME not set, and this user has no $HOME either.\n')
+        sys.exit(os.EX_UNAVAILABLE)
 
+prefix = None
+try:
+    prefix = os.path.abspath(os.environ['PREFIX'])
+except KeyError:
+    sys.stderr.write('$PREFIX was not set!\n')
+    sys.exit(os.EX_UNAVAILABLE)
+
+_packageCacheDirectory = os.path.join(xdg_cache_home, 'crossroad', 'package')
+_repositoryCacheDirectory = os.path.join(xdg_cache_home, 'crossroad', 'repository')
+_extractedCacheDirectory = os.path.join(xdg_cache_home, 'crossroad', 'extracted')
+_extractedFilesDirectory = os.path.join(xdg_cache_home, 'crossroad', 'prefix')
 
 def OpenRepository(repositoryLocation):
   from xml.etree.cElementTree import parse as xmlparse
@@ -61,7 +85,6 @@ def OpenRepository(repositoryLocation):
       'requires': {req.attrib['name'] for req in p.findall('{%s}format/{%s}requires/{%s}entry'%(xmlns,rpmns,rpmns))}
     } for p in elements.findall('{%s}package'%xmlns)]
 
-
 def _findPackage(packageName, srcpkg=False):
   filter_func = lambda p: (p['name'] == packageName or p['filename'] == packageName) and p['arch'] == ('src' if srcpkg else 'noarch')
   sort_func = lambda p: p['buildtime']
@@ -74,7 +97,6 @@ def _findPackage(packageName, srcpkg=False):
       error('  %s', p['filename'])
   return packages[0]
 
-
 def _checkPackageRequirements(package, packageNames):
   allProviders = set()
   for requirement in package['requires']:
@@ -86,7 +108,6 @@ def _checkPackageRequirements(package, packageNames):
         warning('Package %s requires %s, provided by: %s', package['name'], requirement, ','.join(providers))
         allProviders.add(providers.pop())
   return allProviders
-
 
 def packagesDownload(packageNames, withDependencies=False, srcpkg=False):
   from fnmatch import fnmatchcase
@@ -115,25 +136,20 @@ def packagesDownload(packageNames, withDependencies=False, srcpkg=False):
     packageFilenames.append(package['filename'])
   return packageFilenames
 
-
 def _extractFile(filename, output_dir=_extractedCacheDirectory):
-  from subprocess import check_call
   try:
     with open('7z.log', 'w') as logfile:
-      check_call(['7z', 'x', '-o'+output_dir, '-y', filename], stdout=logfile)
+      subprocess.check_call(['7z', 'x', '-o'+output_dir, '-y', filename], stderr=logfile, stdout=logfile)
     os.remove('7z.log')
   except:
     error('Failed to extract %s', filename)
 
-def _extractFile2(filename, output_dir=_extractedCacheDirectory):
-  from subprocess import check_call
-  try:
-    with open('7z.log', 'w') as logfile:
-      check_call(['/win32dev/_newdev/deps-mgw/cpio-wrapper.sh', filename], stdout=logfile)
-    os.remove('7z.log')
-  except:
-    error('Failed to extract %s', filename)
-
+def GetBaseDirectory(project):
+  if project == 'windows:mingw:win32' and os.path.exists(os.path.join(_extractedFilesDirectory, 'usr/i686-w64-mingw32/sys-root/mingw')):
+    return os.path.join(_extractedFilesDirectory, 'usr/i686-w64-mingw32/sys-root/mingw')
+  elif project == 'windows:mingw:win64' and os.path.exists(os.path.join(_extractedFilesDirectory, 'usr/x86_64-w64-mingw32/sys-root/mingw')):
+    return os.path.join(_extractedFilesDirectory, 'usr/x86_64-w64-mingw32/sys-root/mingw')
+  return _extractedFilesDirectory
 
 def packagesExtract(packageFilenames, srcpkg=False):
   for packageFilename in packageFilenames :
@@ -146,26 +162,92 @@ def packagesExtract(packageFilenames, srcpkg=False):
     else:
       _extractFile(cpioFilename, _extractedFilesDirectory)
 
-
-def GetBaseDirectory():
-  if os.path.exists(os.path.join(_extractedFilesDirectory, 'usr/i686-w64-mingw32/sys-root/mingw')):
-    return os.path.join(_extractedFilesDirectory, 'usr/i686-w64-mingw32/sys-root/mingw')
-  if os.path.exists(os.path.join(_extractedFilesDirectory, 'usr/x86_64-w64-mingw32/sys-root/mingw')):
-    return os.path.join(_extractedFilesDirectory, 'usr/x86_64-w64-mingw32/sys-root/mingw')
-  return _extractedFilesDirectory
-
+def move_files(from_file, to_file):
+    if os.path.isdir(from_file):
+        os.makedirs(to_file, exist_ok=True)
+        for f in os.listdir(from_file):
+            move_files(os.path.join(from_file, f), os.path.join(to_file, f))
+    else:
+        if to_file[-3:] == '.pc':
+            try:
+                fd = open(from_file, 'r')
+                contents = fd.read()
+                fd.close()
+                contents = re.sub(r'^prefix=.*$', 'prefix=' + prefix, contents, count=0, flags=re.MULTILINE)
+            except IOError:
+                sys.stderr.write('File "{}" could not be read.\n'.format(from_file))
+                sys.exit(os.EX_CANTCREAT)
+            try:
+                # XXX shouldn't I os.unlink it first, just in case it does exist?
+                fd = open(to_file, 'w')
+                fd.write(contents)
+                fd.close()
+            except IOError:
+                sys.stderr.write('File {} cannot be written.'.format(to_file))
+                sys.exit(os.EX_CANTCREAT)
+        elif (mimetypes.guess_type(from_file)[0] is not None and mimetypes.guess_type(from_file)[0][:5] == 'text/') or \
+             subprocess.check_output(['mimetype', '-b', from_file], universal_newlines=True)[:5] == 'text/':
+            # I had the case with "bin/gdbus-codegen" which has the prefix inside the script.
+            # mimetypes python module would not work because it only relies on extension.
+            # Use mimetype command if possible instead.
+            # XXX should I also want to check binary files?
+            try:
+                fd = open(from_file, 'r')
+                contents = fd.read()
+                fd.close()
+                contents = re.sub(r'/usr/[^/]+-mingw32/sys-root/mingw', prefix, contents, count=0, flags=re.MULTILINE)
+            except (IOError, UnicodeDecodeError):
+                #sys.stderr.write('File "{}" could not be read.\n'.format(from_file))
+                #sys.exit(os.EX_CANTCREAT)
+                # May fail if the file encoding is problematic for instance.
+                # When this happens, just bypass the contents check and move the file.
+                shutil.move(from_file, to_file)
+                return
+            try:
+                # XXX shouldn't I os.unlink it first, just in case it does exist?
+                fd = open(to_file, 'w')
+                fd.write(contents)
+                fd.close()
+            except IOError:
+                #sys.stderr.write('File {} cannot be written.'.format(to_file))
+                #sys.exit(os.EX_CANTCREAT)
+                shutil.move(from_file, to_file)
+        elif to_file[-7:] == '-config':
+            try:
+                fd = open(from_file, 'r')
+                contents = fd.read()
+                fd.close()
+                contents = re.sub(r'/usr/[^/]+-mingw32/sys-root/mingw', prefix, contents, count=0, flags=re.MULTILINE)
+            except IOError:
+                #sys.stderr.write('File "{}" could not be read.\n'.format(from_file))
+                #sys.exit(os.EX_CANTCREAT)
+                shutil.move(from_file, to_file)
+                return
+            try:
+                # XXX shouldn't I os.unlink it first, just in case it does exist?
+                fd = open(to_file, 'w')
+                fd.write(contents)
+                fd.close()
+            except IOError:
+                #sys.stderr.write('File {} cannot be written.'.format(to_file))
+                #sys.exit(os.EX_CANTCREAT)
+                shutil.move(from_file, to_file)
+        else:
+            shutil.move(from_file, to_file)
 
 def CleanExtracted():
-  from shutil import rmtree
-  rmtree(os.path.join(_extractedFilesDirectory, 'usr'), True)
-
+    shutil.rmtree(os.path.join(_extractedFilesDirectory, 'usr'), True)
 
 def SetExecutableBit():
-  # set executable bit on libraries and executables
-  for root, dirs, files in os.walk(GetBaseDirectory()):
-    for filename in {f for f in files if f.endswith('.dll') or f.endswith('.exe')} | set(dirs):
-      os.chmod(os.path.join(root, filename), 0o755)
-
+    # set executable bit on anything in bin/
+    bin_dir = os.path.join(prefix, 'bin')
+    if os.path.isdir(bin_dir):
+        for f in os.listdir(bin_dir):
+            os.chmod(os.path.join(bin_dir, f), 0o755)
+    # set executable bit on libraries and executables whatever the path.
+    for root, dirs, files in os.walk(prefix):
+        for filename in {f for f in files if f.endswith('.dll') or f.endswith('.exe')} | set(dirs):
+            os.chmod(os.path.join(root, filename), 0o755)
 
 def GetOptions():
   from optparse import OptionParser, OptionGroup #3.2: use argparse
@@ -216,10 +298,7 @@ def GetOptions():
 
   return (options, args)
 
-
-def main():
-  import re, zipfile 
-
+if __name__ == "__main__":
   (options, args) = GetOptions()
   packages = set(args)
   logging.basicConfig(level=(logging.WARNING if options.verbose else logging.ERROR), format='%(message)s', stream=sys.stderr)
@@ -247,11 +326,13 @@ def main():
     print(package)
 
   packagesExtract(packages, options.srcpkg)
+  extracted_prefix = GetBaseDirectory(options.project)
+  move_files(extracted_prefix, prefix)
   SetExecutableBit()
 
   if options.metadata:
     cleanup = lambda n: re.sub('^mingw(?:32|64)-(.*)', '\\1', re.sub('^mingw(?:32|64)[(](.*)[)]', '\\1', n))
-    with open(os.path.join(GetBaseDirectory(), packageBasename + '.metadata'), 'w') as m:
+    with open(os.path.join(prefix, packageBasename + '.metadata'), 'w') as m:
       for packageFilename in sorted(packages):
         package = [p for p in _packages if p['filename'] == packageFilename][0]
         m.writelines(['provides:%s\r\n' % cleanup(p) for p in package['provides']])
@@ -259,14 +340,12 @@ def main():
 
   if options.makezip:
     packagezip = zipfile.ZipFile(packageBasename + '.zip', 'w', compression=zipfile.ZIP_DEFLATED)
-    for root, dirs, files in os.walk(GetBaseDirectory()):
+    for root, dirs, files in os.walk(prefix):
       for filename in files:
         fullname = os.path.join(root, filename)
-        packagezip.write(fullname, fullname.replace(GetBaseDirectory(), ''))
+        packagezip.write(fullname, fullname.replace(prefix, ''))
     packagezip.close() #3.2: use with
-    if options.clean:
-      CleanExtracted()
 
-if __name__ == "__main__":
-    main()
+  if options.clean:
+    CleanExtracted()
 

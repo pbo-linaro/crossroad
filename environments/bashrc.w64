@@ -1,0 +1,91 @@
+#!/bin/sh
+
+# Source the normal system-wide and user environment.
+if [ -f /etc/bash.bashrc ]; then
+	. /etc/bash.bashrc
+fi
+if [ -f ~/.bashrc ]; then
+    . ~/.bashrc
+fi
+
+# Some value for user usage.
+export HOST=x86_64-w64-mingw32
+export PLATFORM=w64
+export PLATFORM_NICENAME="Windows 64 bits"
+
+# Internal usage.
+export CROSSROAD_ROAD=w64
+
+# Here is our root.
+export PREFIX="`pwd`"
+
+# Reset pkg-config to search *ONLY* libraries compiled for the cross-compiled platform target.
+export PKG_CONFIG_LIBDIR=
+export PKG_CONFIG_PATH=$PREFIX/lib64/pkgconfig:$PREFIX/share/pkgconfig:$PREFIX/lib/pkgconfig
+if [ -d /usr/local/$HOST/lib/pkconfig ]; then
+    export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/$HOST/lib/pkconfig
+fi
+if [ -d /usr/$HOST/lib/pkconfig ]; then
+    export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/$HOST/lib/pkconfig
+fi
+
+export LD_LIBRARY_PATH=$PREFIX/lib
+# Adding some typical distribution paths.
+# Note: I could also try to guess the user path from `which x86_64-w64-mingw32-gcc`. But it may not always work.
+# For instance if the user uses ccache.
+if [ -d /usr/local/$HOST/lib/ ]; then
+    export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/$HOST/lib64/:/usr/local/$HOST/lib/
+fi
+if [ -d /usr/$HOST/lib/ ]; then
+    export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/$HOST/lib64/:/usr/$HOST/lib/
+fi
+export PATH=$PREFIX/bin:$PATH
+# NOTE: any -config not in $PREFIX must be banned!
+
+export ACLOCAL_FLAGS="-I $PREFIX/share/aclocal"
+export CFLAGS="-I$PREFIX/include -I/usr/$HOST/include"
+export LDFLAGS="-L$PREFIX/lib -L/usr/$HOST/lib"
+
+# Very important! The default -I directory when not is specified!
+export CPATH="$PREFIX/include"
+
+if [ -d /usr/local/$HOST/include/ ]; then
+    export CFLAGS="$CFLAGS -I/usr/local/$HOST/include/"
+    export CPATH="$CPATH:/usr/local/$HOST/include/"
+fi
+if [ -d /usr/$HOST/include/ ]; then
+    export CFLAGS="$CFLAGS -I/usr/$HOST/include/"
+    export CPATH="$CPATH:/usr/$HOST/include/"
+fi
+
+# So that the system-wide python can still find any locale lib.
+for dir in $PREFIX/lib/python*
+do
+    export PYTHONPATH=:${dir}:$PYTHONPATH
+done;
+
+# http://gcc.gnu.org/onlinedocs/cpp/Environment-Variables.html
+# http://wiki.gimp.org/index.php/Hacking:Building/Windows
+
+# CHANGE the shell to show you are in cross-comp env.
+RED="\[\033[0;31m\]"
+NORMAL="\[\033[00m\]"
+if [ x"$(locale charmap)"x == "xUTF-8x" ]; then
+    SYMBOL="✘"
+else
+    SYMBOL="*"
+fi;
+
+# Leave the user override the default crossroads PS1.
+if [ x"${CROSSROADS_PS1}"x == "xx" ]; then
+    export PS1="${RED}${PLATFORM}${SYMBOL}${NORMAL} ${PS1}"
+else
+    export PS1="${CROSSROADS_PS1}"
+fi
+
+echo "Your environment has been set to cross-compile for the '$PLATFORM_NICENAME' ($PLATFORM) environment."
+echo "You have been automatically transported to the prefered cross-compilation prefix (${PREFIX})."
+echo "Use the \$PREFIX environment variable in your compilation scripts (for instance \`./configure --prefix=\$PREFIX\` for GNU-style projects)."
+echo "To exit this cross-compilation environment, simply \`exit\` the current shell session."
+
+#echo "full list of available environment variables as 'cross --env'" #TODO

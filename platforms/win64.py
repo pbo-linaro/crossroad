@@ -1,0 +1,87 @@
+#!/usr/bin/python
+# -*- coding: utf-8 -*-
+
+'''
+Setups a cross-compilation environment for Microsoft Windows operating systems (64 bits).
+'''
+
+# Require python 3.3 for shutil.which
+import shutil
+import subprocess
+import os
+
+install_datadir = os.path.abspath('@DATADIR@')
+install_datadir = os.path.abspath('../..')
+
+name = 'w64'
+
+short_description = 'Windows 64 bits'
+
+mandatory_binaries = {
+    'x86_64-w64-mingw32-gcc': 'gcc-mingw-w32-x86_64',
+    'x86_64-w64-mingw32-ld': 'binutils-mingw-w32-x86_64'
+    }
+
+languages = {
+    'C' : {'x86_64-w64-mingw32-gcc': 'gcc-mingw-w64-x86-64'},
+    'C++': {'x86_64-w64-mingw32-c++': 'g++-mingw-w64-x86-64'},
+    'Ada': {'x86_64-w64-mingw32-gnat': 'gnat-mingw-w64-x86-64'},
+    'OCaml': {'i686-w64-mingw32-ocamlc': 'mingw-ocaml'},
+    'fortran': {'x86_64-w64-mingw32-gfortran': 'gfortran-mingw-w64-x86-64'},
+    'Objective C' : {'x86_64-w64-mingw32-gobjc': 'gobjc-mingw-w64-x86-64'},
+    'Objective C' : {'x86_64-w64-mingw32-gobjc++': 'gobjc++-mingw-w64-x86-64'}
+    }
+
+def is_available():
+    '''
+    Is it possible on this computer?
+    '''
+    for bin in mandatory_binaries:
+        if shutil.which(bin) is None:
+            return False
+    return True
+
+def requires():
+    '''
+    Output on standard output necessary packages and what is missing on
+    the current installation.
+    '''
+    requirements = ''
+    for bin in mandatory_binaries:
+        requirements += "- {}".format(bin)
+        if shutil.which(bin) is None:
+            requirements += " (missing)\n"
+        else:
+            requirements += "\n"
+    return requirements
+
+def language_list():
+    '''
+    Return a couple of (installed, uninstalled) language list.
+    '''
+    uninstalled_languages = {}
+    installed_languages = []
+    for name in languages:
+        for bin in languages[name]:
+            if shutil.which(bin) is None:
+                # List of packages to install.
+                uninstalled_languages[name] = [languages[name][f] for f in languages[name]]
+                # Removing duplicate packages.
+                uninstalled_languages[name] = list(set(uninstalled_languages[name]))
+                break
+        else:
+            installed_languages.append(name)
+    return (installed_languages, uninstalled_languages)
+
+def prepare():
+    pass
+
+def install(pkgs):
+    '''
+    Installing dependencies, etc.
+    '''
+    command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
+               '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win64', '--deps'] + pkgs
+    inst_proc = subprocess.Popen(command, shell=False)
+    inst_proc.wait()
+
