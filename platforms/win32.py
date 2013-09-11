@@ -79,7 +79,7 @@ def install(pkgs):
     Installing dependencies, etc.
     '''
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
-               '-r', 'openSUSE_12.1', '--deps'] + pkgs
+               '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win32', '--deps'] + pkgs
     inst_proc = subprocess.Popen(command, shell=False)
     return inst_proc.wait()
 
