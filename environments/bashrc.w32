@@ -11,7 +11,7 @@ fi
 # Some value for user usage.
 export HOST=i686-w64-mingw32
 export PLATFORM=w32
-export PLATFORM_NICENAME="Windows 32 bits"
+export PLATFORM_NICENAME="Windows 32-bit"
 
 # Internal usage.
 export CROSSROAD_ROAD=w32
@@ -21,21 +21,32 @@ export PREFIX="`pwd`"
 
 # Reset pkg-config to search *ONLY* libraries compiled for the cross-compiled platform target.
 export PKG_CONFIG_LIBDIR=
-export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig
+export PKG_CONFIG_PATH=$PREFIX/lib/pkgconfig:$PREFIX/share/pkgconfig
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/$HOST/lib/pkconfig
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/$HOST/lib/pkconfig
 
 export LD_LIBRARY_PATH=$PREFIX/lib
-if [ -d /usr/local/$HOST/lib/ ]; then
-    export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/$HOST/lib64/:/usr/local/$HOST/lib/
-fi
-if [ -d /usr/$HOST/lib/ ]; then
-    export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/$HOST/lib/
-fi
+# Adding some typical distribution paths.
+# Note: I could also try to guess the user path from `which ${HOST}-gcc`.
+# But it may not always work. For instance if the user uses ccache.
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/$HOST/lib/
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/$HOST/lib/
+
 export PATH=$PREFIX/bin:$PATH
 
 export ACLOCAL_FLAGS="-I $PREFIX/share/aclocal"
-export CFLAGS="-I$PREFIX/include -I$PREFIX/include"
-export LDFLAGS="-L$PREFIX/lib -L$PREFIX/lib"
-#export CPATH=$DEP_PREFIX/include #??
+export CFLAGS="-I$PREFIX/include -I/usr/local/$HOST/include -I/usr/$HOST/include"
+export LDFLAGS="-L$PREFIX/lib -L/usr/local/$HOST/lib -L/usr/$HOST/lib"
+
+# Very important! The default -I list of directories when none is specified!
+export CPATH="$PREFIX/include:/usr/local/$HOST/include/:/usr/$HOST/include/"
+
+# So that the system-wide python can still find any locale lib.
+for dir in $PREFIX/lib/python*
+do
+    export PYTHONPATH=:${dir}:$PYTHONPATH
+done;
+
 # http://gcc.gnu.org/onlinedocs/cpp/Environment-Variables.html
 # http://wiki.gimp.org/index.php/Hacking:Building/Windows
 

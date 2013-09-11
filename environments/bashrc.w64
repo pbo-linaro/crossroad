@@ -11,7 +11,7 @@ fi
 # Some value for user usage.
 export HOST=x86_64-w64-mingw32
 export PLATFORM=w64
-export PLATFORM_NICENAME="Windows 64 bits"
+export PLATFORM_NICENAME="Windows 64-bit"
 
 # Internal usage.
 export CROSSROAD_ROAD=w64
@@ -22,41 +22,27 @@ export PREFIX="`pwd`"
 # Reset pkg-config to search *ONLY* libraries compiled for the cross-compiled platform target.
 export PKG_CONFIG_LIBDIR=
 export PKG_CONFIG_PATH=$PREFIX/lib64/pkgconfig:$PREFIX/share/pkgconfig:$PREFIX/lib/pkgconfig
-if [ -d /usr/local/$HOST/lib/pkconfig ]; then
-    export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/$HOST/lib/pkconfig
-fi
-if [ -d /usr/$HOST/lib/pkconfig ]; then
-    export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/$HOST/lib/pkconfig
-fi
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/$HOST/lib64/pkconfig
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/$HOST/lib64/pkconfig
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/$HOST/lib/pkconfig
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/$HOST/lib/pkconfig
 
 export LD_LIBRARY_PATH=$PREFIX/lib
 # Adding some typical distribution paths.
-# Note: I could also try to guess the user path from `which x86_64-w64-mingw32-gcc`. But it may not always work.
-# For instance if the user uses ccache.
-if [ -d /usr/local/$HOST/lib/ ]; then
-    export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/$HOST/lib64/:/usr/local/$HOST/lib/
-fi
-if [ -d /usr/$HOST/lib/ ]; then
-    export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/$HOST/lib64/:/usr/$HOST/lib/
-fi
+# Note: I could also try to guess the user path from `which ${HOST}-gcc`.
+# But it may not always work. For instance if the user uses ccache.
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/$HOST/lib64/:/usr/local/$HOST/lib/
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/$HOST/lib64/:/usr/$HOST/lib/
+
 export PATH=$PREFIX/bin:$PATH
 # NOTE: any -config not in $PREFIX must be banned!
 
 export ACLOCAL_FLAGS="-I $PREFIX/share/aclocal"
-export CFLAGS="-I$PREFIX/include -I/usr/$HOST/include"
-export LDFLAGS="-L$PREFIX/lib -L/usr/$HOST/lib"
+export CFLAGS="-I$PREFIX/include -I/usr/local/$HOST/include -I/usr/$HOST/include"
+export LDFLAGS="-L$PREFIX/lib -L/usr/local/$HOST/lib64 -L/usr/$HOST/lib64 -L/usr/local/$HOST/lib -L/usr/$HOST/lib"
 
 # Very important! The default -I directory when not is specified!
-export CPATH="$PREFIX/include"
-
-if [ -d /usr/local/$HOST/include/ ]; then
-    export CFLAGS="$CFLAGS -I/usr/local/$HOST/include/"
-    export CPATH="$CPATH:/usr/local/$HOST/include/"
-fi
-if [ -d /usr/$HOST/include/ ]; then
-    export CFLAGS="$CFLAGS -I/usr/$HOST/include/"
-    export CPATH="$CPATH:/usr/$HOST/include/"
-fi
+export CPATH="$PREFIX/include:/usr/local/$HOST/include/:/usr/$HOST/include/"
 
 # So that the system-wide python can still find any locale lib.
 for dir in $PREFIX/lib/python*
