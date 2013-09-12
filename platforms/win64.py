@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 '''
-Setups a cross-compilation environment for Microsoft Windows operating systems (64 bits).
+Setups a cross-compilation environment for Microsoft Windows operating systems (64-bit).
 '''
 
 # Require python 3.3 for shutil.which
@@ -15,7 +15,7 @@ install_datadir = os.path.abspath('../..')
 
 name = 'w64'
 
-short_description = 'Windows 64 bits'
+short_description = 'Windows 64-bit'
 
 mandatory_binaries = {
     'x86_64-w64-mingw32-gcc': 'gcc-mingw-w32-x86_64',

@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 '''
-Setups a cross-compilation environment for Microsoft Windows operating systems (32 bits).
+Setups a cross-compilation environment for Microsoft Windows operating systems (32-bit).
 '''
 
 # Require python 3.3 for shutil.which
@@ -15,7 +15,7 @@ install_datadir = os.path.abspath('../..')
 
 name = 'w32'
 
-short_description = 'Windows 32 bits'
+short_description = 'Windows 32-bit'
 
 mandatory_binaries = {
     'i686-w64-mingw32-gcc': 'gcc-mingw-w64-i686',
@@ -46,12 +46,14 @@ def requires():
     Output on standard output necessary packages and what is missing on
     the current installation.
     '''
+    requirements = ''
     for bin in mandatory_binaries:
-        print("- {}".format(bin))
+        requirements += '- {} [package "{}"]'.format(bin, mandatory_binaries[bin])
         if shutil.which(bin) is None:
-            print(" (missing)\n")
+            requirements += " (missing)\n"
         else:
-            print("\n")
+            requirements += "\n"
+    return requirements
 
 def language_list():
     '''
