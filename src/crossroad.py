@@ -148,7 +148,7 @@ cmdline.add_option('-l', '--list-all',
     help = 'list all known platforms',
     action = 'store_true', dest = 'list_all', default = False)
 cmdline.add_option('-h', '--help',
-    help = 'show this help message and exit',
+    help = 'show this help message and exit. If a TARGET is provided, show information about this platform.',
     action = 'store_true', dest = 'help', default = False)
 if crossroad_road is not None:
     cmdline.add_option('-i', '--install',
