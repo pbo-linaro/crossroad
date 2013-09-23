@@ -11,7 +11,6 @@ import subprocess
 import os
 
 install_datadir = os.path.abspath('@DATADIR@')
-install_datadir = os.path.abspath('../..')
 
 name = 'w32'
 

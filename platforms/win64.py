@@ -10,8 +10,7 @@ import shutil
 import subprocess
 import os
 
-install_datadir = os.path.abspath('@DATADIR@')
-install_datadir = os.path.abspath('../..')
+install_datadir = os.path.join(os.path.abspath('@DATADIR@'), 'share')
 
 name = 'w64'
 

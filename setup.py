@@ -84,14 +84,18 @@ class my_build(distutils.command.build.build):
     def run(self):
         # Add manual generation in build.
         self.run_command('man')
-        # Move the file without modification at build time
+        # Move files without modification at build time
         # This allows renaming mostly.
         try:
             os.makedirs('build/bin', exist_ok = True)
+            os.makedirs('build/platforms', exist_ok = True)
         except os.error:
             sys.stderr.write('Build error: failure to create the build/ tree. Please check your permissions.\n')
             sys.exit(os.EX_CANTCREAT)
         shutil.copyfile('src/crossroad.py', 'build/bin/crossroad')
+        for f in os.listdir('platforms'):
+            if f[-3:] == '.py':
+                shutil.copyfile(os.path.join('platforms', f), os.path.join('build/platforms', f))
         distutils.command.build.build.run(self)
 
 class my_install(distutils.command.install.install):
@@ -114,6 +118,34 @@ class my_install(distutils.command.install.install):
         # Go on with normal install.
         distutils.command.install.install.run(self)
 
+def update_scripts(build_dir):
+    '''
+    Convenience function to update any file in `build_dir`:
+    - replace @DATADIR@ by `datadir` as set on the setup.py call.
+    '''
+    datadir = '/usr/local'
+    try:
+        data_dir_file = open('build/data_dir', 'r')
+        datadir = data_dir_file.readline().rstrip(' \n\r\t')
+        data_dir_file.close()
+    except IOError:
+        sys.stderr.write('Warning: no build/data_dir file. You should run the `install` command. Defaulting to {}.\n'.format(datadir))
+
+    for f in os.listdir(build_dir):
+        try:
+            script = open(os.path.join(build_dir, f), 'r+')
+            contents = script.read()
+            # Make the necessary replacements.
+            contents = contents.replace('@DATADIR@', datadir)
+            script.truncate(0)
+            script.seek(0)
+            script.write(contents)
+            script.flush()
+            script.close()
+        except IOError:
+            sys.stderr.write('The script {} failed to update. Check your permissions.'.format(f))
+            sys.exit(os.EX_CANTCREAT)
+
 class my_install_data(distutils.command.install_data.install_data):
     '''
     Override the install to build the manual first.
@@ -124,6 +156,7 @@ class my_install_data(distutils.command.install_data.install_data):
     # in a close future.
 
     def run(self):
+        update_scripts('build/platforms')
         distutils.command.install_data.install_data.run(self)
 
 class my_install_scripts(distutils.command.install_scripts.install_scripts):
@@ -131,40 +164,13 @@ class my_install_scripts(distutils.command.install_scripts.install_scripts):
     Override the install to build the manual first.
     '''
 
-    data_dir = '/usr/local'
-
     def run(self):
-        try:
-            data_dir_file = open('build/data_dir', 'r')
-            self.data_dir = data_dir_file.readline().rstrip(' \n\r\t')
-            data_dir_file.close()
-        except IOError:
-            sys.stderr.write('Warning: no build/data_dir file. You should run the `install` command. Defaulting to {}.\n'.format(self.data_dir))
-
-        self.update_scripts()
+        update_scripts(self.build_dir)
         distutils.command.install_scripts.install_scripts.run(self)
 
-    def update_scripts(self):
-        '''
-        Update the crossroad script's contents.
-        '''
-        for f in os.listdir(self.build_dir):
-            try:
-                script = open(os.path.join(self.build_dir, f), 'r+')
-                contents = script.read()
-                # Make the necessary replacements.
-                contents = contents.replace('@DATADIR@', self.data_dir)
-                script.truncate(0)
-                script.seek(0)
-                script.write(contents)
-                script.flush()
-                script.close()
-            except IOError:
-                sys.stderr.write('The script {} failed to update. Check your permissions.'.format(f))
-                sys.exit(os.EX_CANTCREAT)
 
 platform_list = os.listdir('platforms')
-platform_list = [os.path.join('platforms/', f) for f in platform_list if f[-3:] == '.py']
+platform_list = [os.path.join('build/platforms/', f) for f in platform_list if f[-3:] == '.py']
 
 environment_list = os.listdir('environments')
 environment_list = [os.path.join('environments/', f) for f in environment_list]
