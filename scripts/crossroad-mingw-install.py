@@ -7,7 +7,6 @@
 # compliance with the License. You may obtain a copy of the License at http://www.mozilla.org/MPL/
 
 from urllib.request import urlretrieve, urlopen
-from logging import warning, error
 import logging
 import os.path
 import sys
@@ -22,6 +21,7 @@ import subprocess
 # Also full list visible?
 
 _packages = []
+_package_filelists = {}
 
 xdg_cache_home = None
 try:
@@ -49,30 +49,43 @@ _extractedFilesDirectory = os.path.join(xdg_cache_home, 'crossroad', 'prefix')
 def OpenRepository(repositoryLocation):
   from xml.etree.cElementTree import parse as xmlparse
   global _packages
+  global _package_filelists
   # Check repository for latest primary.xml
   with urlopen(repositoryLocation + 'repodata/repomd.xml') as metadata:
     doctree = xmlparse(metadata)
   xmlns = 'http://linux.duke.edu/metadata/repo'
   for element in doctree.findall('{%s}data'%xmlns):
     if element.get('type') == 'primary':
-      primaryUrl = element.find('{%s}location'%xmlns).get('href')
+      primary_url = element.find('{%s}location'%xmlns).get('href')
+    elif element.get('type') == 'filelists':
+      filelist_url = element.find('{%s}location'%xmlns).get('href')
   # Make sure all the cache directories exist
   for dir in _packageCacheDirectory, _repositoryCacheDirectory, _extractedCacheDirectory:
     try:
       os.makedirs(dir)
     except OSError: pass
   # Download repository metadata (only if not already in cache)
-  primaryFilename = os.path.join(_repositoryCacheDirectory, os.path.splitext(os.path.basename(primaryUrl))[0])
-  if not os.path.exists(primaryFilename):
-    warning('Dowloading repository data')
-    with urlopen(repositoryLocation + primaryUrl) as primaryGzFile:
+  primary_filename = os.path.join(_repositoryCacheDirectory, os.path.splitext(os.path.basename(primary_url))[0])
+  if not os.path.exists(primary_filename):
+    logging.warning('Dowloading repository data')
+    with urlopen(repositoryLocation + primary_url) as primaryGzFile:
       import io, gzip
       primaryGzString = io.BytesIO(primaryGzFile.read()) #3.2: use gzip.decompress
       with gzip.GzipFile(fileobj=primaryGzString) as primaryGzipFile:
-        with open(primaryFilename, 'wb') as primaryFile:
+        with open(primary_filename, 'wb') as primaryFile:
           primaryFile.writelines(primaryGzipFile)
-  elements = xmlparse(primaryFilename)
+  # Also download the filelist.
+  filelist_filename = os.path.join(_repositoryCacheDirectory, os.path.splitext(os.path.basename(filelist_url))[0])
+  if not os.path.exists(filelist_filename):
+    logging.warning('Dowloading repository file list')
+    with urlopen(repositoryLocation + filelist_url) as GzFile:
+      import io, gzip
+      GzString = io.BytesIO(GzFile.read()) #3.2: use gzip.decompress
+      with gzip.GzipFile(fileobj=GzString) as primaryGzipFile:
+        with open(filelist_filename, 'wb') as filelist_file:
+          filelist_file.writelines(primaryGzipFile)
   # Parse package list from XML
+  elements = xmlparse(primary_filename)
   xmlns = 'http://linux.duke.edu/metadata/common'
   rpmns = 'http://linux.duke.edu/metadata/rpm'
   _packages = [{
@@ -84,6 +97,13 @@ def OpenRepository(repositoryLocation):
       'provides': {provides.attrib['name'] for provides in p.findall('{%s}format/{%s}provides/{%s}entry'%(xmlns,rpmns,rpmns))},
       'requires': {req.attrib['name'] for req in p.findall('{%s}format/{%s}requires/{%s}entry'%(xmlns,rpmns,rpmns))}
     } for p in elements.findall('{%s}package'%xmlns)]
+  # Package's file lists.
+  elements = xmlparse(filelist_filename)
+  xmlns = 'http://linux.duke.edu/metadata/filelists'
+  _package_filelists = {
+      p.get('name') : [
+        {'type': f.get('type', default='file'), 'path': f.text} for f in p.findall('{%s}file'%xmlns)
+    ] for p in elements.findall('{%s}package'%xmlns)}
 
 def _findPackage(packageName, srcpkg=False):
   filter_func = lambda p: (p['name'] == packageName or p['filename'] == packageName) and p['arch'] == ('src' if srcpkg else 'noarch')
@@ -92,9 +112,9 @@ def _findPackage(packageName, srcpkg=False):
   if len(packages) == 0:
     return None
   if len(packages) > 1:
-    error('multiple packages found for %s:', packageName)
+    logging.error('multiple packages found for %s:', packageName)
     for p in packages:
-      error('  %s', p['filename'])
+      logging.error('  %s', p['filename'])
   return packages[0]
 
 def _checkPackageRequirements(package, packageNames):
@@ -103,9 +123,9 @@ def _checkPackageRequirements(package, packageNames):
     providers = {p['name'] for p in _packages if requirement in p['provides']}
     if len(providers & packageNames) == 0:
       if len(providers) == 0:
-        error('Package %s requires %s, not provided by any package', package['name'], requirement)
+        logging.error('Package %s requires %s, not provided by any package', package['name'], requirement)
       else:
-        warning('Package %s requires %s, provided by: %s', package['name'], requirement, ','.join(providers))
+        logging.warning('Package %s requires %s, provided by: %s', package['name'], requirement, ','.join(providers))
         allProviders.add(providers.pop())
   return allProviders
 
@@ -123,7 +143,7 @@ def packagesDownload(packageNames, withDependencies=False, srcpkg=False):
     packName = packageNames.pop()
     package = _findPackage(packName, srcpkg)
     if package == None:
-      error('Package %s not found', packName)
+      logging.error('Package %s not found', packName)
       continue
     dependencies = _checkPackageRequirements(package, allPackageNames)
     if withDependencies and len(dependencies) > 0:
@@ -131,7 +151,7 @@ def packagesDownload(packageNames, withDependencies=False, srcpkg=False):
       allPackageNames |= dependencies
     localFilenameFull = os.path.join(_packageCacheDirectory, package['filename'])
     if not os.path.exists(localFilenameFull):
-      warning('Downloading %s', package['filename'])
+      logging.warning('Downloading %s', package['filename'])
       urlretrieve(package['url'], localFilenameFull)
     packageFilenames.append(package['filename'])
   return packageFilenames
@@ -142,7 +162,7 @@ def _extractFile(filename, output_dir=_extractedCacheDirectory):
       subprocess.check_call(['7z', 'x', '-o'+output_dir, '-y', filename], stderr=logfile, stdout=logfile)
     os.remove('7z.log')
   except:
-    error('Failed to extract %s', filename)
+    logging.error('Failed to extract %s', filename)
 
 def GetBaseDirectory(project):
   if project == 'windows:mingw:win32' and os.path.exists(os.path.join(_extractedFilesDirectory, 'usr/i686-w64-mingw32/sys-root/mingw')):
@@ -153,7 +173,7 @@ def GetBaseDirectory(project):
 
 def packagesExtract(packageFilenames, srcpkg=False):
   for packageFilename in packageFilenames :
-    warning('Extracting %s', packageFilename)
+    logging.warning('Extracting %s', packageFilename)
     cpioFilename = os.path.join(_extractedCacheDirectory, os.path.splitext(packageFilename)[0] + '.cpio')
     if not os.path.exists(cpioFilename):
       _extractFile(os.path.join(_packageCacheDirectory, packageFilename))
@@ -274,6 +294,7 @@ def GetOptions():
   packageOptions.add_option("--deps", action="store_true", dest="withdeps", help="Download dependencies")
   packageOptions.add_option("--no-deps", action="store_false", dest="withdeps", help="Do not download dependencies [default]")
   packageOptions.add_option("--src", action="store_true", dest="srcpkg", default=False, help="Download source instead of noarch package")
+  packageOptions.add_option("--list-files", action="store_true", dest="list_files", default=False, help="Only list the files of a package")
   parser.add_option_group(packageOptions)
 
   # Output options
@@ -309,6 +330,43 @@ if __name__ == "__main__":
     OpenRepository(repository)
   except Exception as e:
     sys.exit('Error opening repository:\n\t%s\n\t%s' % (repository, e))
+
+  if options.list_files:
+    sys.stdout.flush()
+    if (len(packages) == 0):
+        logging.error('Please provide at list one package.\n')
+        sys.exit(os.EX_USAGE)
+    for package in packages:
+        file_list = None
+        # OH! several arch! src, noarch, etc.
+        try:
+            real_name = package
+            file_list = _package_filelists[package]
+        except KeyError:
+            if options.project == 'windows:mingw:win64':
+                try:
+                    real_name = 'mingw64-' + package
+                    file_list = _package_filelists[real_name]
+                except KeyError:
+                    file_list = None
+            if file_list is None:
+                # There are some 32-bit package in the 64-bit list.
+                try:
+                    real_name = 'mingw32-' + package
+                    file_list = _package_filelists[real_name]
+                except KeyError:
+                    file_list = None
+        if file_list is None:
+            sys.stderr.write('Package "{}" unknown.\n'.format(package))
+        else:
+            sys.stdout.write('package "{}":\n'.format(real_name))
+            for f in file_list:
+                if f['type'] == 'dir':
+                    # TODO: different color?
+                    sys.stdout.write('\t{} (directory)\n'.format(f['path']))
+                else:
+                    sys.stdout.write('\t{}\n'.format(f['path']))
+    sys.exit(os.EX_OK)
 
   if options.clean:
     CleanExtracted()

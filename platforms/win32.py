@@ -9,6 +9,7 @@ Setups a cross-compilation environment for Microsoft Windows operating systems (
 import shutil
 import subprocess
 import os
+import sys
 
 install_datadir = os.path.abspath('@DATADIR@')
 
@@ -83,4 +84,13 @@ def install(pkgs):
                '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win32', '--deps'] + pkgs
     inst_proc = subprocess.Popen(command, shell=False)
     return inst_proc.wait()
+
+def list_files(pkgs):
+    '''
+    List package files, etc.
+    '''
+    command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
+               '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win32', '--list-files'] + pkgs
+    output = subprocess.check_output(command, shell=False)
+    sys.stdout.write(output.decode('UTF-8'))
 
