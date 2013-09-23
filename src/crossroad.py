@@ -223,7 +223,7 @@ if __name__ == "__main__":
         sys.stdout.write(prefix)
         sys.exit(os.EX_OK)
 
-    if options.reset:
+    if crossroad_road is None and options.reset:
         if len(args) == 0:
             sys.stderr.write('You must specify at least one platform name for --reset.\n')
             sys.exit(os.EX_USAGE)
