@@ -22,6 +22,7 @@ import subprocess
 
 _packages = []
 _package_filelists = {}
+_package_src_filelists = {}
 
 xdg_cache_home = None
 try:
@@ -50,6 +51,7 @@ def OpenRepository(repositoryLocation):
   from xml.etree.cElementTree import parse as xmlparse
   global _packages
   global _package_filelists
+  global _package_src_filelists
   # Check repository for latest primary.xml
   with urlopen(repositoryLocation + 'repodata/repomd.xml') as metadata:
     doctree = xmlparse(metadata)
@@ -103,7 +105,11 @@ def OpenRepository(repositoryLocation):
   _package_filelists = {
       p.get('name') : [
         {'type': f.get('type', default='file'), 'path': f.text} for f in p.findall('{%s}file'%xmlns)
-    ] for p in elements.findall('{%s}package'%xmlns)}
+    ] for p in elements.findall('{%s}package'%xmlns) if p.get('arch') == 'noarch'}
+  _package_src_filelists = {
+      p.get('name') : [
+        {'type': f.get('type', default='file'), 'path': f.text} for f in p.findall('{%s}file'%xmlns)
+    ] for p in elements.findall('{%s}package'%xmlns) if p.get('arch') == 'src'}
 
 def _findPackage(packageName, srcpkg=False):
   filter_func = lambda p: (p['name'] == packageName or p['filename'] == packageName) and p['arch'] == ('src' if srcpkg else 'noarch')
@@ -336,30 +342,36 @@ if __name__ == "__main__":
     if (len(packages) == 0):
         logging.error('Please provide at list one package.\n')
         sys.exit(os.EX_USAGE)
+    if options.srcpkg:
+        filelists = _package_src_filelists
+        package_type = 'Source package'
+    else:
+        filelists = _package_filelists
+        package_type = 'Package'
     for package in packages:
         file_list = None
         # OH! several arch! src, noarch, etc.
         try:
             real_name = package
-            file_list = _package_filelists[package]
+            file_list = filelists[package]
         except KeyError:
             if options.project == 'windows:mingw:win64':
                 try:
                     real_name = 'mingw64-' + package
-                    file_list = _package_filelists[real_name]
+                    file_list = filelists[real_name]
                 except KeyError:
                     file_list = None
             if file_list is None:
                 # There are some 32-bit package in the 64-bit list.
                 try:
                     real_name = 'mingw32-' + package
-                    file_list = _package_filelists[real_name]
+                    file_list = filelists[real_name]
                 except KeyError:
                     file_list = None
         if file_list is None:
-            sys.stderr.write('Package "{}" unknown.\n'.format(package))
+            sys.stderr.write('{} "{}" unknown.\n'.format(package_type, package))
         else:
-            sys.stdout.write('package "{}":\n'.format(real_name))
+            sys.stdout.write('{} "{}":\n'.format(package_type, real_name))
             for f in file_list:
                 if f['type'] == 'dir':
                     # TODO: different color?

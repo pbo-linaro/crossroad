@@ -176,8 +176,11 @@ if crossroad_road is None:
 
 if crossroad_road is not None:
     cmdline.add_option('-i', '--install',
-        help = 'install a dependency',
+        help = 'install packages',
         action = 'store_true', dest = 'install', default = False)
+    cmdline.add_option('--src',
+        help = 'install source package',
+        action = 'store_true', dest = 'src_pkg', default = False)
     cmdline.add_option('-l', '--list-files',
         help = 'list files which would be installed with a package',
         action = 'store_true', dest = 'list_files', default = False)
@@ -214,9 +217,9 @@ if __name__ == "__main__":
             
     if crossroad_road is not None:
         if options.list_files and crossroad_road in available_platforms:
-            sys.exit(available_platforms[crossroad_road].list_files(args))
+            sys.exit(available_platforms[crossroad_road].list_files(args, options.src_pkg))
         elif options.install and crossroad_road in available_platforms:
-            sys.exit(available_platforms[crossroad_road].install(args))
+            sys.exit(available_platforms[crossroad_road].install(args, options.src_pkg))
 
     if options.list_all:
         cmdline.print_version()

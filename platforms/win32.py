@@ -76,21 +76,27 @@ def language_list():
 def prepare():
     pass
 
-def install(pkgs):
+def install(pkgs, src_pkg):
     '''
     Installing dependencies, etc.
     '''
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
-               '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win32', '--deps'] + pkgs
+               '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win32', '--deps']
+    if src_pkg:
+        command += ['--src']
+    command += pkgs
     inst_proc = subprocess.Popen(command, shell=False)
     return inst_proc.wait()
 
-def list_files(pkgs):
+def list_files(pkgs, src_pkg):
     '''
     List package files, etc.
     '''
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
-               '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win32', '--list-files'] + pkgs
+               '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win32', '--list-files']
+    if src_pkg:
+        command += ['--src']
+    command += pkgs
     output = subprocess.check_output(command, shell=False)
     sys.stdout.write(output.decode('UTF-8'))
 
