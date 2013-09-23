@@ -20,6 +20,8 @@ import optparse
 import os
 import sys
 import subprocess
+import time
+import shutil
 
 ### Current Crossroad Environment ###
 
@@ -153,6 +155,12 @@ cmdline.add_option('-h', '--help',
 cmdline.add_option('-p', '--prefix',
     help = 'outputs the prefix of the current platform',
     action = 'store_true', dest = 'prefix', default = False)
+if crossroad_road is None:
+    # Features only available out of a crossroad env.
+    cmdline.add_option('--reset',
+        help = "effectively delete TARGET's tree. Don't do this if you have important data saved in there.",
+        action = 'store_true', dest = 'reset', default = False)
+
 if crossroad_road is not None:
     cmdline.add_option('-i', '--install',
         help = 'install a dependency',
@@ -213,6 +221,29 @@ if __name__ == "__main__":
 
         prefix = os.path.join(xdg_data_home, 'crossroad/roads', platform_name)
         sys.stdout.write(prefix)
+        sys.exit(os.EX_OK)
+
+    if options.reset:
+        if len(args) == 0:
+            sys.stderr.write('You must specify at least one platform name for --reset.\n')
+            sys.exit(os.EX_USAGE)
+
+        for platform_name in args:
+            if platform_name not in available_platforms:
+                sys.stderr.write('Not a valid platform: {}\n'.format(platform_name))
+                continue
+            platform_path = os.path.join(xdg_data_home, 'crossroad/roads', platform_name)
+            # XXX Or a --force option?
+            sys.stdout.write('Platform {} ({}) is going to be deleted in'.format(platform_name, platform_path))
+            for i in range(5, 0, -1):
+                sys.stdout.write(' {}'.format(i))
+                sys.stdout.flush()
+                time.sleep(1)
+            sys.stdout.write('...\nDeleting {}...\n'.format(platform_path))
+            try:
+                shutil.rmtree(platform_path)
+            except:
+                sys.stderr.write('Warning: deletion of {} failed with {}\n'.format(platform_path, sys.exc_info()[0]))
         sys.exit(os.EX_OK)
 
     if len(args) != 1:
