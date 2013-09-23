@@ -22,6 +22,7 @@ import sys
 import subprocess
 import time
 import shutil
+import zipfile
 
 ### Current Crossroad Environment ###
 
@@ -155,6 +156,18 @@ cmdline.add_option('-h', '--help',
 cmdline.add_option('-p', '--prefix',
     help = 'outputs the prefix of the current platform',
     action = 'store_true', dest = 'prefix', default = False)
+# XXX may support other format in the future, so I could use a generic naming.
+# But in same time, zip seems the most prominent on Windows platform, so for transfer,
+# I support only this for now.
+if crossroad_road is None:
+    cmdline.add_option('-c', '--archive',
+        help = 'Compress an archive, with the given name, of the named platforms.',
+        action = 'store', type="string", dest = 'archive', default = None)
+else:
+    cmdline.add_option('-c', '--archive',
+        help = 'Compress an archive, with the given name, of the current platform.',
+        action = 'store', type="string", dest = 'archive', default = None)
+
 if crossroad_road is None:
     # Features only available out of a crossroad env.
     cmdline.add_option('--reset',
@@ -244,6 +257,43 @@ if __name__ == "__main__":
                 shutil.rmtree(platform_path)
             except:
                 sys.stderr.write('Warning: deletion of {} failed with {}\n'.format(platform_path, sys.exc_info()[0]))
+        sys.exit(os.EX_OK)
+
+    if options.archive is not None:
+        if options.archive[-4:].lower() != '.zip':
+            sys.stderr.write('Error: sorry, only zip format archives are supported for the time being.\n')
+            sys.exit(os.EX_UNAVAILABLE)
+        if crossroad_road:
+            platforms = [crossroad_road]
+        else:
+            platforms = args
+        if len(platforms) == 0:
+            sys.stderr.write('You must name at least one platform to include in your archive.\n')
+            sys.exit(os.EX_USAGE)
+        for platform in platforms:
+            # Test existence and readability of the platform.
+            platform_path = os.path.join(xdg_data_home, 'crossroad/roads', platform)
+            if platform not in available_platforms or not os.access(platform_path, os.R_OK):
+                sys.stderr.write('Platform {} is not built, or unreadable.\n'.format(platform))
+                sys.exit(os.EX_NOPERM)
+        # All looks good. Create the zip!
+        sys.stdout.write('Generating an archive file...\n')
+        archive_file = zipfile.ZipFile(options.archive, 'w',
+                                     compression = zipfile.ZIP_DEFLATED,
+                                     allowZip64 = True)
+        # XXX the last slash / is important because we will want to remove it from file archive name.
+        archive_root = os.path.join(xdg_data_home, 'crossroad/roads/')
+        for platform in platforms:
+            platform_path = os.path.join(archive_root, platform)
+            # XXX should we followlinks=True to walk into directory links?
+            for dirpath, dirnames, filenames in os.walk(platform_path):
+              for filename in filenames:
+                file_path = os.path.join(dirpath, filename)
+                archive_file.write(file_path,
+                                   arcname = file_path.replace(archive_root, ''))
+        sys.stdout.write('Archive file {} completed.\n'.format(options.archive))
+        archive_file.close()
+
         sys.exit(os.EX_OK)
 
     if len(args) != 1:
