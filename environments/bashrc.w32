@@ -2,7 +2,7 @@
 
 # Source the normal system-wide and user environment.
 if [ -f /etc/bash.bashrc ]; then
-	. /etc/bash.bashrc
+    . /etc/bash.bashrc
 fi
 if [ -f ~/.bashrc ]; then
     . ~/.bashrc
@@ -17,7 +17,7 @@ export PLATFORM_NICENAME="Windows 32-bit"
 export CROSSROAD_ROAD=w32
 
 # Here is our root.
-export PREFIX="`pwd`"
+export PREFIX="`crossroad -p`"
 
 # Reset pkg-config to search *ONLY* libraries compiled for the cross-compiled platform target.
 export PKG_CONFIG_LIBDIR=

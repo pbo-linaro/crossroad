@@ -149,6 +149,10 @@ cmdline.add_option('-l', '--list-all',
 cmdline.add_option('-h', '--help',
     help = 'show this help message and exit. If a TARGET is provided, show information about this platform.',
     action = 'store_true', dest = 'help', default = False)
+# TODO: do the same for --host?
+cmdline.add_option('-p', '--prefix',
+    help = 'outputs the prefix of the current platform',
+    action = 'store_true', dest = 'prefix', default = False)
 if crossroad_road is not None:
     cmdline.add_option('-i', '--install',
         help = 'install a dependency',
@@ -194,6 +198,23 @@ if __name__ == "__main__":
             sys.stdout.write(unavailable_platform_list)
         sys.exit(os.EX_OK)
 
+    if options.prefix:
+        if crossroad_road:
+            platform_name = crossroad_road
+        elif len(args) > 0:
+            platform_name = args[0]
+        else:
+            sys.stderr.write('You must specify a platform.\n')
+            sys.exit(os.EX_USAGE)
+
+        if platform_name not in available_platforms:
+            sys.stderr.write('Not a valid platform: {}\n'.format(platform_name))
+            sys.exit(os.EX_USAGE)
+
+        prefix = os.path.join(xdg_data_home, 'crossroad/roads', platform_name)
+        sys.stdout.write(prefix)
+        sys.exit(os.EX_OK)
+
     if len(args) != 1:
         cmdline.print_version()
         cmdline.print_usage()
@@ -215,18 +236,14 @@ if __name__ == "__main__":
             command = [shell, '--rcfile', bashrc_path]
         else:
             command = ['bash', '--rcfile', bashrc_path]
-            sys.stderr.write("Sorry, only bash is supported right now.")
+            sys.stderr.write("Warning: sorry, only bash is supported right now.")
 
         env_path = os.path.join(xdg_data_home, 'crossroad/roads', available_platforms[args[0]].name)
         try:
-            os.chdir(env_path)
-        except FileNotFoundError:
-            try:
-                os.makedirs(env_path)
-            except PermissionError:
-                sys.stderr.write('"{}" cannot be created. Please verify your permissions. Aborting.\n'.format(env_path))
-                sys.exit(os.EX_CANTCREAT)
-            os.chdir(env_path)
+            os.makedirs(env_path, exist_ok = True)
+        except PermissionError:
+            sys.stderr.write('"{}" cannot be created. Please verify your permissions. Aborting.\n'.format(env_path))
+            sys.exit(os.EX_CANTCREAT)
         except NotADirectoryError:
             sys.stderr.write('"{}" exists but is not a directory. Aborting.\n'.format(env_path))
             sys.exit(os.EX_CANTCREAT)
