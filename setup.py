@@ -3,7 +3,10 @@
 
 import distutils.core
 import distutils.command.build
+import distutils.command.build_scripts
 import distutils.command.install
+import distutils.command.install_data
+import distutils.command.install_scripts
 import gzip
 import sys
 import os
@@ -46,11 +49,10 @@ class build_man(distutils.core.Command):
         '''
         Create a build tree.
         '''
-        shutil.rmtree('build/', True)
         try:
-            os.makedirs('build/man/man1')
+            os.makedirs('build/man/man1', exist_ok=True)
         except os.error:
-            sys.stderr.write('Build error: failure to create the build/ tree. Please check your permissions.')
+            sys.stderr.write('Build error: failure to create the build/ tree. Please check your permissions.\n')
             sys.exit(os.EX_CANTCREAT)
 
     def build(self):
@@ -76,34 +78,101 @@ class build_man(distutils.core.Command):
 
 class my_build(distutils.command.build.build):
     '''
-    Override the build to build the manual first.
+    Override the build to have some additional pre-processing.
     '''
 
     def run(self):
+        # Add manual generation in build.
         self.run_command('man')
+        # Move the file without modification at build time
+        # This allows renaming mostly.
+        try:
+            os.makedirs('build/bin', exist_ok = True)
+        except os.error:
+            sys.stderr.write('Build error: failure to create the build/ tree. Please check your permissions.\n')
+            sys.exit(os.EX_CANTCREAT)
+        shutil.copyfile('src/crossroad.py', 'build/bin/crossroad')
         distutils.command.build.build.run(self)
-        #distutils.command.install.install.run(self)
-
-    def prepare_main_script(self):
-        '''
-        os.makedirs('build/bin')
-        '''
-        pass
 
 class my_install(distutils.command.install.install):
+    '''
+    Override the install to modify updating scripts before installing.
+    '''
+
+    def run(self):
+        try:
+            os.makedirs('build/', exist_ok=True)
+        except os.error:
+            sys.stderr.write('Build error: failure to create the build/ tree. Please check your permissions.\n')
+            sys.exit(os.EX_CANTCREAT)
+        # Install is the only time we know the actual data directory.
+        # We save this information in a temporary build file for replacement in scripts.
+        script = open('build/data_dir', 'w')
+        script.truncate(0)
+        script.write(os.path.abspath(self.install_data))
+        script.close()
+        # Go on with normal install.
+        distutils.command.install.install.run(self)
+
+class my_install_data(distutils.command.install_data.install_data):
     '''
     Override the install to build the manual first.
     '''
 
+    # XXX Right now this is useless.
+    # I may want to update data files, same as scripts file,
+    # in a close future.
+
     def run(self):
-        #print(self.install_data) #/usr/local
-        #print(self.install_scripts) #/usr/local/bin
-        # Prepare the crossroad script! XXX
-        distutils.command.install.install.run(self)
+        distutils.command.install_data.install_data.run(self)
+
+class my_install_scripts(distutils.command.install_scripts.install_scripts):
+    '''
+    Override the install to build the manual first.
+    '''
+
+    data_dir = '/usr/local'
+
+    def run(self):
+        try:
+            data_dir_file = open('build/data_dir', 'r')
+            self.data_dir = data_dir_file.readline().rstrip(' \n\r\t')
+            data_dir_file.close()
+        except IOError:
+            sys.stderr.write('Warning: no build/data_dir file. You should run the `install` command. Defaulting to {}.\n'.format(self.data_dir))
+
+        self.update_scripts()
+        distutils.command.install_scripts.install_scripts.run(self)
+
+    def update_scripts(self):
+        '''
+        Update the crossroad script's contents.
+        '''
+        for f in os.listdir(self.build_dir):
+            try:
+                script = open(os.path.join(self.build_dir, f), 'r+')
+                contents = script.read()
+                # Make the necessary replacements.
+                contents = contents.replace('@DATADIR@', self.data_dir)
+                script.truncate(0)
+                script.seek(0)
+                script.write(contents)
+                script.flush()
+                script.close()
+            except IOError:
+                sys.stderr.write('The script {} failed to update. Check your permissions.'.format(f))
+                sys.exit(os.EX_CANTCREAT)
+
+platform_list = os.listdir('platforms')
+platform_list = [os.path.join('platforms/', f) for f in platform_list if f[-3:] == '.py']
+
+environment_list = os.listdir('environments')
+environment_list = [os.path.join('environments/', f) for f in environment_list]
 
 distutils.core.setup(
     name = 'crossroad',
-    cmdclass = {'man': build_man, 'build': my_build, 'install': my_install},
+    cmdclass = {'man': build_man, 'build': my_build, 'install': my_install,
+        'install_data': my_install_data, 'install_scripts': my_install_scripts},
     version = version,
     description = 'Cross-Compilation Environment Toolkit.',
     long_description = 'Crossroad is a developer tool to prepare your shell environment for Cross-Compilation.',
@@ -122,10 +191,10 @@ distutils.core.setup(
     requires = [],
     scripts = ['build/bin/crossroad'],
     data_files = [('man/man1/', ['build/man/man1/crossroad.1.gz']),
-        ('crossroad/scripts/', ['scripts/crossroad-mingw-install.py']),
-        ('crossroad/platforms/', ['platforms']),
-        ('crossroad/environments/', ['environments']),
-        ('crossroad/projects/', ['projects']),
+        ('share/crossroad/scripts/', ['scripts/crossroad-mingw-install.py']),
+        ('share/crossroad/platforms/', platform_list),
+        ('share/crossroad/environments/', environment_list),
+        #('crossroad/projects/', ['projects']),
         ],
     )
 

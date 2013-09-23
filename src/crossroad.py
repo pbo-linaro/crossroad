@@ -32,8 +32,7 @@ except KeyError:
 
 # This string will be replaced by the setup.py at installation time,
 # depending on where you installed default data.
-install_datadir = os.path.abspath('@DATADIR@')
-install_datadir = os.path.abspath('../..')
+install_datadir = os.path.join(os.path.abspath('@DATADIR@'), 'share/')
 
 xdg_data_home = None
 try:
