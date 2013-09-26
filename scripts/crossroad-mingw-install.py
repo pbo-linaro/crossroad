@@ -169,7 +169,7 @@ def _checkPackageRequirements(package, packageNames):
         allProviders.add(providers.pop())
   return allProviders
 
-def packagesDownload(packageNames, withDependencies=False, srcpkg=False):
+def packagesDownload(packageNames, withDependencies = False, srcpkg = False, nocache = False):
   from fnmatch import fnmatchcase
   packageNames_new = {pn for pn in packageNames if pn.endswith('.rpm')}
   for packageName in packageNames - packageNames_new:
@@ -190,11 +190,11 @@ def packagesDownload(packageNames, withDependencies=False, srcpkg=False):
       packageNames.extend(dependencies)
       allPackageNames |= dependencies
     localFilenameFull = os.path.join(_packageCacheDirectory, package['filename'])
-    if not os.path.exists(localFilenameFull):
+    if nocache or not os.path.exists(localFilenameFull):
       logging.warning('Downloading %s', package['filename'])
       urlretrieve(package['url'], localFilenameFull)
     else:
-      logging.warning('Using cached package %s', package['filename'])
+      logging.warning('Using cached package %s', localFilenameFull)
     packageFilenames.append(package['filename'])
   return packageFilenames
 
@@ -342,6 +342,8 @@ def GetOptions():
   packageOptions.add_option("--deps", action="store_true", dest="withdeps", help="Download dependencies")
   packageOptions.add_option("--no-deps", action="store_false", dest="withdeps", help="Do not download dependencies [default]")
   packageOptions.add_option("--src", action="store_true", dest="srcpkg", default=False, help="Download source instead of noarch package")
+  packageOptions.add_option("--nocache", action="store_true", dest="nocache", default=False,
+                            help="Force package download even if it is in cache.")
   packageOptions.add_option("--list-files", action="store_true", dest="list_files", default=False, help="Only list the files of a package")
   packageOptions.add_option("--uninstall", action="store_true", dest="uninstall", default=False, help="Uninstall the list of packages")
   parser.add_option_group(packageOptions)
@@ -445,7 +447,7 @@ if __name__ == "__main__":
       sys.exit('Package not found:\n\t%s' % args[0])
     packageBasename = re.sub('^mingw(32|64)-|\\.noarch|\\.rpm$', '', package['filename'])
 
-  packages = packagesDownload(packages, options.withdeps, options.srcpkg)
+  packages = packagesDownload(packages, options.withdeps, options.srcpkg, options.nocache)
 
   packagesExtract(packages, options.srcpkg)
   extracted_prefix = GetBaseDirectory(options.project)
