@@ -193,6 +193,8 @@ def packagesDownload(packageNames, withDependencies=False, srcpkg=False):
     if not os.path.exists(localFilenameFull):
       logging.warning('Downloading %s', package['filename'])
       urlretrieve(package['url'], localFilenameFull)
+    else:
+      logging.warning('Using cached package %s', package['filename'])
     packageFilenames.append(package['filename'])
   return packageFilenames
 
@@ -444,8 +446,6 @@ if __name__ == "__main__":
     packageBasename = re.sub('^mingw(32|64)-|\\.noarch|\\.rpm$', '', package['filename'])
 
   packages = packagesDownload(packages, options.withdeps, options.srcpkg)
-  for package in sorted(packages):
-    print(package)
 
   packagesExtract(packages, options.srcpkg)
   extracted_prefix = GetBaseDirectory(options.project)
