@@ -81,6 +81,28 @@ def get_package_files (package, options):
             f['path'] = re.sub(r'/usr/[^/]+-mingw32/sys-root/mingw', prefix, f['path'])
     return (real_name, file_list)
 
+def fix_symlink (path):
+    '''
+    if path is a symlink, fixes it with a relative prefix.
+    '''
+    if os.path.islink (path):
+        link_path = os.readlink (path)
+        if os.path.isabs (link_path):
+            # First I make it an absolute path in our new prefix.
+            link_path = re.sub(r'/usr/[^/]+-mingw32/sys-root/mingw', prefix, link_path)
+            # Then I make it a path relative to the symlink file in our same prefix.
+            # Because likely relative symlinks won't need to be fixed again,
+            # even when we will move the tree to a new prefix.
+            link_path = os.path.relpath (link_path, os.path.dirname (path))
+            os.unlink (path)
+            os.symlink (link_path, path, target_is_directory = os.path.isdir (path))
+
+def fix_package_symlinks (package, options):
+    (real_name, file_list) = get_package_files (package, options)
+    if file_list is not None:
+        for f in file_list:
+            fix_symlink (f['path'])
+
 def OpenRepository(repositoryLocation):
   from xml.etree.cElementTree import parse as xmlparse
   global _packages
@@ -196,7 +218,7 @@ def packagesDownload(packageNames, withDependencies = False, srcpkg = False, noc
     else:
       logging.warning('Using cached package %s', localFilenameFull)
     packageFilenames.append(package['filename'])
-  return packageFilenames
+  return (allPackageNames, packageFilenames)
 
 def _extractFile(filename, output_dir=_extractedCacheDirectory):
   try:
@@ -449,17 +471,20 @@ if __name__ == "__main__":
       sys.exit('Package not found:\n\t%s' % args[0])
     packageBasename = re.sub('^mingw(32|64)-|\\.noarch|\\.rpm$', '', package['filename'])
 
-  packages = packagesDownload(packages, options.withdeps, options.srcpkg, options.nocache)
+  (packages, packages_rpm) = packagesDownload(packages, options.withdeps, options.srcpkg, options.nocache)
 
-  packagesExtract(packages, options.srcpkg)
+  packagesExtract(packages_rpm, options.srcpkg)
   extracted_prefix = GetBaseDirectory(options.project)
   move_files(extracted_prefix, prefix)
+  logging.warning ('Fixing symlinks')
+  for package in packages:
+      fix_package_symlinks (package, options)
   SetExecutableBit()
 
   if options.metadata:
     cleanup = lambda n: re.sub('^mingw(?:32|64)-(.*)', '\\1', re.sub('^mingw(?:32|64)[(](.*)[)]', '\\1', n))
     with open(os.path.join(prefix, packageBasename + '.metadata'), 'w') as m:
-      for packageFilename in sorted(packages):
+      for packageFilename in sorted(packages_rpm):
         package = [p for p in _packages if p['filename'] == packageFilename][0]
         m.writelines(['provides:%s\r\n' % cleanup(p) for p in package['provides']])
         m.writelines(['requires:%s\r\n' % cleanup(r) for r in package['requires']])
