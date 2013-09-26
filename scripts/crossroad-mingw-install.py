@@ -201,11 +201,13 @@ def packagesDownload(packageNames, withDependencies = False, srcpkg = False, noc
 def _extractFile(filename, output_dir=_extractedCacheDirectory):
   try:
     with open('7z.log', 'w') as logfile:
-      if filename[-4:] == '.cpio':
+      if filename[-5:] == '.cpio':
         # 7z loses links and I can't find an option to change this behavior.
         # So I use the cpio command for cpio files, even though it might create broken links.
+        cwd = os.getcwd()
         os.chdir (output_dir)
-        subprocess.check_call(['cpio', '-i', '--make-directories', '<' + filename], stderr=logfile, stdout=logfile)
+        subprocess.check_call('cpio -i --make-directories <' + filename, stderr=logfile, stdout=logfile, shell = True)
+        os.chdir (cwd)
       else:
         subprocess.check_call(['7z', 'x', '-o'+output_dir, '-y', filename], stderr=logfile, stdout=logfile)
     os.remove('7z.log')
