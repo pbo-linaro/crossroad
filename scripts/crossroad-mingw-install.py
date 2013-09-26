@@ -344,7 +344,6 @@ if __name__ == "__main__":
     sys.exit('Error opening repository:\n\t%s\n\t%s' % (repository, e))
 
   if options.list_files:
-    sys.stdout.flush()
     if (len(packages) == 0):
         logging.error('Please provide at list one package.\n')
         sys.exit(os.EX_USAGE)
@@ -356,7 +355,6 @@ if __name__ == "__main__":
         package_type = 'Package'
     for package in packages:
         file_list = None
-        # OH! several arch! src, noarch, etc.
         try:
             real_name = package
             file_list = filelists[package]
@@ -379,11 +377,12 @@ if __name__ == "__main__":
         else:
             sys.stdout.write('{} "{}":\n'.format(package_type, real_name))
             for f in file_list:
+                path = re.sub(r'/usr/[^/]+-mingw32/sys-root/mingw', prefix, f['path'])
                 if f['type'] == 'dir':
                     # TODO: different color?
-                    sys.stdout.write('\t{} (directory)\n'.format(f['path']))
+                    sys.stdout.write('\t{} (directory)\n'.format(path))
                 else:
-                    sys.stdout.write('\t{}\n'.format(f['path']))
+                    sys.stdout.write('\t{}\n'.format(path))
     sys.exit(os.EX_OK)
 
   if options.clean:
