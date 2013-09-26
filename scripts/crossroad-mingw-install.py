@@ -307,6 +307,7 @@ def GetOptions():
   packageOptions.add_option("--no-deps", action="store_false", dest="withdeps", help="Do not download dependencies [default]")
   packageOptions.add_option("--src", action="store_true", dest="srcpkg", default=False, help="Download source instead of noarch package")
   packageOptions.add_option("--list-files", action="store_true", dest="list_files", default=False, help="Only list the files of a package")
+  packageOptions.add_option("--uninstall", action="store_true", dest="uninstall", default=False, help="Uninstall the list of packages")
   parser.add_option_group(packageOptions)
 
   # Output options
@@ -383,6 +384,58 @@ if __name__ == "__main__":
                     sys.stdout.write('\t{} (directory)\n'.format(path))
                 else:
                     sys.stdout.write('\t{}\n'.format(path))
+    sys.exit(os.EX_OK)
+
+  if options.uninstall:
+    if (len(packages) == 0):
+        logging.error('Please provide at list one package to uninstall.\n')
+        sys.exit(os.EX_USAGE)
+    if options.srcpkg:
+        filelists = _package_src_filelists
+        package_type = 'Source package'
+    else:
+        filelists = _package_filelists
+        package_type = 'Package'
+    for package in packages:
+        file_list = None
+        try:
+            real_name = package
+            file_list = filelists[package]
+        except KeyError:
+            if options.project == 'windows:mingw:win64':
+                try:
+                    real_name = 'mingw64-' + package
+                    file_list = filelists[real_name]
+                except KeyError:
+                    file_list = None
+            if file_list is None:
+                # There are some 32-bit package in the 64-bit list.
+                try:
+                    real_name = 'mingw32-' + package
+                    file_list = filelists[real_name]
+                except KeyError:
+                    file_list = None
+        if file_list is None:
+            sys.stderr.write('{} "{}" unknown.\n'.format(package_type, package))
+        else:
+            sys.stdout.write('Deleting {} "{}"...\n'.format(package_type, real_name))
+            sys.stdout.flush()
+            for f in file_list:
+                path = re.sub(r'/usr/[^/]+-mingw32/sys-root/mingw', prefix, f['path'])
+                if f['type'] == 'dir':
+                    # Only remove empty directories.
+                    # Good thing exactly what os.rmdir() does!
+                    try:
+                        os.rmdir (path)
+                    except OSError:
+                        # Probably non empty.
+                        pass
+                else:
+                    try:
+                        os.unlink (path)
+                    except FileNotFoundError:
+                        # Let's just ignore already removed files.
+                        pass
     sys.exit(os.EX_OK)
 
   if options.clean:

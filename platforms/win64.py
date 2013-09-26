@@ -100,3 +100,15 @@ def list_files(pkgs, src_pkg):
     output = subprocess.check_output(command, shell=False)
     sys.stdout.write(output.decode('UTF-8'))
 
+def uninstall(pkgs, src_pkg):
+    '''
+    Uninstall package.
+    '''
+    command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
+               '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win64', '--uninstall']
+    if src_pkg:
+        command += ['--src']
+    command += pkgs
+    output = subprocess.check_output(command, shell=False)
+    sys.stdout.write(output.decode('UTF-8'))
+

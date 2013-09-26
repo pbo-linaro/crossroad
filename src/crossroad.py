@@ -184,6 +184,9 @@ if crossroad_road is not None:
     cmdline.add_option('-l', '--list-files',
         help = 'list files which would be installed with a package',
         action = 'store_true', dest = 'list_files', default = False)
+    cmdline.add_option('-u', '--uninstall',
+        help = 'uninstall packages',
+        action = 'store_true', dest = 'uninstall', default = False)
 
 (options, args) = cmdline.parse_args()
 
@@ -218,6 +221,14 @@ if __name__ == "__main__":
     if crossroad_road is not None:
         if options.list_files and crossroad_road in available_platforms:
             sys.exit(available_platforms[crossroad_road].list_files(args, options.src_pkg))
+        elif options.uninstall and crossroad_road in available_platforms:
+            sys.stdout.write('Crossroad will uninstall the following packages: {}\nin'.format(" ".join(args)))
+            for i in range(5, 0, -1):
+                sys.stdout.write(' {}'.format(i))
+                sys.stdout.flush()
+                time.sleep(1)
+            sys.stdout.write('...\nUninstalling...\n')
+            sys.exit(available_platforms[crossroad_road].uninstall(args, options.src_pkg))
         elif options.install and crossroad_road in available_platforms:
             sys.exit(available_platforms[crossroad_road].install(args, options.src_pkg))
 
