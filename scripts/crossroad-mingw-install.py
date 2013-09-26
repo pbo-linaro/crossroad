@@ -211,6 +211,10 @@ def packagesDownload(packageNames, withDependencies = False, srcpkg = False, noc
     if withDependencies and len(dependencies) > 0:
       packageNames.extend(dependencies)
       allPackageNames |= dependencies
+    if packName[-6:] == '-devel':
+        logging.warning('{} is a devel package. Adding {}'.format(packName, packName[:-6]))
+        packageNames.append(packName[:-6])
+        allPackageNames.add(packName[:-6])
     localFilenameFull = os.path.join(_packageCacheDirectory, package['filename'])
     if nocache or not os.path.exists(localFilenameFull):
       logging.warning('Downloading %s', package['filename'])
