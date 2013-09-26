@@ -12,7 +12,7 @@ import os.path
 import sys
 import shutil
 import re
-import zipfile 
+import zipfile
 import mimetypes
 import subprocess
 
@@ -165,7 +165,13 @@ def packagesDownload(packageNames, withDependencies=False, srcpkg=False):
 def _extractFile(filename, output_dir=_extractedCacheDirectory):
   try:
     with open('7z.log', 'w') as logfile:
-      subprocess.check_call(['7z', 'x', '-o'+output_dir, '-y', filename], stderr=logfile, stdout=logfile)
+      if filename[-4:] == '.cpio':
+        # 7z loses links and I can't find an option to change this behavior.
+        # So I use the cpio command for cpio files, even though it might create broken links.
+        os.chdir (output_dir)
+        subprocess.check_call(['cpio', '-i', '--make-directories', '<' + filename], stderr=logfile, stdout=logfile)
+      else:
+        subprocess.check_call(['7z', 'x', '-o'+output_dir, '-y', filename], stderr=logfile, stdout=logfile)
     os.remove('7z.log')
   except:
     logging.error('Failed to extract %s', filename)
