@@ -15,6 +15,29 @@ export PLATFORM=w64
 export PLATFORM_NICENAME="Windows 64-bit"
 export CROSSROAD_CMAKE_TOOLCHAIN_FILE="@DATADIR@/share/crossroad/environments/toolchain-w64.cmake"
 
+# ld is a mandatory file to enter this environment.
+# Also it is normally not touched by ccache, which makes it a better
+# prefix-searching tool than gcc.
+host_ld="`which $HOST-ld`"
+host_ld_dir="`dirname $host_ld`"
+host_ld_bin="`basename $host_ld_dir`"
+
+if [ $host_ld_bin = "bin" ]; then
+    host_ld_prefix="`dirname $host_ld_dir`"
+    # No need to add the guessed prefix if it is a common one that we add anyway.
+    if [ "$host_ld_prefix" != "/usr" ]; then
+        if [ "$host_ld_prefix" != "/usr/local" ]; then
+            if [ -d "$host_ld_prefix/$HOST" ]; then
+                export CROSSROAD_GUESSED_MINGW_PREFIX="$host_ld_prefix/$HOST"
+            fi
+        fi
+    fi
+    unset host_ld_prefix
+fi
+unset host_ld_bin
+unset host_ld_dir
+unset host_ld
+
 # Internal usage.
 export CROSSROAD_ROAD=w64
 
@@ -24,17 +47,29 @@ export PREFIX="`crossroad -p`"
 # Reset pkg-config to search *ONLY* libraries compiled for the cross-compiled platform target.
 export PKG_CONFIG_LIBDIR=
 export PKG_CONFIG_PATH=$PREFIX/lib64/pkgconfig:$PREFIX/share/pkgconfig:$PREFIX/lib/pkgconfig
-export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/$HOST/lib64/pkconfig
-export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/$HOST/lib64/pkconfig
-export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/$HOST/lib/pkconfig
-export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/$HOST/lib/pkconfig
+if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX" ]; then
+    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib64/pkconfig:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib/pkconfig"
+fi
+if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX" ]; then
+    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$CROSSROAD_GUESSED_MINGW_PREFIX/lib64/pkconfig:$CROSSROAD_GUESSED_MINGW_PREFIX/lib/pkconfig"
+fi
+export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/local/$HOST/lib64/pkconfig"
+export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/$HOST/lib64/pkconfig"
+export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/local/$HOST/lib/pkconfig"
+export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/$HOST/lib/pkconfig"
 
 export LD_LIBRARY_PATH=$PREFIX/lib
+if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX" ]; then
+    export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib64/:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib/"
+fi
+if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX" ]; then
+    export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$CROSSROAD_GUESSED_MINGW_PREFIX/lib64/:$CROSSROAD_GUESSED_MINGW_PREFIX/lib/"
+fi
 # Adding some typical distribution paths.
 # Note: I could also try to guess the user path from `which ${HOST}-gcc`.
 # But it may not always work. For instance if the user uses ccache.
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/$HOST/lib64/:/usr/local/$HOST/lib/
-export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/$HOST/lib64/:/usr/$HOST/lib/
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/$HOST/lib64/:/usr/local/$HOST/lib/"
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/$HOST/lib64/:/usr/$HOST/lib/"
 
 mkdir -p $PREFIX/bin
 export PATH=$PREFIX/bin:$PATH
@@ -51,6 +86,30 @@ export LDFLAGS="-L$PREFIX/lib"
 # Very important! The default -I list of directories when none is specified!
 export CPATH="$PREFIX/include"
 
+if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX" ]; then
+    if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/include" ]; then
+        export CFLAGS="$CFLAGS -I$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/include/"
+        export CPATH="$CPATH:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/include/"
+    fi
+    if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib64" ]; then
+        export LDFLAGS="$LDFLAGS -L$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib64"
+    fi
+    if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib" ]; then
+        export LDFLAGS="$LDFLAGS -L$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib"
+    fi
+fi
+if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX" ]; then
+    if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX/include" ]; then
+        export CFLAGS="$CFLAGS -I$CROSSROAD_GUESSED_MINGW_PREFIX/include/"
+        export CPATH="$CPATH:$CROSSROAD_GUESSED_MINGW_PREFIX/include/"
+    fi
+    if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX/lib64" ]; then
+        export LDFLAGS="$LDFLAGS -L$CROSSROAD_GUESSED_MINGW_PREFIX/lib64"
+    fi
+    if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX/lib" ]; then
+        export LDFLAGS="$LDFLAGS -L$CROSSROAD_GUESSED_MINGW_PREFIX/lib"
+    fi
+fi
 # Adding some user-installed or distribution common installation path.
 if [ -d "/usr/local/$HOST/include" ]; then
     export CFLAGS="$CFLAGS -I/usr/local/$HOST/include/"
@@ -102,5 +161,3 @@ echo "Your environment has been set to cross-compile for the '$PLATFORM_NICENAME
 echo "You have been automatically transported to the prefered cross-compilation prefix (${PREFIX})."
 echo "Use the \$PREFIX environment variable in your compilation scripts (for instance \`./configure --prefix=\$PREFIX\` for GNU-style projects)."
 echo "To exit this cross-compilation environment, simply \`exit\` the current shell session."
-
-#echo "full list of available environment variables as 'cross --env'" #TODO

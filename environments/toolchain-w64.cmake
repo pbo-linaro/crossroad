@@ -7,7 +7,7 @@ SET(CMAKE_CXX_COMPILER x86_64-w64-mingw32-g++)
 SET(CMAKE_RC_COMPILER x86_64-w64-mingw32-windres)
 
 # here is the target environment located
-SET(CMAKE_FIND_ROOT_PATH $ENV{PREFIX} /usr/x86_64-w64-mingw32)
+SET(CMAKE_FIND_ROOT_PATH $ENV{PREFIX} $ENV{CROSSROAD_CUSTOM_MINGW_W64_PREFIX} $ENV{CROSSROAD_GUESSED_MINGW_PREFIX} /usr/local/x86_64-w64-mingw32 /usr/x86_64-w64-mingw32)
 
 # adjust the default behaviour of the FIND_XXX() commands:
 # search headers and libraries in the target environment, search
