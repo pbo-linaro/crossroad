@@ -506,6 +506,7 @@ if __name__ == "__main__":
   extracted_prefix = GetBaseDirectory(options.project)
   move_files(extracted_prefix, prefix)
   logging.warning ('Fixing symlinks')
+  sys.stdout.flush()
   for package in packages:
       fix_package_symlinks (package, options)
   SetExecutableBit()
