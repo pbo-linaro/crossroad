@@ -277,7 +277,15 @@ def packagesExtract(packageFilenames, srcpkg=False):
 
 def move_files(from_file, to_file):
     if os.path.isdir(from_file):
-        os.makedirs(to_file, exist_ok=True)
+        try:
+            os.makedirs(to_file, exist_ok=True)
+        except FileExistsError:
+            # This exception would not happen if `to_file` exists and is a directory.
+            # But I had the strange case where it existed as a file, and the error still occurred.
+            # Not sure this is the right solution, but I will just output a warning and delete it.
+            logging.warning ("{} exists as a file, but we want a directory. Deleting.")
+            os.unlink (to_file)
+            os.makedirs(to_file, exist_ok=True)
         for f in os.listdir(from_file):
             move_files(os.path.join(from_file, f), os.path.join(to_file, f))
     else:
