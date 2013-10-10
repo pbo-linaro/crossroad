@@ -98,7 +98,7 @@ class my_build(distutils.command.build.build):
             if f[-3:] == '.py':
                 shutil.copyfile(os.path.join('platforms', f), os.path.join('build/platforms', f))
         for f in os.listdir('environments'):
-            if f[:7] == 'bashrc.':
+            if f[:7] == 'bashrc.' or f[-6:] == '.cmake':
                 shutil.copyfile(os.path.join('environments', f), os.path.join('build/environments', f))
         distutils.command.build.build.run(self)
 
@@ -178,7 +178,7 @@ platform_list = os.listdir('platforms')
 platform_list = [os.path.join('build/platforms/', f) for f in platform_list if f[-3:] == '.py']
 
 environment_list = os.listdir('environments')
-environment_list = [os.path.join('build/environments/', f) for f in environment_list if f[:7] == 'bashrc.']
+environment_list = [os.path.join('build/environments/', f) for f in environment_list if f[:7] == 'bashrc.' or f[-6:] == '.cmake']
 
 distutils.core.setup(
     name = 'crossroad',

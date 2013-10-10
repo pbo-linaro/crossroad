@@ -34,17 +34,16 @@ After running crossroad, go into usr/src/, where you will download GIMP source c
 $ cd usr/src/
 *[get some source code]*
 $ cd gimp
-$ ./configure --prefix=$CROSSROAD_PREFIX --host=$HOST
+$ ./configure --prefix=$CROSSROAD_PREFIX --host=$HOST --build=$BUILD
 $ make
 $ make install
 
-Of course this kind of compilation with prefix is not limited to autotools. It is pretty common. You see this with most Python tools:
+Of course this kind of compilation with prefix is not limited to autotools. It is pretty common. You see this with most Python tools,
+even though that's not really "compilation" here, so you don't need to set any host information:
 $ ./setup.py --prefix=$CROSSROAD_PREFIX
 
 Or cmake:
-$ cmake . -DCMAKE_INSTALL_PREFIX:PATH=$CROSSROAD_PREFIX
-
-*Note: cmake has a special logic for cross-compile and it is not just as simple as setting a target. TODO.*
+$ cmake . -DCMAKE_INSTALL_PREFIX:PATH=$CROSSROAD_PREFIX -DCMAKE_TOOLCHAIN_FILE=$CROSSROAD_CMAKE_TOOLCHAIN_FILE
 
 and so on.
 
