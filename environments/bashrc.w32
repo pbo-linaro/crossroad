@@ -10,6 +10,7 @@ fi
 
 # Some value for user usage.
 export HOST=i686-w64-mingw32
+export BUILD=`@DATADIR@/share/crossroad/scripts/config.guess`
 export PLATFORM=w32
 export PLATFORM_NICENAME="Windows 32-bit"
 

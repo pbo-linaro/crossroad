@@ -89,6 +89,7 @@ class my_build(distutils.command.build.build):
         try:
             os.makedirs('build/bin', exist_ok = True)
             os.makedirs('build/platforms', exist_ok = True)
+            os.makedirs('build/environments', exist_ok = True)
         except os.error:
             sys.stderr.write('Build error: failure to create the build/ tree. Please check your permissions.\n')
             sys.exit(os.EX_CANTCREAT)
@@ -96,6 +97,9 @@ class my_build(distutils.command.build.build):
         for f in os.listdir('platforms'):
             if f[-3:] == '.py':
                 shutil.copyfile(os.path.join('platforms', f), os.path.join('build/platforms', f))
+        for f in os.listdir('environments'):
+            if f[:7] == 'bashrc.':
+                shutil.copyfile(os.path.join('environments', f), os.path.join('build/environments', f))
         distutils.command.build.build.run(self)
 
 class my_install(distutils.command.install.install):
@@ -157,6 +161,7 @@ class my_install_data(distutils.command.install_data.install_data):
 
     def run(self):
         update_scripts('build/platforms')
+        update_scripts('build/environments')
         distutils.command.install_data.install_data.run(self)
 
 class my_install_scripts(distutils.command.install_scripts.install_scripts):
@@ -173,7 +178,7 @@ platform_list = os.listdir('platforms')
 platform_list = [os.path.join('build/platforms/', f) for f in platform_list if f[-3:] == '.py']
 
 environment_list = os.listdir('environments')
-environment_list = [os.path.join('environments/', f) for f in environment_list]
+environment_list = [os.path.join('build/environments/', f) for f in environment_list if f[:7] == 'bashrc.']
 
 distutils.core.setup(
     name = 'crossroad',
@@ -197,7 +202,7 @@ distutils.core.setup(
     requires = [],
     scripts = ['build/bin/crossroad'],
     data_files = [('man/man1/', ['build/man/man1/crossroad.1.gz']),
-        ('share/crossroad/scripts/', ['scripts/crossroad-mingw-install.py']),
+        ('share/crossroad/scripts/', ['scripts/crossroad-mingw-install.py', 'scripts/config.guess']),
         ('share/crossroad/platforms/', platform_list),
         ('share/crossroad/environments/', environment_list),
         #('crossroad/projects/', ['projects']),
