@@ -437,7 +437,7 @@ if __name__ == "__main__":
 
   if options.list_files:
     if (len(packages) == 0):
-        logging.error('Please provide at list one package.\n')
+        logging.error('Please provide at least one package.\n')
         sys.exit(os.EX_USAGE)
     if options.srcpkg:
         package_type = 'Source package'
@@ -459,7 +459,7 @@ if __name__ == "__main__":
 
   if options.uninstall:
     if (len(packages) == 0):
-        logging.error('Please provide at list one package to uninstall.\n')
+        logging.error('Please provide at least one package to uninstall.\n')
         sys.exit(os.EX_USAGE)
     if options.srcpkg:
         package_type = 'Source package'
