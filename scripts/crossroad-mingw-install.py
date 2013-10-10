@@ -15,6 +15,7 @@ import re
 import zipfile
 import mimetypes
 import subprocess
+import glob
 
 # XXX 7z dependency!
 # TODO Jehan: make possibility to research amongst packages, and see version before installing.
@@ -109,39 +110,55 @@ def OpenRepository(repositoryLocation):
   global _package_filelists
   global _package_src_filelists
   # Check repository for latest primary.xml
-  with urlopen(repositoryLocation + 'repodata/repomd.xml') as metadata:
-    doctree = xmlparse(metadata)
-  xmlns = 'http://linux.duke.edu/metadata/repo'
-  for element in doctree.findall('{%s}data'%xmlns):
-    if element.get('type') == 'primary':
-      primary_url = element.find('{%s}location'%xmlns).get('href')
-    elif element.get('type') == 'filelists':
-      filelist_url = element.find('{%s}location'%xmlns).get('href')
-  # Make sure all the cache directories exist
-  for dir in _packageCacheDirectory, _repositoryCacheDirectory, _extractedCacheDirectory:
-    try:
-      os.makedirs(dir)
-    except OSError: pass
-  # Download repository metadata (only if not already in cache)
-  primary_filename = os.path.join(_repositoryCacheDirectory, os.path.splitext(os.path.basename(primary_url))[0])
-  if not os.path.exists(primary_filename):
-    logging.warning('Dowloading repository data')
-    with urlopen(repositoryLocation + primary_url) as primaryGzFile:
-      import io, gzip
-      primaryGzString = io.BytesIO(primaryGzFile.read()) #3.2: use gzip.decompress
-      with gzip.GzipFile(fileobj=primaryGzString) as primaryGzipFile:
-        with open(primary_filename, 'wb') as primaryFile:
-          primaryFile.writelines(primaryGzipFile)
-  # Also download the filelist.
-  filelist_filename = os.path.join(_repositoryCacheDirectory, os.path.splitext(os.path.basename(filelist_url))[0])
-  if not os.path.exists(filelist_filename):
-    logging.warning('Dowloading repository file list')
-    with urlopen(repositoryLocation + filelist_url) as GzFile:
-      import io, gzip
-      GzString = io.BytesIO(GzFile.read()) #3.2: use gzip.decompress
-      with gzip.GzipFile(fileobj=GzString) as primaryGzipFile:
-        with open(filelist_filename, 'wb') as filelist_file:
-          filelist_file.writelines(primaryGzipFile)
+  try:
+      with urlopen(repositoryLocation + 'repodata/repomd.xml', timeout = 5.0) as metadata:
+        doctree = xmlparse(metadata)
+      xmlns = 'http://linux.duke.edu/metadata/repo'
+      for element in doctree.findall('{%s}data'%xmlns):
+        if element.get('type') == 'primary':
+          primary_url = element.find('{%s}location'%xmlns).get('href')
+        elif element.get('type') == 'filelists':
+          filelist_url = element.find('{%s}location'%xmlns).get('href')
+      # Make sure all the cache directories exist
+      for dir in _packageCacheDirectory, _repositoryCacheDirectory, _extractedCacheDirectory:
+        try:
+          os.makedirs(dir)
+        except OSError: pass
+      # Download repository metadata (only if not already in cache)
+      primary_filename = os.path.join(_repositoryCacheDirectory, os.path.splitext(os.path.basename(primary_url))[0])
+      if not os.path.exists(primary_filename):
+        logging.warning('Dowloading repository data')
+        with urlopen(repositoryLocation + primary_url, timeout = 5.0) as primaryGzFile:
+          import io, gzip
+          primaryGzString = io.BytesIO(primaryGzFile.read()) #3.2: use gzip.decompress
+          with gzip.GzipFile(fileobj=primaryGzString) as primaryGzipFile:
+            with open(primary_filename, 'wb') as primaryFile:
+              primaryFile.writelines(primaryGzipFile)
+      # Also download the filelist.
+      filelist_filename = os.path.join(_repositoryCacheDirectory, os.path.splitext(os.path.basename(filelist_url))[0])
+      if not os.path.exists(filelist_filename):
+        logging.warning('Dowloading repository file list')
+        with urlopen(repositoryLocation + filelist_url, timeout = 5.0) as GzFile:
+          import io, gzip
+          GzString = io.BytesIO(GzFile.read()) #3.2: use gzip.decompress
+          with gzip.GzipFile(fileobj=GzString) as primaryGzipFile:
+            with open(filelist_filename, 'wb') as filelist_file:
+              filelist_file.writelines(primaryGzipFile)
+  except:
+    raise
+    # If we can't download but there is already a primary.xml and filelists.xml, let's use them.
+    primary_files = glob.glob (_repositoryCacheDirectory + '/*-primary.xml')
+    filelist_files = glob.glob (_repositoryCacheDirectory + '/*-filelists.xml')
+    if len (primary_files) > 0 and len (filelist_files) > 0:
+        # Files exist. In case there are more than 1 (there should not be in stable version,
+        # but right now, we never clean out cache), we have no good way to know which is the
+        # most recent, because there is no date or id. So we just take the first one at random.
+        logging.warning ('Error opening repository. Using cached files instead.')
+        primary_filename = primary_files[0]
+        filelist_filename = filelist_files[0]
+    else:
+        # Reraise the download error.
+        raise
   # Parse package list from XML
   elements = xmlparse(primary_filename)
   xmlns = 'http://linux.duke.edu/metadata/common'
