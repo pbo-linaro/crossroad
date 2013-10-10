@@ -32,14 +32,36 @@ export LD_LIBRARY_PATH=$PREFIX/lib
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/$HOST/lib/
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/$HOST/lib/
 
+mkdir -p $PREFIX/bin
 export PATH=$PREFIX/bin:$PATH
 
+# no such file or directory error on non-existing aclocal.
+mkdir -p $PREFIX/share/aclocal
 export ACLOCAL_FLAGS="-I $PREFIX/share/aclocal"
-export CFLAGS="-I$PREFIX/include -I/usr/local/$HOST/include -I/usr/$HOST/include"
-export LDFLAGS="-L$PREFIX/lib -L/usr/local/$HOST/lib -L/usr/$HOST/lib"
+# no such file or directory warning on non-existing include.
+mkdir -p $PREFIX/include
+export CFLAGS="-I$PREFIX/include"
+mkdir -p $PREFIX/lib
+export LDFLAGS="-L$PREFIX/lib"
 
 # Very important! The default -I list of directories when none is specified!
-export CPATH="$PREFIX/include:/usr/local/$HOST/include/:/usr/$HOST/include/"
+export CPATH="$PREFIX/include"
+
+# Adding some user-installed or distribution common installation path.
+if [ -d "/usr/local/$HOST/include" ]; then
+    export CFLAGS="$CFLAGS -I/usr/local/$HOST/include/"
+    export CPATH="$CPATH:/usr/local/$HOST/include/"
+fi
+if [ -d "/usr/$HOST/include" ]; then
+    export CFLAGS="$CFLAGS -I/usr/$HOST/include/"
+    export CPATH="$CPATH:/usr/$HOST/include/"
+fi
+if [ -d "/usr/local/$HOST/lib" ]; then
+    export LDFLAGS="$LDFLAGS -L/usr/local/$HOST/lib"
+fi
+if [ -d "/usr/$HOST/lib" ]; then
+    export LDFLAGS="$LDFLAGS -L/usr/$HOST/lib"
+fi
 
 # So that the system-wide python can still find any locale lib.
 for dir in $PREFIX/lib/python*
