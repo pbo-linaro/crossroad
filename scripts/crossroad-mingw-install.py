@@ -166,9 +166,18 @@ def OpenRepository(repositoryLocation):
   _packages = [{
       'name': p.find('{%s}name'%xmlns).text,
       'arch': p.find('{%s}arch'%xmlns).text,
+      'summary': p.find('{%s}summary'%xmlns).text,
+      'description': p.find('{%s}description'%xmlns).text,
+      'project_url': p.find('{%s}url'%xmlns).text,
+      'version': {'epoch': p.find('{%s}version'%xmlns).get('epoch'),
+                  'ver': p.find('{%s}version'%xmlns).get('ver'),
+                  'rel': p.find('{%s}version'%xmlns).get('rel')},
+      #'license': p.find('{%s}location/{%s}format/{%s}license'%(xmlns, xmlns, rpmns)).text,
       'buildtime': int(p.find('{%s}time'%xmlns).get('build')),
       'url': repositoryLocation + p.find('{%s}location'%xmlns).get('href'),
       'filename': os.path.basename(p.find('{%s}location'%xmlns).get('href')),
+      'checksum': {'type': p.find('{%s}checksum'%xmlns).get('type'),
+                   'sum': p.find('{%s}checksum'%xmlns).text},
       'provides': {provides.attrib['name'] for provides in p.findall('{%s}format/{%s}provides/{%s}entry'%(xmlns,rpmns,rpmns))},
       'requires': {req.attrib['name'] for req in p.findall('{%s}format/{%s}requires/{%s}entry'%(xmlns,rpmns,rpmns))}
     } for p in elements.findall('{%s}package'%xmlns)]
@@ -398,6 +407,7 @@ def GetOptions():
   packageOptions.add_option("--nocache", action="store_true", dest="nocache", default=False,
                             help="Force package download even if it is in cache.")
   packageOptions.add_option("--list-files", action="store_true", dest="list_files", default=False, help="Only list the files of a package")
+  packageOptions.add_option("--info", action="store_true", dest="info", default=False, help="Output information about a package")
   packageOptions.add_option("--uninstall", action="store_true", dest="uninstall", default=False, help="Uninstall the list of packages")
   parser.add_option_group(packageOptions)
 
@@ -455,6 +465,34 @@ if __name__ == "__main__":
                     sys.stdout.write('\t{} (directory)\n'.format(f['path']))
                 else:
                     sys.stdout.write('\t{}\n'.format(f['path']))
+    sys.exit(os.EX_OK)
+
+  if options.info:
+    if (len(packages) == 0):
+        logging.error('Please provide at least one package.\n')
+        sys.exit(os.EX_USAGE)
+    if options.srcpkg:
+        package_type = 'Source package'
+    else:
+        package_type = 'Package'
+    for pkg in packages:
+        package = _findPackage(pkg, options.srcpkg)
+        if package is None:
+            if options.project == 'windows:mingw:win64':
+                package = _findPackage("mingw64-" + pkg, options.srcpkg)
+            elif options.project == 'windows:mingw:win32':
+                package = _findPackage("mingw32-" + pkg, options.srcpkg)
+            if package is None:
+                sys.stderr.write('{} "{}" unknown.\n'.format(package_type, pkg))
+                continue
+        sys.stdout.write('{} "{}":\n'.format(package_type, package['name']))
+        sys.stdout.write('\tSummary: {}\n'.format(package['summary']))
+        sys.stdout.write('\tProject URL: {}\n'.format(package['project_url']))
+        sys.stdout.write('\tVersion: {} (release: {} - epoch: {})\n'.format(package['version']['ver'],
+                                                                            package['version']['rel'],
+                                                                            package['version']['epoch']))
+        description = re.sub(r'\n', "\n\t             ", package['description'])
+        sys.stdout.write('\tDescription: {}\n'.format(description))
     sys.exit(os.EX_OK)
 
   if options.uninstall:
