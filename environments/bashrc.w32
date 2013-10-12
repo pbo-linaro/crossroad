@@ -9,10 +9,10 @@ if [ -f ~/.bashrc ]; then
 fi
 
 # Some value for user usage.
-export HOST=i686-w64-mingw32
-export BUILD=`@DATADIR@/share/crossroad/scripts/config.guess`
-export PLATFORM=w32
-export PLATFORM_NICENAME="Windows 32-bit"
+export CROSSROAD_HOST=i686-w64-mingw32
+export CROSSROAD_BUILD=`@DATADIR@/share/crossroad/scripts/config.guess`
+export CROSSROAD_PLATFORM=w32
+export CROSSROAD_PLATFORM_NICENAME="Windows 32-bit"
 export CROSSROAD_CMAKE_TOOLCHAIN_FILE="@DATADIR@/share/crossroad/environments/toolchain-w32.cmake"
 
 # ld is a mandatory file to enter this environment.
