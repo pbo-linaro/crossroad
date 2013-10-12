@@ -2,14 +2,32 @@
 crossroad
 =========
 
-`crossroad` is a set of scripts implementing a command line tool to set up easily a cross-compilation environment on a GNU/Linux
+`crossroad` is a set of scripts implementing a command line tool to
+easily set up a cross-compilation environment on a GNU/Linux
 distribution.
-Two target environment are supported currently:
+Be aware that this is essentially a developer tool. Its target audience
+are developers working on UNIX system (tested only under a GNU/Linux
+system though), and wishing to cross-compile projects from the same
+platform). It is not for end-users, and is useless in *running*
+software, only building them.
 
-- Windows 32 bits;
-- Windows 64 bits.
+Only two target environments are supported currently:
 
-*Note: no difference are done between Windows platform other than 32/64 bits. This is up to you to take care of available APIs in your code.*
+- Windows 32-bit;
+- Windows 64-bit.
+
+*Note: no differences are made between Windows platform other than
+32/64-bit. This is up to you to take care of available APIs in your code.*
+
+This is Free Software, under the license AGPL version 3
+(http://www.gnu.org/licenses/agpl.html).
+
+If you liked this software, you are free to contact the author (http://girinstud.io/),
+or even support them (http://girinstud.io/support-us/).
+
+Also you are more than welcome to propose patches. Bugfix, or new features,
+like support of more target environments, other shells than `bash`, etc.
+See the **contributing** section below.
 
 Usage
 =====
@@ -18,44 +36,170 @@ From a command line, run::
 
     $ crossroad w64
 
-This will set up a Windows 64 bits cross-compilation environment.
+This will set up a Windows 64-bit cross-compilation environment.
 
-Your prompt will also be slightly modified (only adding information. Whatever prompt hack you may have made — like displaying information on
-a git/svn/hg/whatever repository — will be untouched) to show you are in your working cross-compilation environment.
+Your prompt will also be slightly modified (only adding information.
+Whatever prompt hack you may have made — for instance displaying
+information on a code repository — will be untouched) to show you are
+in your working cross-compilation environment.
+
 *Note: only bash is supported right now.*
 
-You will also be moved to the root of this environment, under which a usual GNU style tree has been prepared. This includes a bin/, usr/,
-etc. All necessary environment variables, like PATH or LD_LIBRARY_PATH, etc., are set for you.
-Yet when you will compile your new software, you are obviously advised to use the crossroad environment prefix. For this, `crossroad`
-prepared an easy to remember, ready-to-use, environment variable: $CROSSROAD_PREFIX and $HOST.
+All necessary environment variables for successful builds, like PATH,
+LD_LIBRARY_PATH, etc., are set for you.
 
-Let's imagine you want to compile GIMP or any other software with a typical GNU compilation system.
-After running crossroad, go into usr/src/, where you will download GIMP source code:
-$ cd usr/src/
-*[get some source code]*
-$ cd gimp
-$ ./configure --prefix=$CROSSROAD_PREFIX --host=$HOST --build=$BUILD
+When you will compile your new software, you should use the crossroad
+environment prefix. For this, `crossroad` prepared easy to remember,
+ready-to-use, environment variables:
+- $CROSSROAD_PREFIX;
+- $CROSSROAD_HOST;
+- $CROSSROAD_BUILD;
+- $CROSSROAD_CMAKE_TOOLCHAIN_FILE.
+
+And finally a prefix is prepared for you, which encapsulate your new build
+and all its dependencies. Though in most cases, you should not need to
+manually go there do anything, you still can (for instance to change
+software settings, etc.) with `cd $CROSSROAD_PREFIX`.
+
+Example: autotools
+~~~~~~~~~~~~~~~~~~
+
+Let's imagine you want to compile any software with a typical GNU
+compilation system, for Windows 64-bit.
+
+1/ **First enter crossroad:**
+$ crossroad w64
+_Normally here your bash prompt will be modified_
+
+2/ **Enter your source code:**
+$ cd /some/path/to/your/source/
+_In a typical GNU code, you will have here access to a `configure`
+script, or with ways to build one, for instance by running an
+`autogen.sh` first._
+
+3/ **Configure your build:**
+$ ./configure --prefix=$CROSSROAD_PREFIX --host=$CROSSROAD_HOST --build=$CROSSROAD_BUILD
+_Of course you should add any additional option as you would normally
+do to your `configure` step._
+
+4/ Here the configure may fail if you miss any dependency. You may
+install any dependency with crossroad. Let's say for instance that this
+project depends on glib. You could just run:
+$ crossroad -i glib-devel
+
+Do this step as many times as necessary, until the configure step 3/
+succeeds. Then go to the next step.
+
+5/ **Build:**
 $ make
 $ make install
 
-Of course this kind of compilation with prefix is not limited to autotools. It is pretty common. You see this with most Python tools,
-even though that's not really "compilation" here, so you don't need to set any host information:
-$ ./setup.py --prefix=$CROSSROAD_PREFIX
+6/ Well all is done, if you need to test your binaries on an actual
+Windows machine, run the following:
+$ crossroad -C mysoftware.zip w64
+This will create a zip file `mysoftware.zip` than you can just move over
+to your test Windows OS. Then uncompress it, and set or update your PATH
+environment variable with the `bin/` directory of this uncompressed
+prefix.
+Then run, and enjoy!
 
-Or cmake:
+_Note: only zip format supported for the moment, since it is the most
+common for Windows._
+
+_Note 2: this has been tested with success on many GNU projects, compiled
+for Windows:
+cairo, babl, GEGL, glib, GTK+, libpng, pango, freetype2, gdk-pixbuf and GIMP.
+
+Example: cmake
+~~~~~~~~~~~~~~~
+
+Cmake uses toolchain files. Crossroad prepared one for you, so you don't
+have to worry about it.
+Simply replace the step 3/ of the autotools example with this command:
+
 $ cmake . -DCMAKE_INSTALL_PREFIX:PATH=$CROSSROAD_PREFIX -DCMAKE_TOOLCHAIN_FILE=$CROSSROAD_CMAKE_TOOLCHAIN_FILE
+
+The rest should be the same. Obviously these options should also work
+with the `ccmake` (curses interface of cmake).
+
+This has been tested with success on allegro 5, compiled for Windows.
+
+Example: other
+~~~~~~~~~~~~~~
+
+It has not been tested with any other compilation system up to now. So
+it all depends what they require for a cross-compilation.
+But since a `crossroad` environment prepare a bunch of environment
+variables for you, and helps you download dependencies, no doubt it will
+make your life easier.
+
+You can also use your `crossroad` prefix, even for system which do not
+require any compilation. Let's say for instance you wish to include a
+pure python project in your build. No per-platform compilation is needed,
+but you still want to carry all the files in the same prefix.
+So just run:
+
+$ ./setup.py --prefix=$CROSSROAD_PREFIX
 
 and so on.
 
 Installation
 ============
 
-TODO
+`Crossroad` is a typical python-style project, relying on Python 3.3 or above.
+You will also need `7z` installed.
+
+To install, just run:
+$ ./setup.py install
+
+Obviously unless you set a particular prefix, you will need super-user rights.
+`Crossroad` does not need any particular cross-compilation tool to run,
+but it will tell you what you are missing, and you won't be able to enter
+a cross-compilation environment until this is installed.
+
+When you run just:
+
+$ crossroad
+
+It will list available and unavailable environments.
+To get details about what needs to be installed for an environments,
+for instance Windows 64-bit, run:
+
+$ crossroad -h w64
+
+It will tell you what you should install, what language can be compiled,
+which still miss some third-party software, etc.
+
+Configuration
+=============
+
+`Crossroad` rely on XDG standards.
+Right now it does not need any configuration file, but it will soon probably.
+And these will be in $XDG_CONFIG_HOME/crossroad/ (defaults to $HOME/.config/crossroad/).
+
+Cache is saved in $XDG_CACHE_HOME/crossroad/ and data $XDG_DATA_HOME/crossroad/.
+
+The only configuration right now is that in case you use a self-installed MinGW-w64,
+and you did not set it in your $PATH, you can set $CROSSROAD_CUSTOM_MINGW_W32_PREFIX
+and $CROSSROAD_CUSTOM_MINGW_W64_PREFIX for your 32-bit and 64-bit installation of
+MinGW-w64 respectively.
+
+Contributing
+============
+
+You can view the git branch on the web at: http://git.tuxfamily.org/crossroad/crossroad
+And clone it with::
+
+    $ git clone git://git.tuxfamily.org/gitroot/crossroad/crossroad.git
+
+Then send your `git-format`ed patches by email to crossroad <at> girinstud.io.
 
 About the name
 ==============
 
-The name is a hommage to "cross road blues" by Robert Johnson, which itself spawned dozens, if not hundreds, of other versions by so many
+The name is a hommage to "cross road blues" by Robert Johnson, which
+itself spawned dozens, if not hundreds, of other versions by so many
 artists.
-I myself always play this song (or rather a version with modified lyrics adapted to my life) in concerts.
+I myself always play this song (or rather a version with modified lyrics
+adapted to my life) in concerts.
 
