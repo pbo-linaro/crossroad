@@ -134,7 +134,8 @@ def load_platforms():
 version = '0.3'
 maintainer = '<jehan at girinstud.io>'
 
-usage = 'Usage: %prog [TARGET] [--help] [--version] [--list-all]'
+usage  = 'Usage: crossroad [<TARGET>] [--help] [--version] [--list-all]\n'
+usage += '                 [--symlink <target> [<link-name>]] [--compress <archive.zip> <TARGET 1> [<TARGET 2>...]]'
 
 platform_list = "Available platforms:\n"
 for name in available_platforms:
@@ -164,7 +165,7 @@ cmdline.add_option('-p', '--prefix',
 # XXX may support other format in the future, so I could use a generic naming.
 # But in same time, zip seems the most prominent on Windows platform, so for transfer,
 # I support only this for now.
-cmdline.add_option('-c', '--archive',
+cmdline.add_option('-c', '--compress',
     help = 'Compress an archive, with the given name, of the named platforms.',
     action = 'store', type="string", dest = 'archive', default = None)
 cmdline.add_option('-s', '--symlink',
