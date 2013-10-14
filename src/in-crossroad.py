@@ -18,6 +18,7 @@
 # along with crossroad.  If not, see <http://www.gnu.org/licenses/>.
 
 import importlib.machinery
+import subprocess
 import inspect
 import os.path
 import sys
@@ -182,6 +183,32 @@ if __name__ == "__main__":
             prefix = os.path.join(xdg_data_home, 'crossroad/roads', crossroad_road)
             sys.stdout.write(prefix)
             sys.exit(os.EX_OK)
+        elif arg == 'configure':
+            if not os.path.exists('configure') and os.path.exists('autogen.sh'):
+                sys.stderr.write('Warning: there is no ./configure script in the current directory, but there is an autogen.sh. Running it first.\n')
+                # NOTE: some project would configure their autogen.sh to actually run ./configure
+                # To be on the safe side, I would add the prefix/host/build info there.
+                command = './autogen.sh --prefix=$CROSSROAD_PREFIX --host=$CROSSROAD_HOST --build=$CROSSROAD_BUILD'
+                sys.stdout.write('crossroad info: running "{}"\n'.format(command))
+                subprocess.call(command, shell=True)
+            if not os.path.exists('configure'):
+                sys.stderr.write('There is no ./configure script in the current directory.\n')
+                sys.exit(os.EX_USAGE)
+            # The position should normally be 2 since any other command or option before
+            # would be an error. But just in case the logics evolve.
+            arg_pos = sys.argv.index(arg)
+            # NOTE: with shell=True, subprocess does not deal well with list as a command.
+            command = './configure --prefix=$CROSSROAD_PREFIX --host=$CROSSROAD_HOST --build=$CROSSROAD_BUILD ' + ' '.join(sys.argv[arg_pos + 1:])
+            sys.stdout.write('crossroad info: running "{}"\n'.format(command))
+            sys.exit(subprocess.call(command, shell=True))
+        elif arg == 'cmake' or arg == 'ccmake':
+            # The position should normally be 2 since any other command or option before
+            # would be an error. But just in case the logics evolve.
+            arg_pos = sys.argv.index(arg)
+            command = '{} -DCMAKE_INSTALL_PREFIX:PATH=$CROSSROAD_PREFIX -DCMAKE_TOOLCHAIN_FILE=$CROSSROAD_CMAKE_TOOLCHAIN_FILE '.format(arg)
+            command += ' '.join(sys.argv[arg_pos + 1:])
+            sys.stdout.write('crossroad info: running "{}"\n'.format(command))
+            sys.exit(subprocess.call(command, shell=True))
         elif arg[:1] == '-':
             sys.stderr.write('Unknown option: {}\n{}\n'.format(arg, usage))
             sys.exit(os.EX_USAGE)
@@ -197,6 +224,11 @@ if __name__ == "__main__":
 
     if show_help:
         command_list = usage
+        command_list += '\n\nAny crossroad environment provides the following commands:'
+        command_list += '\n{:<20} {}'.format('configure', 'Run `./configure` in the following directory for your cross-compilation environment.')
+        command_list += '\n{:<20} {}'.format('cmake', 'Run cmake for your cross-compilation environment.')
+        command_list += '\n{:<20} {}'.format('ccmake', 'Run ccmake for your cross-compilation environment.')
+        command_list += '\n{:<20} {}'.format('prefix', 'Return the installation prefix.')
         command_list += "\n\nCrossroad's {} environment proposes the following commands:".format(crossroad_road)
         for command in commands:
             command_fun = getattr(platform, 'crossroad_' + command)
