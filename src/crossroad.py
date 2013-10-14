@@ -167,7 +167,9 @@ cmdline.add_option('-p', '--prefix',
 cmdline.add_option('-c', '--archive',
     help = 'Compress an archive, with the given name, of the named platforms.',
     action = 'store', type="string", dest = 'archive', default = None)
-
+cmdline.add_option('-s', '--symlink',
+    help = 'Create a symbolic link of the named platforms.',
+    action = 'store_true', dest = 'symlink', default = False)
 cmdline.add_option('--reset',
     help = "effectively delete TARGET's tree. Don't do this if you have important data saved in there.",
     action = 'store_true', dest = 'reset', default = False)
@@ -277,6 +279,35 @@ if __name__ == "__main__":
         sys.stdout.write('Archive file {} completed.\n'.format(options.archive))
         archive_file.close()
 
+        sys.exit(os.EX_OK)
+
+    if options.symlink:
+        if len(args) != 1 and len(args) != 2:
+            sys.stderr.write('You must specify the platform to symlink, optionally followed by the link name.\n')
+            sys.exit(os.EX_USAGE)
+        platform = args[0]
+        link_name = platform
+        if len(args) == 2:
+            link_name = args[1]
+            # When specifying a link name, it may be somewhere else than current directory.
+            link_dir = os.path.dirname(os.path.abspath(link_name))
+            if not os.path.exists(link_dir):
+                try:
+                    os.makedirs(link_dir, exist_ok = True)
+                except:
+                    sys.stderr.write('The directory {} could not be created. Cancelling.\n'.format(link_dir))
+                    sys.exit(os.EX_IOERR)
+        if os.path.exists(link_name):
+            # TODO: --force option?
+            sys.stderr.write('The file "{}" already exists.\n'.format(link_name))
+            sys.exit(os.EX_IOERR)
+        # Test existence and readability of the platform.
+        platform_path = os.path.join(xdg_data_home, 'crossroad/roads', platform)
+        print(platform_path)
+        if platform not in available_platforms or not os.access(platform_path, os.R_OK):
+            sys.stderr.write('Platform {} is not built, or unreadable.\n'.format(platform))
+            sys.exit(os.EX_NOPERM)
+        os.symlink(platform_path, link_name, target_is_directory=True)
         sys.exit(os.EX_OK)
 
     if len(args) != 1:
