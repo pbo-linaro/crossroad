@@ -27,21 +27,23 @@ import shutil
 import zipfile
 
 ### Current Crossroad Environment ###
+
 crossroad_road = None
 try:
     crossroad_road = os.environ['CROSSROAD_ROAD']
 except KeyError:
     pass
 
-### Check all available platforms. ###
-# This string will be replaced by the setup.py at installation time,
-# depending on where you installed default data.
-install_datadir = os.path.join(os.path.abspath('@DATADIR@'), 'share/')
-
 # This command must not be run in a crossroad environment.
 if crossroad_road is not None:
     sys.stderr.write('Error: crossroad environment found. Contact the developers.')
     sys.exit(os.EX_DATAERR)
+
+### Check all available platforms. ###
+
+# This string will be replaced by setup.py at installation time,
+# depending on where you installed default data.
+install_datadir = os.path.join(os.path.abspath('@DATADIR@'), 'share/')
 
 xdg_data_home = None
 try:
@@ -98,21 +100,20 @@ def load_platforms():
         (module, ext) = os.path.splitext(file)
         if ext.lower() != ".py":
             continue
-        #sys.path.insert(0, dir)
-        #sys.path.pop(0)
         loader = importlib.machinery.SourceFileLoader(module, platform_file)
         try:
             platform = loader.load_module(module)
         except ImportError:
             continue
         except FileNotFoundError:
-            #sys.stderr.write ("Module not found: %s\n", platform.path)
+            sys.stderr.write ("Module not found: %s\n", platform_file)
             continue
-        #except SyntaxError as err:
-            #sys.stderr.write ("Syntax error in module %s:%s\n", platform.name, err.text)
-        #    continue
+        except SyntaxError as err:
+            sys.stderr.write ("Syntax error in module %s:%s\n", platform_file, err.text)
+            continue
         try:
-            # TODO: test other mandatory attributes?
+            # XXX I don't test other mandatory attributes because if missing,
+            # that's an obvious bug that we want fixed asap.
             if platform.name in available_platforms or platform.name in other_platforms:
                 # A platform with the same name has already been processed.
                 # It may happen if for instance the user overrod a spec with
@@ -161,17 +162,13 @@ cmdline.add_option('-h', '--help',
     action = 'store_true', dest = 'help', default = False)
 # TODO: do the same for --host?
 cmdline.add_option('-p', '--prefix',
-    help = 'outputs the prefix of the current platform',
+    help = 'outputs the prefix of the named platform.',
     action = 'store', type="string", dest = 'prefix', default = False)
-
-# XXX may support other format in the future, so I could use a generic naming.
-# But in same time, zip seems the most prominent on Windows platform, so for transfer,
-# I support only this for now.
 cmdline.add_option('-c', '--compress',
-    help = 'Compress an archive, with the given name, of the named platforms.',
+    help = 'compress an archive, with the given name, of the named platforms.',
     action = 'store', type="string", dest = 'archive', default = None)
 cmdline.add_option('-s', '--symlink',
-    help = 'Create a symbolic link of the named platforms.',
+    help = 'create a symbolic link of the named platform.',
     action = 'store_true', dest = 'symlink', default = False)
 cmdline.add_option('--reset',
     help = "effectively delete TARGET's tree. Don't do this if you have important data saved in there.",
@@ -249,6 +246,9 @@ if __name__ == "__main__":
 
     if options.archive is not None:
         if options.archive[-4:].lower() != '.zip':
+            # XXX may support other format in the future, so I could use a generic naming.
+            # But in same time, zip seems the most prominent on Windows platform, so for transfer,
+            # I support only this for now.
             sys.stderr.write('Error: sorry, only zip format archives are supported for the time being.\n')
             sys.exit(os.EX_UNAVAILABLE)
         if crossroad_road:
@@ -281,7 +281,6 @@ if __name__ == "__main__":
                                    arcname = file_path.replace(archive_root, ''))
         sys.stdout.write('Archive file {} completed.\n'.format(options.archive))
         archive_file.close()
-
         sys.exit(os.EX_OK)
 
     if options.symlink:
@@ -313,6 +312,7 @@ if __name__ == "__main__":
         os.symlink(platform_path, link_name, target_is_directory=True)
         sys.exit(os.EX_OK)
 
+    # If we are here, it means we want to enter a crossroad environment.
     if len(args) != 1:
         cmdline.print_version()
         cmdline.print_usage()
