@@ -19,11 +19,10 @@ Only two target environments are supported currently:
 *Note: no differences are made between Windows platform other than
 32/64-bit. This is up to you to take care of available APIs in your code.*
 
-This is Free Software, under the license AGPL version 3
-(http://www.gnu.org/licenses/agpl.html).
+This is Free Software, under the license `AGPL version 3`_.
 
-If you liked this software, you are free to contact the author (http://girinstud.io/),
-or even support them (http://girinstud.io/support-us/).
+If you liked this software, you are free to contact the author_,
+or even support_ them.
 
 Also you are more than welcome to propose patches. Bugfix, or new features,
 like support of more target environments, other shells than `bash`, etc.
@@ -203,3 +202,6 @@ artists.
 I myself always play this song (or rather a version with modified lyrics
 adapted to my life) in concerts.
 
+.. _AGPL version 3: http://www.gnu.org/licenses/agpl.html
+.. _author: http://girinstud.io/
+.. _support: http://girinstud.io/support-us/

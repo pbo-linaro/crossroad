@@ -76,51 +76,48 @@ def language_list():
 def prepare():
     pass
 
-def install(pkgs, src_pkg):
+def crossroad_install(*packages:list, src:bool = False):
     '''
-    Installing dependencies, etc.
+    Install the list of packages and all their dependencies.
+    If --src is provided, it installs the source packages, and not the main packages.
     '''
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
                '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win64', '--deps']
-    if src_pkg:
+    if src:
         command += ['--src']
-    command += pkgs
-    inst_proc = subprocess.Popen(command, shell=False)
-    inst_proc.wait()
+    command += list(packages)
+    subprocess.call(command, shell=False)
 
-def list_files(pkgs, src_pkg):
+def crossroad_list_files(*packages, src:bool = False):
     '''
-    List package files, etc.
+    List files provided by packages.
     '''
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
                '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win64', '--list-files']
-    if src_pkg:
+    if src:
         command += ['--src']
-    command += pkgs
-    output = subprocess.check_output(command, shell=False)
-    sys.stdout.write(output.decode('UTF-8'))
+    command += packages
+    subprocess.call(command, shell=False)
 
-def info(pkgs, src_pkg):
+def crossroad_info(*packages, src:bool = False):
     '''
     Display package details.
     '''
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
                '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win64', '--info']
-    if src_pkg:
+    if src:
         command += ['--src']
-    command += pkgs
-    output = subprocess.check_output(command, shell=False)
-    sys.stdout.write(output.decode('UTF-8'))
+    command += list(packages)
+    subprocess.call(command, shell=False)
 
-def uninstall(pkgs, src_pkg):
+def crossroad_uninstall(*packages, src:bool = False):
     '''
-    Uninstall package.
+    Uninstall packages.
     '''
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
                '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win64', '--uninstall']
-    if src_pkg:
+    if src:
         command += ['--src']
-    command += pkgs
-    output = subprocess.check_output(command, shell=False)
-    sys.stdout.write(output.decode('UTF-8'))
+    command += list(packages)
+    subprocess.call(command, shell=False)
 

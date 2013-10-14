@@ -13,6 +13,7 @@ import sys
 import shutil
 import re
 import zipfile
+import time
 import mimetypes
 import subprocess
 import glob
@@ -38,9 +39,9 @@ except KeyError:
 
 prefix = None
 try:
-    prefix = os.path.abspath(os.environ['PREFIX'])
+    prefix = os.path.abspath(os.environ['CROSSROAD_PREFIX'])
 except KeyError:
-    sys.stderr.write('$PREFIX was not set!\n')
+    sys.stderr.write('$CROSSROAD_PREFIX was not set!\n')
     sys.exit(os.EX_UNAVAILABLE)
 
 _packageCacheDirectory = os.path.join(xdg_cache_home, 'crossroad', 'package')
@@ -503,6 +504,13 @@ if __name__ == "__main__":
         package_type = 'Source package'
     else:
         package_type = 'Package'
+    sys.stdout.write('Crossroad will uninstall the following packages: {}\nin'.format(" ".join(packages)))
+    for i in range(5, 0, -1):
+        sys.stdout.write(' {}'.format(i))
+        sys.stdout.flush()
+        time.sleep(1)
+    sys.stdout.write('...\nUninstalling...\n')
+    sys.stdout.flush()
     for package in packages:
         (real_name, file_list) = get_package_files (package, options)
         if file_list is None:

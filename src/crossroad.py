@@ -25,17 +25,21 @@ import shutil
 import zipfile
 
 ### Current Crossroad Environment ###
-
-### Check all available platforms. ###
 crossroad_road = None
 try:
     crossroad_road = os.environ['CROSSROAD_ROAD']
 except KeyError:
     pass
 
+### Check all available platforms. ###
 # This string will be replaced by the setup.py at installation time,
 # depending on where you installed default data.
 install_datadir = os.path.join(os.path.abspath('@DATADIR@'), 'share/')
+
+# This command must not be run in a crossroad environment.
+if crossroad_road is not None:
+    sys.stderr.write('Error: crossroad environment found. Contact the developers.')
+    sys.exit(os.EX_DATAERR)
 
 xdg_data_home = None
 try:
@@ -155,41 +159,18 @@ cmdline.add_option('-h', '--help',
 # TODO: do the same for --host?
 cmdline.add_option('-p', '--prefix',
     help = 'outputs the prefix of the current platform',
-    action = 'store_true', dest = 'prefix', default = False)
+    action = 'store', type="string", dest = 'prefix', default = False)
+
 # XXX may support other format in the future, so I could use a generic naming.
 # But in same time, zip seems the most prominent on Windows platform, so for transfer,
 # I support only this for now.
-if crossroad_road is None:
-    cmdline.add_option('-c', '--archive',
-        help = 'Compress an archive, with the given name, of the named platforms.',
-        action = 'store', type="string", dest = 'archive', default = None)
-else:
-    cmdline.add_option('-c', '--archive',
-        help = 'Compress an archive, with the given name, of the current platform.',
-        action = 'store', type="string", dest = 'archive', default = None)
+cmdline.add_option('-c', '--archive',
+    help = 'Compress an archive, with the given name, of the named platforms.',
+    action = 'store', type="string", dest = 'archive', default = None)
 
-if crossroad_road is None:
-    # Features only available out of a crossroad env.
-    cmdline.add_option('--reset',
-        help = "effectively delete TARGET's tree. Don't do this if you have important data saved in there.",
-        action = 'store_true', dest = 'reset', default = False)
-
-if crossroad_road is not None:
-    cmdline.add_option('-i', '--install',
-        help = 'install packages',
-        action = 'store_true', dest = 'install', default = False)
-    cmdline.add_option('--src',
-        help = 'install source package',
-        action = 'store_true', dest = 'src_pkg', default = False)
-    cmdline.add_option('-l', '--list-files',
-        help = 'list files which would be installed with a package',
-        action = 'store_true', dest = 'list_files', default = False)
-    cmdline.add_option('--info',
-        help = 'Display package details',
-        action = 'store_true', dest = 'info', default = False)
-    cmdline.add_option('-u', '--uninstall',
-        help = 'uninstall packages',
-        action = 'store_true', dest = 'uninstall', default = False)
+cmdline.add_option('--reset',
+    help = "effectively delete TARGET's tree. Don't do this if you have important data saved in there.",
+    action = 'store_true', dest = 'reset', default = False)
 
 (options, args) = cmdline.parse_args()
 
@@ -221,22 +202,6 @@ if __name__ == "__main__":
                     print("Uninstalled language list:\n- {}".format("\n- ".join(uninstalled)))
         sys.exit(os.EX_OK)
             
-    if crossroad_road is not None:
-        if options.list_files and crossroad_road in available_platforms:
-            sys.exit(available_platforms[crossroad_road].list_files(args, options.src_pkg))
-        elif options.info and crossroad_road in available_platforms:
-            sys.exit(available_platforms[crossroad_road].info(args, options.src_pkg))
-        elif options.uninstall and crossroad_road in available_platforms:
-            sys.stdout.write('Crossroad will uninstall the following packages: {}\nin'.format(" ".join(args)))
-            for i in range(5, 0, -1):
-                sys.stdout.write(' {}'.format(i))
-                sys.stdout.flush()
-                time.sleep(1)
-            sys.stdout.write('...\nUninstalling...\n')
-            sys.exit(available_platforms[crossroad_road].uninstall(args, options.src_pkg))
-        elif options.install and crossroad_road in available_platforms:
-            sys.exit(available_platforms[crossroad_road].install(args, options.src_pkg))
-
     if options.list_all:
         cmdline.print_version()
         sys.stdout.write(platform_list)
@@ -245,14 +210,7 @@ if __name__ == "__main__":
         sys.exit(os.EX_OK)
 
     if options.prefix:
-        if crossroad_road:
-            platform_name = crossroad_road
-        elif len(args) > 0:
-            platform_name = args[0]
-        else:
-            sys.stderr.write('You must specify a platform.\n')
-            sys.exit(os.EX_USAGE)
-
+        platform_name = options.prefix
         if platform_name not in available_platforms:
             sys.stderr.write('Not a valid platform: {}\n'.format(platform_name))
             sys.exit(os.EX_USAGE)
@@ -261,7 +219,7 @@ if __name__ == "__main__":
         sys.stdout.write(prefix)
         sys.exit(os.EX_OK)
 
-    if crossroad_road is None and options.reset:
+    if options.reset:
         if len(args) == 0:
             sys.stderr.write('You must specify at least one platform name for --reset.\n')
             sys.exit(os.EX_USAGE)

@@ -76,51 +76,52 @@ def language_list():
 def prepare():
     pass
 
-def install(pkgs, src_pkg):
+def crossroad_install(*packages:list, src:bool = False):
     '''
-    Installing dependencies, etc.
+    Install the list of packages and all their dependencies.
+    If --src is provided, it installs the source packages, and not the main packages.
     '''
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
                '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win32', '--deps']
-    if src_pkg:
+    if src:
         command += ['--src']
-    command += pkgs
+    command += list(packages)
     inst_proc = subprocess.Popen(command, shell=False)
-    return inst_proc.wait()
+    inst_proc.wait()
 
-def list_files(pkgs, src_pkg):
+def crossroad_list_files(*packages, src:bool = False):
     '''
-    List package files, etc.
+    List files provided by packages.
     '''
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
                '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win32', '--list-files']
-    if src_pkg:
+    if src:
         command += ['--src']
-    command += pkgs
+    command += packages
     output = subprocess.check_output(command, shell=False)
     sys.stdout.write(output.decode('UTF-8'))
 
-def info(pkgs, src_pkg):
+def crossroad_info(*packages, src:bool = False):
     '''
     Display package details.
     '''
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
                '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win32', '--info']
-    if src_pkg:
+    if src:
         command += ['--src']
-    command += pkgs
+    command += list(packages)
     output = subprocess.check_output(command, shell=False)
     sys.stdout.write(output.decode('UTF-8'))
 
-def uninstall(pkgs, src_pkg):
+def crossroad_uninstall(*packages, src:bool = False):
     '''
     Uninstall package.
     '''
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
                '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win32', '--uninstall']
-    if src_pkg:
+    if src:
         command += ['--src']
-    command += pkgs
+    command += list(packages)
     output = subprocess.check_output(command, shell=False)
     sys.stdout.write(output.decode('UTF-8'))
 
