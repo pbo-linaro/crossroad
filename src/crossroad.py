@@ -34,10 +34,10 @@ try:
 except KeyError:
     pass
 
-# This command must not be run in a crossroad environment.
+# Redirect to the in-crossroad binary.
 if crossroad_road is not None:
-    sys.stderr.write('Error: crossroad environment found. Contact the developers.')
-    sys.exit(os.EX_DATAERR)
+    in_crossroad = os.path.join('@DATADIR@', 'share/crossroad/scripts/in-crossroad.py')
+    sys.exit(subprocess.call([in_crossroad] + sys.argv[1:], shell=False))
 
 ### Check all available platforms. ###
 

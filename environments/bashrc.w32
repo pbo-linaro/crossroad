@@ -86,7 +86,7 @@ export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/$CROSSROAD_HOST/lib/
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/$CROSSROAD_HOST/lib/
 
 mkdir -p $CROSSROAD_PREFIX/bin
-export PATH=$CROSSROAD_PREFIX/bin:$PATH
+export PATH="$CROSSROAD_PREFIX/bin:$PATH"
 
 # no such file or directory error on non-existing aclocal.
 mkdir -p $CROSSROAD_PREFIX/share/aclocal
