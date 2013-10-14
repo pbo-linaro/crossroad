@@ -1,6 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+#
 # This file is part of crossroad.
+# Copyright (C) 2013 Jehan <jehan at girinstud.io>
 #
 # crossroad is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
