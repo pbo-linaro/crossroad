@@ -1,10 +1,8 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 
-import distutils.core
 import distutils.command.build
 import distutils.command.build_scripts
-import distutils.command.install
 import distutils.command.install_data
 import distutils.command.install_scripts
 import gzip
@@ -15,6 +13,24 @@ import subprocess
 import shutil
 
 version = '0.4'
+
+use_setuptools = False
+
+if 'USE_SETUPTOOLS' in os.environ or 'setuptools' in sys.modules:
+    # I don't like to unreference modules out of their namespaces.
+    # Unfortunately it seems pip would need setuptools instead of the
+    # core distutils. Thus I import setup and install from setuptools
+    # when it is requested or already loaded (ex: in pip).
+    use_setuptools = True
+    try:
+        from setuptools import setup
+        from setuptools.command.install import install
+    except ImportError:
+        use_setuptools = False
+
+if not use_setuptools:
+    from distutils.core import setup
+    from distutils.command.install import install
 
 class build_man(distutils.core.Command):
     '''
@@ -104,7 +120,7 @@ class my_build(distutils.command.build.build):
                 shutil.copyfile(os.path.join('environments', f), os.path.join('build/environments', f))
         distutils.command.build.build.run(self)
 
-class my_install(distutils.command.install.install):
+class my_install(install):
     '''
     Override the install to modify updating scripts before installing.
     '''
@@ -122,7 +138,7 @@ class my_install(distutils.command.install.install):
         script.write(os.path.abspath(self.install_data))
         script.close()
         # Go on with normal install.
-        distutils.command.install.install.run(self)
+        install.run(self)
 
 def update_scripts(build_dir):
     '''
@@ -194,7 +210,7 @@ platform_list = [os.path.join('build/platforms/', f) for f in platform_list if f
 environment_list = os.listdir('environments')
 environment_list = [os.path.join('build/environments/', f) for f in environment_list if f[:7] == 'bashrc.' or f[-6:] == '.cmake']
 
-distutils.core.setup(
+setup(
     name = 'crossroad',
     cmdclass = {'man': build_man, 'build': my_build, 'install': my_install,
         'install_data': my_install_data, 'install_scripts': my_install_scripts},
