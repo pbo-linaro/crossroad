@@ -14,7 +14,7 @@ import stat
 import subprocess
 import shutil
 
-version = '0.3'
+version = '0.4'
 
 class build_man(distutils.core.Command):
     '''
