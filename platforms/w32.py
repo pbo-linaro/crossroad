@@ -27,7 +27,7 @@ import subprocess
 import os
 import sys
 
-install_datadir = os.path.abspath('@DATADIR@')
+install_datadir = os.path.join(os.path.abspath('@DATADIR@'), 'share')
 
 name = 'w32'
 
@@ -102,8 +102,7 @@ def crossroad_install(*packages:list, src:bool = False):
     if src:
         command += ['--src']
     command += list(packages)
-    inst_proc = subprocess.Popen(command, shell=False)
-    inst_proc.wait()
+    subprocess.call(command, shell=False)
 
 def crossroad_list_files(*packages, src:bool = False):
     '''
@@ -114,8 +113,7 @@ def crossroad_list_files(*packages, src:bool = False):
     if src:
         command += ['--src']
     command += packages
-    output = subprocess.check_output(command, shell=False)
-    sys.stdout.write(output.decode('UTF-8'))
+    subprocess.call(command, shell=False)
 
 def crossroad_info(*packages, src:bool = False):
     '''
@@ -126,18 +124,16 @@ def crossroad_info(*packages, src:bool = False):
     if src:
         command += ['--src']
     command += list(packages)
-    output = subprocess.check_output(command, shell=False)
-    sys.stdout.write(output.decode('UTF-8'))
+    subprocess.call(command, shell=False)
 
 def crossroad_uninstall(*packages, src:bool = False):
     '''
-    Uninstall package.
+    Uninstall packages.
     '''
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
                '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win32', '--uninstall']
     if src:
         command += ['--src']
     command += list(packages)
-    output = subprocess.check_output(command, shell=False)
-    sys.stdout.write(output.decode('UTF-8'))
+    subprocess.call(command, shell=False)
 

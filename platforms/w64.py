@@ -64,7 +64,7 @@ def requires():
     '''
     requirements = ''
     for bin in mandatory_binaries:
-        requirements += "- {}".format(bin)
+        requirements += '- {} [package "{}"]'.format(bin, mandatory_binaries[bin])
         if shutil.which(bin) is None:
             requirements += " (missing)\n"
         else:
