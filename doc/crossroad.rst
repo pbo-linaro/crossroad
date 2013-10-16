@@ -30,7 +30,7 @@ DESCRIPTION
 OPTIONS
 =======
 
--v, --version                               Show program's version number and exit
+--version                               Show program's version number and exit
 -h, --help                              Show the help message and exit. If a *TARGET* is provided, show information about this platform.
 -l, --list-all                          List all known platforms
 -c, --compress                          Compress an archive (zip support only), with the given name, of the named platforms.
