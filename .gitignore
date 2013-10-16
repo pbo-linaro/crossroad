@@ -1,5 +1,7 @@
 *.pyc
 build/
+MANIFEST
+dist/
 
 # Vim files.
 .*.swp

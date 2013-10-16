@@ -1,0 +1,3 @@
+include src/*.py scripts/*.py scripts/config.guess platforms/*.py
+include environments/bashrc.* environments/*.cmake
+include README COPYING doc/*.rst
