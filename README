@@ -17,7 +17,7 @@ Only two target environments are supported currently:
 - Windows 64-bit.
 
 *Note: no differences are made between Windows platform other than
-32/64-bit. This is up to you to take care of available APIs in your code.*
+32/64-bit. This is up to you to make your code portable.*
 
 This is Free Software, under the license `AGPL version 3`_.
 
@@ -27,6 +27,76 @@ or even support_ them.
 Also you are more than welcome to propose patches. Bugfix, or new features,
 like support of more target environments, other shells than `bash`, etc.
 See the **contributing** section below.
+
+Installation
+============
+
+`Crossroad` is a typical python-style project, relying on Python 3.3 or
+above. You will also need `7z` installed.
+
+To install, just run::
+
+    $ ./setup.py install
+
+`Crossroad` does not need any particular cross-compilation tool to run,
+but it will tell you what you are missing, and you won't be able to enter
+a cross-compilation environment until this is installed.
+
+List targets with::
+
+    $ crossroad --list-all
+    crossroad, version 0.3
+    Available targets:
+    w64                  Windows 64-bit
+
+    Uninstalled targets:
+    w32                  Windows 32-bit
+
+In the above example, I can compile for Windows 64-bit, not 32-bit.
+
+To get details about a target's missing dependencies, for instance
+Windows 32-bit::
+
+    $ crossroad -h w32
+    w32: Setups a cross-compilation environment for Microsoft Windows operating systems (32-bit).
+
+    Not available. Some requirements are missing:
+    - i686-w64-mingw32-gcc [package "gcc-mingw-w64-i686"] (missing)
+    - i686-w64-mingw32-ld [package "binutils-mingw-w64-i686"]
+
+It will return a list of required binaries that crossroad cannot find.
+If you actually have them, the most likely reason is that you should
+update your `$PATH` with the right location. In the above example,
+`crossroad` could find your minGW linker, but not the compiler. It also
+inform you of a possible package name (based on a Linux Mint
+distribution. Your distribution may use a different name, but it would
+still give a useful hint to search in your package manager).
+
+Install the missing requirements and run crossroad again::
+
+    $ crossroad --list-all
+    crossroad, version 0.3
+    Available targets:
+    w32                  Windows 32-bit
+    w64                  Windows 64-bit
+    $ crossroad -h w32
+    w32: Setups a cross-compilation environment for Microsoft Windows operating systems (32-bit).
+
+    Installed language list:
+    - C
+    Uninstalled language list:
+    - Ada                 Common package name providing the feature: gnat-mingw-w64-i686
+    - C++                 Common package name providing the feature: g++-mingw-w64-i686
+    - OCaml               Common package name providing the feature: mingw-ocaml
+    - Objective C         Common package name providing the feature: gobjc++-mingw-w64-i686
+    - fortran             Common package name providing the feature: gfortran-mingw-w64-i686
+
+You will notice that now `w32` is available in your list of target, but
+also the help is more complete and will also tell you a list of possible
+languages that MinGW can handle if you installed additional packages.
+
+_Note: crossroad has actually been tested only with C and C++ projects.
+But I welcome any usage report with other languages._
 
 Usage
 =====
@@ -46,19 +116,12 @@ in your working cross-compilation environment.
 
 All necessary environment variables for successful builds, like PATH,
 LD_LIBRARY_PATH, etc., are set for you.
+Moreover the crossroad command is modified once in a cross-compilation
+environment. You can `crossroad -h` or `crossroad help` to see the new
+list of commands.
 
-When you will compile your new software, you should use the crossroad
-environment prefix. For this, `crossroad` prepared easy to remember,
-ready-to-use, environment variables:
-- $CROSSROAD_PREFIX;
-- $CROSSROAD_HOST;
-- $CROSSROAD_BUILD;
-- $CROSSROAD_CMAKE_TOOLCHAIN_FILE.
-
-And finally a prefix is prepared for you, which encapsulate your new build
-and all its dependencies. Though in most cases, you should not need to
-manually go there do anything, you still can (for instance to change
-software settings, etc.) with `cd $CROSSROAD_PREFIX`.
+You are now ready to configure and compile any project for your target
+platform.
 
 Example: autotools
 ~~~~~~~~~~~~~~~~~~
@@ -66,62 +129,109 @@ Example: autotools
 Let's imagine you want to compile any software with a typical GNU
 compilation system, for Windows 64-bit.
 
-1/ **First enter crossroad:**
-$ crossroad w64
+1/ **First enter crossroad**::
+
+    $ crossroad w64
+
 _Normally here your bash prompt will be modified_
 
-2/ **Enter your source code:**
-$ cd /some/path/to/your/source/
+2/ **Enter your source code**::
+
+    $ cd /some/path/to/your/source/
+
 _In a typical GNU code, you will have here access to a `configure`
 script, or with ways to build one, for instance by running an
 `autogen.sh` first._
 
-3/ **Configure your build:**
-$ ./configure --prefix=$CROSSROAD_PREFIX --host=$CROSSROAD_HOST --build=$CROSSROAD_BUILD
-_Of course you should add any additional option as you would normally
-do to your `configure` step._
+3/ **Configure your build**::
+
+    $ crossroad configure
+
+There is no need to add a --prefix, a --host, or a build. These are
+automatically and appropriately set up for you.
+
+_Of course you should add any other option as you would normally do to
+your `configure` step._
+For instance if your project had a libjpeg dependency that you want to
+deactivate:
+
+    $ crossroad configure --without-libjpeg
+
+See the `./configure --help` for listing of available options.
 
 4/ Here the configure may fail if you miss any dependency. You may
-install any dependency with crossroad. Let's say for instance that this
-project depends on glib. You could just run:
-$ crossroad -i glib-devel
+install many dependency easily through crossroad. Crossroad relies on the
+`Fedora MinGW project`_ for this feature.
+Let's say for instance that your project depends on glib. You could just
+run::
+
+    $ crossroad install glib-devel
 
 Do this step as many times as necessary, until the configure step 3/
 succeeds. Then go to the next step.
 
-5/ **Build:**
-$ make
-$ make install
+5/ **Build**::
 
-6/ Well all is done, if you need to test your binaries on an actual
-Windows machine, run the following:
-$ crossroad -C mysoftware.zip w64
-This will create a zip file `mysoftware.zip` than you can just move over
+    $ make
+    $ make install
+
+6/ Well all done! Just exit your cross-compilation environment with
+*ctrl-d* or `exit`.
+If you need to test your binaries on an actual Windows machine,
+crossroad provides 2 tools.
+
+6.1/ Make a zip of your whole cross-compiled tree with the following::
+
+    $ crossroad -c mysoftware.zip w64
+
+This will create a zip file `mysoftware.zip` that you can just move over
 to your test Windows OS. Then uncompress it, and set or update your PATH
 environment variable with the `bin/` directory of this uncompressed
 prefix.
-Then run, and enjoy!
 
 _Note: only zip format supported for the moment, since it is the most
 common for Windows._
 
-_Note 2: this has been tested with success on many GNU projects, compiled
-for Windows:
-cairo, babl, GEGL, glib, GTK+, libpng, pango, freetype2, gdk-pixbuf and GIMP.
+6.2/ If you are running Windows in a VM for instance, or are sharing
+partitions, you can just add a link in a shared directory.
+Just cd to the shared directory and run::
+
+    $ crossroad -s w64 myproject
+
+This will create a symlink named "myproject" to the "w64" target. Since
+the directory is shared, it should be visible in Windows as a normal
+directory.
+
+7/ Then run your app, and enjoy!
+
+_Note: this has been tested with success on many GNU projects,
+cross-compiled for Windows: cairo, babl, GEGL, glib, GTK+, libpng,
+pango, freetype2, gdk-pixbuf and GIMP.
 
 Example: cmake
 ~~~~~~~~~~~~~~~
 
 Cmake uses toolchain files. Crossroad prepared one for you, so you don't
 have to worry about it.
-Simply replace the step 3/ of the autotools example with this command:
+Simply replace the step 3/ of the autotools example with this command::
 
-$ cmake . -DCMAKE_INSTALL_PREFIX:PATH=$CROSSROAD_PREFIX -DCMAKE_TOOLCHAIN_FILE=$CROSSROAD_CMAKE_TOOLCHAIN_FILE
+    $ crossroad cmake .
 
-The rest should be the same. Obviously these options should also work
-with the `ccmake` (curses interface of cmake).
+A common cmake usage is to create a build/ directory and build there.
+You can do so with crossroad, of course::
 
-This has been tested with success on allegro 5, compiled for Windows.
+    $ mkdir build; cd build
+    $ crossroad cmake ..
+
+Alternatively crossroad allows also to use the curses interface of
+`cmake`::
+
+    $ crossroad ccmake .
+
+The rest should be the same, and you can add any options to your build.
+
+This has been tested with success on allegro 5, cross-compiled for
+Windows.
 
 Example: other
 ~~~~~~~~~~~~~~
@@ -130,9 +240,30 @@ It has not been tested with any other compilation system up to now. So
 it all depends what they require for a cross-compilation.
 But since a `crossroad` environment prepare a bunch of environment
 variables for you, and helps you download dependencies, no doubt it will
-make your life easier.
+already make your life easier.
 
-You can also use your `crossroad` prefix, even for system which do not
+The `configure`, `cmake` and `ccmake` command are simple wrapper around
+normal any `./configure` script, and the `cmake/ccmake` commands, adding
+some default options (which crossroad prepared) for successful
+cross-compilation.
+
+For instance `crossroad configure` is the equivalent of running::
+
+    $ ./configure --prefix=$CROSSROAD_PREFIX --host=$CROSSROAD_HOST --build=$CROSSROAD_BUILD
+
+And `crossroad cmake` is nothing more than::
+
+    $ cmake . -DCMAKE_INSTALL_PREFIX:PATH=$CROSSROAD_PREFIX -DCMAKE_TOOLCHAIN_FILE=$CROSSROAD_CMAKE_TOOLCHAIN_FILE
+
+Here is the list of useful, easy-to-remember and ready-to-use,
+environment variables, prepared by crossroad:
+- $CROSSROAD_PREFIX;
+- $CROSSROAD_HOST;
+- $CROSSROAD_BUILD;
+- $CROSSROAD_CMAKE_TOOLCHAIN_FILE.
+
+What it means is that you can use these for other compilation system.
+You can also use your `crossroad` prefix, even for systems which do not
 require any compilation. Let's say for instance you wish to include a
 pure python project in your build. No per-platform compilation is needed,
 but you still want to carry all the files in the same prefix.
@@ -142,32 +273,11 @@ $ ./setup.py --prefix=$CROSSROAD_PREFIX
 
 and so on.
 
-Installation
-============
-
-`Crossroad` is a typical python-style project, relying on Python 3.3 or above.
-You will also need `7z` installed.
-
-To install, just run:
-$ ./setup.py install
-
-Obviously unless you set a particular prefix, you will need super-user rights.
-`Crossroad` does not need any particular cross-compilation tool to run,
-but it will tell you what you are missing, and you won't be able to enter
-a cross-compilation environment until this is installed.
-
-When you run just:
-
-$ crossroad
-
-It will list available and unavailable environments.
-To get details about what needs to be installed for an environments,
-for instance Windows 64-bit, run:
-
-$ crossroad -h w64
-
-It will tell you what you should install, what language can be compiled,
-which still miss some third-party software, etc.
+_Note: as you may have guess `$CROSSROAD_PREFIX` encapsulate your new
+cross-build and all its dependencies.
+Though in most cases, you should not need to manually go there do
+anything, you still can (for instance to change software settings, etc.)
+with `cd $CROSSROAD_PREFIX`._
 
 Configuration
 =============
@@ -178,10 +288,20 @@ And these will be in $XDG_CONFIG_HOME/crossroad/ (defaults to $HOME/.config/cros
 
 Cache is saved in $XDG_CACHE_HOME/crossroad/ and data $XDG_DATA_HOME/crossroad/.
 
-The only configuration right now is that in case you use a self-installed MinGW-w64,
-and you did not set it in your $PATH, you can set $CROSSROAD_CUSTOM_MINGW_W32_PREFIX
-and $CROSSROAD_CUSTOM_MINGW_W64_PREFIX for your 32-bit and 64-bit installation of
-MinGW-w64 respectively.
+The only configuration right now is that in case you use a
+self-installed MinGW-w64 prefix of Windows libraries, if they are not in
+the same prefix as the MinGW-64 executables you run, you can set
+$CROSSROAD_CUSTOM_MINGW_W32_PREFIX and $CROSSROAD_CUSTOM_MINGW_W64_PREFIX
+respectively for your 32-bit and 64-bit installation of MinGW-w64.
+
+Help
+====
+
+`Crossroad` provides inline help with `crossroad -h` but also by
+installing a man page in section 1::
+
+    $ man crossroad
+
 
 Contributing
 ============
@@ -191,7 +311,7 @@ And clone it with::
 
     $ git clone git://git.tuxfamily.org/gitroot/crossroad/crossroad.git
 
-Then send your `git-format`ed patches by email to crossroad <at> girinstud.io.
+Then send your `git-format`-ed patches by email to crossroad <at> girinstud.io.
 
 About the name
 ==============
@@ -205,3 +325,4 @@ adapted to my life) in concerts.
 .. _AGPL version 3: http://www.gnu.org/licenses/agpl.html
 .. _author: http://girinstud.io/
 .. _support: http://girinstud.io/support-us/
+.. _Fedora MinGW project: http://fedoraproject.org/wiki/MinGW

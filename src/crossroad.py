@@ -137,15 +137,15 @@ def load_platforms():
 version = '0.3'
 maintainer = '<jehan at girinstud.io>'
 
-usage  = 'Usage: crossroad [<TARGET>] [--help] [--version] [--list-all]\n'
-usage += '                 [--symlink <target> [<link-name>]] [--compress <archive.zip> <TARGET 1> [<TARGET 2>...]]'
+usage  = 'Usage: crossroad [<TARGET>] [--help] [--version] [--list-all] [--reset <TARGET 1> [<TARGET 2>...]]\n'
+usage += '                 [--symlink <TARGET> [<link-name>]] [--compress <archive.zip> <TARGET 1> [<TARGET 2>...]]'
 
-platform_list = "Available platforms:\n"
+platform_list = "Available targets:\n"
 for name in available_platforms:
     platform = available_platforms[name]
     platform_list += "{:<20} {}\n".format(platform.name, platform.short_description.strip())
 
-unavailable_platform_list = '\nUninstalled platforms:\n'
+unavailable_platform_list = '\nUninstalled targets:\n'
 for name in other_platforms:
     platform = other_platforms[name]
     unavailable_platform_list += "{:<20} {}\n".format(platform.name, platform.short_description.strip())
@@ -165,7 +165,7 @@ cmdline.add_option('-p', '--prefix',
     help = 'outputs the prefix of the named platform.',
     action = 'store', type="string", dest = 'prefix', default = False)
 cmdline.add_option('-c', '--compress',
-    help = 'compress an archive, with the given name, of the named platforms.',
+    help = 'compress an archive (zip only), with the given name, of the named platforms.',
     action = 'store', type="string", dest = 'archive', default = None)
 cmdline.add_option('-s', '--symlink',
     help = 'create a symbolic link of the named platform.',
