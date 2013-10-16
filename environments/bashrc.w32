@@ -166,6 +166,5 @@ else
 fi
 
 echo "Your environment has been set to cross-compile for the '$CROSSROAD_PLATFORM_NICENAME' ($CROSSROAD_PLATFORM) environment."
-echo "You have been automatically transported to the prefered cross-compilation prefix (${CROSSROAD_PREFIX})."
-echo "Use the \$CROSSROAD_PREFIX environment variable in your compilation scripts (for instance \`./configure --prefix=\$CROSSROAD_PREFIX\` for GNU-style projects)."
+echo 'Use `crossroad help` to list available commands and `man crossroad` to get a full documentation of crossroad capabilities.'
 echo "To exit this cross-compilation environment, simply \`exit\` the current shell session."
