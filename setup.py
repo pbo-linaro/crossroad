@@ -193,6 +193,10 @@ class my_install_data(distutils.command.install_data.install_data):
                               stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
                               stat.S_IRGRP | stat.S_IXGRP |
                               stat.S_IROTH | stat.S_IXOTH)
+        os.chmod(os.path.join(datadir, 'share/crossroad/scripts/config.guess'),
+                              stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
+                              stat.S_IRGRP | stat.S_IXGRP |
+                              stat.S_IROTH | stat.S_IXOTH)
 
 class my_install_scripts(distutils.command.install_scripts.install_scripts):
     '''
