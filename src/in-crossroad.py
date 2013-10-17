@@ -108,7 +108,7 @@ if platform is None:
 commands = [command[10:] for command in dir(platform) if command[:10] == 'crossroad_' and callable(getattr(platform, command))]
 
 program = 'crossroad'
-version = '0.4'
+version = '0.4.1'
 maintainer = 'jehan at girinstud.io'
 
 usage = 'Usage: {} [--help] [--version] <command> [<args>]'.format(program)

@@ -12,7 +12,7 @@ import stat
 import subprocess
 import shutil
 
-version = '0.4'
+version = '0.4.1'
 
 use_setuptools = False
 
