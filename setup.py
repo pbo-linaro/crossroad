@@ -173,10 +173,6 @@ class my_install_data(distutils.command.install_data.install_data):
     Override the install to build the manual first.
     '''
 
-    # XXX Right now this is useless.
-    # I may want to update data files, same as scripts file,
-    # in a close future.
-
     def run(self):
         update_scripts('build/platforms')
         update_scripts('build/environments')
@@ -194,6 +190,10 @@ class my_install_data(distutils.command.install_data.install_data):
                               stat.S_IRGRP | stat.S_IXGRP |
                               stat.S_IROTH | stat.S_IXOTH)
         os.chmod(os.path.join(datadir, 'share/crossroad/scripts/config.guess'),
+                              stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
+                              stat.S_IRGRP | stat.S_IXGRP |
+                              stat.S_IROTH | stat.S_IXOTH)
+        os.chmod(os.path.join(datadir, 'share/crossroad/scripts/crossroad-mingw-install.py'),
                               stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
                               stat.S_IRGRP | stat.S_IXGRP |
                               stat.S_IROTH | stat.S_IXOTH)
