@@ -7,7 +7,7 @@ Cross-Compilation Environment Toolkit.
 --------------------------------------
 
 :Date: 2013-10-14
-:Version: 0.4.1
+:Version: 0.4.2
 :Manual section: 1
 :Author: jehan@girinstud.io
 
@@ -50,7 +50,7 @@ a cross-compilation environment until this is installed.
 List available and unavailable targets with::
 
     $ crossroad --list-all
-    crossroad, version 0.4.1
+    crossroad, version 0.4.2
     Available targets:
     w64                  Windows 64-bit
 
@@ -80,7 +80,7 @@ still give a useful hint to search in your package manager).
 Install the missing requirements and run crossroad again::
 
     $ crossroad --list-all
-    crossroad, version 0.4.1
+    crossroad, version 0.4.2
     Available targets:
     w32                  Windows 32-bit
     w64                  Windows 64-bit
