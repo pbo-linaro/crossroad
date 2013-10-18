@@ -114,10 +114,9 @@ maintainer = 'jehan at girinstud.io'
 usage = 'Usage: {} [--help] [--version] <command> [<args>]'.format(program)
 
 if __name__ == "__main__":
-    #(options, args) = cmdline.parse_args()
     if len(sys.argv) < 2:
-        sys.stdout.write('{} version {} <{}>'.format(program, version, maintainer))
-        sys.stdout.write(usage)
+        sys.stdout.write('{} version {} <{}>\n'.format(program, version, maintainer))
+        sys.stdout.write(usage + '\n')
         sys.exit(os.EX_USAGE)
     command = None
     command_name = None
@@ -248,8 +247,8 @@ if __name__ == "__main__":
             sys.exit(os.EX_OK)
 
     if command is None:
-        sys.stdout.write('{} version {} <{}>'.format(program, version, maintainer))
-        sys.stdout.write(usage)
+        sys.stdout.write('{} version {} <{}>\n'.format(program, version, maintainer))
+        sys.stdout.write(usage + '\n')
         sys.exit(os.EX_USAGE)
     else:
         command_fun = getattr(platform, 'crossroad_' + command)
