@@ -53,7 +53,7 @@ def get_package_files (package, options):
     '''
     Research and return the list of files for a package name.
     '''
-    filelist = None
+    file_list = None
     real_name = None
     if options.srcpkg:
         filelists = _package_src_filelists
