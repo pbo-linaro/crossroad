@@ -134,7 +134,7 @@ def load_platforms():
 
 ### Start the Program ###
 
-version = '0.4.2'
+version = '0.4.3'
 maintainer = '<jehan at girinstud.io>'
 
 usage  = 'Usage: crossroad [<TARGET>] [--help] [--version] [--list-all] [--reset <TARGET 1> [<TARGET 2>...]]\n'
