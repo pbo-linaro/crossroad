@@ -18,10 +18,6 @@ import mimetypes
 import subprocess
 import glob
 
-# XXX 7z dependency!
-# TODO Jehan: make possibility to research amongst packages, and see version before installing.
-# Also full list visible?
-
 _packages = []
 _package_filelists = {}
 _package_src_filelists = {}
@@ -253,7 +249,8 @@ def packagesDownload(packageNames, withDependencies = False, srcpkg = False, noc
 
 def _extractFile(filename, output_dir=_extractedCacheDirectory):
   try:
-    with open('7z.log', 'w') as logfile:
+    logfile_name = '_crossroad-mingw-install_extractFile.log'
+    with open(logfile_name, 'w') as logfile:
       if filename[-5:] == '.cpio':
         # 7z loses links and I can't find an option to change this behavior.
         # So I use the cpio command for cpio files, even though it might create broken links.
@@ -262,11 +259,19 @@ def _extractFile(filename, output_dir=_extractedCacheDirectory):
         os.chdir (output_dir)
         subprocess.check_call('cpio -i --make-directories <' + filename, stderr=logfile, stdout=logfile, shell = True)
         os.chdir (cwd)
+      elif filename[-4:] == '.rpm' and shutil.which('rpm2cpio') is not None:
+        cwd = os.getcwd()
+        os.makedirs(output_dir, exist_ok=True)
+        os.chdir (output_dir)
+        subprocess.check_call('rpm2cpio "{}" | cpio -i --make-directories '.format(filename), stderr=logfile, stdout=logfile, shell = True)
+        os.chdir (cwd)
       else:
         subprocess.check_call(['7z', 'x', '-o'+output_dir, '-y', filename], stderr=logfile, stdout=logfile)
-    os.remove('7z.log')
+    os.remove(logfile_name)
+    return True
   except:
     logging.error('Failed to extract %s', filename)
+    return False
 
 def GetBaseDirectory(project):
   if project == 'windows:mingw:win32' and os.path.exists(os.path.join(_extractedFilesDirectory, 'usr/i686-w64-mingw32/sys-root/mingw')):
@@ -278,13 +283,20 @@ def GetBaseDirectory(project):
 def packagesExtract(packageFilenames, srcpkg=False):
   for packageFilename in packageFilenames :
     logging.warning('Extracting %s', packageFilename)
+    rpm_path = os.path.join(_packageCacheDirectory, packageFilename)
     cpioFilename = os.path.join(_extractedCacheDirectory, os.path.splitext(packageFilename)[0] + '.cpio')
-    if not os.path.exists(cpioFilename):
-      _extractFile(os.path.join(_packageCacheDirectory, packageFilename))
-    if srcpkg:
-      _extractFile(cpioFilename, os.path.join(_extractedFilesDirectory, os.path.splitext(packageFilename)[0]))
+    if shutil.which('rpm2cpio') is None and not os.path.exists(cpioFilename):
+      # If using 7z, we have to make an intermediary step.
+      if not _extractFile(rpm_path, _extractedCacheDirectory):
+        return False
+      if srcpkg:
+        return _extractFile(cpioFilename, os.path.join(_extractedFilesDirectory, os.path.splitext(packageFilename)[0]))
+      else:
+        return _extractFile(cpioFilename, _extractedFilesDirectory)
+    elif srcpkg:
+      return _extractFile(rpm_path, os.path.join(_extractedFilesDirectory, os.path.splitext(packageFilename)[0]))
     else:
-      _extractFile(cpioFilename, _extractedFilesDirectory)
+      return _extractFile(rpm_path, _extractedFilesDirectory)
 
 def move_files(from_file, to_file):
     if os.path.isdir(from_file):
@@ -539,6 +551,18 @@ if __name__ == "__main__":
   if options.clean:
     CleanExtracted()
 
+  # Before starting actual installation, we must check our
+  # tool prerequisites.
+  if shutil.which('cpio') is None:
+    # cpio is a very base command. It is probably everywhere.
+    # Yet better safe than sorry, I check.
+    logging.error('The software `cpio` is absent from your PATH. Please install it.')
+    sys.exit(os.EX_CANTCREAT)
+
+  if shutil.which('rpm2cpio') is None and shutil.which('7z') is None:
+    logging.error('You need either one of the 2 following commands: rpm2cpio or 7z\nPlease install one of them or make sure they are in your PATH.')
+    sys.exit(os.EX_CANTCREAT)
+
   if options.makezip or options.metadata:
     package = _findPackage(args[0]) #if args[0].endswith('.rpm') 
     if package == None: package = _findPackage("mingw32-"+args[0], options.srcpkg)
@@ -549,7 +573,10 @@ if __name__ == "__main__":
 
   (packages, packages_rpm) = packagesDownload(packages, options.withdeps, options.srcpkg, options.nocache)
 
-  packagesExtract(packages_rpm, options.srcpkg)
+  if not packagesExtract(packages_rpm, options.srcpkg):
+    logging.error('A package failed to extract. Please report a bug.')
+    sys.exit(os.EX_CANTCREAT)
+
   extracted_prefix = GetBaseDirectory(options.project)
   move_files(extracted_prefix, prefix)
   logging.warning ('Fixing symlinks')

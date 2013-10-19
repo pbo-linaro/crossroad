@@ -32,7 +32,7 @@ Installation
 ============
 
 `Crossroad` is a typical python-style project, relying on Python 3.3 or
-above. You will also need `7z` installed.
+above. You will also need either `7z` or `rpm2cpio` installed.
 
 To install, just run::
 
