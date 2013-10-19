@@ -97,6 +97,10 @@ def crossroad_install(*packages:list, src:bool = False):
     Install the list of packages and all their dependencies.
     If --src is provided, it installs the source packages, and not the main packages.
     '''
+    if len(packages) == 0:
+        sys.stderr.write('Please provide at least one package name to install.\n')
+        sys.exit(os.EX_USAGE)
+
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
                '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win32', '--deps']
     if src:
@@ -108,6 +112,10 @@ def crossroad_list_files(*packages, src:bool = False):
     '''
     List files provided by packages.
     '''
+    if len(packages) == 0:
+        sys.stderr.write('Please provide at least one package name.\n')
+        sys.exit(os.EX_USAGE)
+
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
                '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win32', '--list-files']
     if src:
@@ -119,6 +127,10 @@ def crossroad_info(*packages, src:bool = False):
     '''
     Display package details.
     '''
+    if len(packages) == 0:
+        sys.stderr.write('Please provide at least one package name.\n')
+        sys.exit(os.EX_USAGE)
+
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
                '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win32', '--info']
     if src:
@@ -130,6 +142,10 @@ def crossroad_uninstall(*packages, src:bool = False):
     '''
     Uninstall packages.
     '''
+    if len(packages) == 0:
+        sys.stderr.write('Please provide at least one package name.\n')
+        sys.exit(os.EX_USAGE)
+
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
                '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win32', '--uninstall']
     if src:
