@@ -34,8 +34,8 @@ name = 'w64'
 short_description = 'Windows 64-bit'
 
 mandatory_binaries = {
-    'x86_64-w64-mingw32-gcc': 'gcc-mingw-w32-x86_64',
-    'x86_64-w64-mingw32-ld': 'binutils-mingw-w32-x86_64'
+    'x86_64-w64-mingw32-gcc': 'gcc-mingw-w64-x86-64',
+    'x86_64-w64-mingw32-ld': 'binutils-mingw-w64-x86-64'
     }
 
 languages = {
