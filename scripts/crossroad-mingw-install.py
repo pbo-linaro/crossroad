@@ -258,6 +258,7 @@ def _extractFile(filename, output_dir=_extractedCacheDirectory):
         # 7z loses links and I can't find an option to change this behavior.
         # So I use the cpio command for cpio files, even though it might create broken links.
         cwd = os.getcwd()
+        os.makedirs(output_dir, exist_ok=True)
         os.chdir (output_dir)
         subprocess.check_call('cpio -i --make-directories <' + filename, stderr=logfile, stdout=logfile, shell = True)
         os.chdir (cwd)
