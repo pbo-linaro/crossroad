@@ -104,6 +104,26 @@ packages.
 *Note: crossroad has actually been tested only with C and C++ projects.
 But I welcome any usage report or patch for other languages.*
 
+Optional Step: cleaning any previous cross-compilation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`Crossroad` saves your work state from one use to another, which
+allows you to pause a compilation work and continue later. It also means
+that your cross-compiled tree will get filled with time. If you start a
+new project or want to start from scratch with a clean prefix, reset
+your project before you enter it with this optional step:
+
+::
+
+    $ crossroad --reset w64
+
+This is an optional step, and you should not run it if you are actually
+expecting to continue where you left `crossroad` the previous time.
+
+**Warning: do not run this --reset if you have important data in your
+prefix! Actually you should never have any important data there! It
+should only contain your cross-compiled binaries and dependencies.**
+
 Entering a Cross-Compilation Environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
