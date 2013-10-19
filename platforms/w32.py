@@ -68,7 +68,7 @@ def requires():
         if shutil.which(bin) is None:
             requirements += " (missing)\n"
         else:
-            requirements += "\n"
+            requirements += " (ok)\n"
     return requirements
 
 def language_list():

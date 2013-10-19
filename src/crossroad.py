@@ -209,6 +209,7 @@ if __name__ == "__main__":
         sys.stdout.write(platform_list)
         if len(other_platforms) > 0:
             sys.stdout.write(unavailable_platform_list)
+        sys.stdout.write('\nSee details about any target with `crossroad --help <TARGET>`.\n')
         sys.exit(os.EX_OK)
 
     if options.prefix:
@@ -316,7 +317,12 @@ if __name__ == "__main__":
     if len(args) != 1:
         cmdline.print_version()
         cmdline.print_usage()
-        sys.stdout.write(platform_list)
+        if len(available_platforms) == 0:
+            sys.stdout.write('No targets are installed.\nSee the whole list with `crossroad --list-all`.\n')
+        else:
+            sys.stdout.write(platform_list)
+            if len(other_platforms) > 0:
+                sys.stdout.write('\nSome targets are not installed.\nSee the whole list with `crossroad --list-all`.\n')
         sys.exit(os.EX_USAGE)
 
     if args[0] in available_platforms:
