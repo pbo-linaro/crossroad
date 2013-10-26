@@ -149,25 +149,22 @@ if [ -d "/usr/$CROSSROAD_HOST/lib" ]; then
 fi
 
 # So that the system-wide python can still find any locale lib.
-for dir in $CROSSROAD_PREFIX/lib/python*
+for dir in $(find $CROSSROAD_PREFIX/lib/ -name 'python*');
 do
     export PYTHONPATH=:${dir}:$PYTHONPATH
 done;
 
-# http://gcc.gnu.org/onlinedocs/cpp/Environment-Variables.html
-# http://wiki.gimp.org/index.php/Hacking:Building/Windows
-
-# CHANGE the shell to show you are in cross-comp env.
-RED="\[\033[0;31m\]"
-NORMAL="\[\033[00m\]"
-if [ x"$(locale charmap)"x == "xUTF-8x" ]; then
+# CHANGE the prompt to show you are in cross-comp env.
+RED=$'\e[0;31m'
+NORMAL=$'\e[0m'
+if [ x"$(locale charmap)"x = "xUTF-8x" ]; then
     SYMBOL="✘"
 else
     SYMBOL="*"
 fi;
 
 # Leave the user override the default crossroads PS1.
-if [ x"${CROSSROADS_PS1}"x == "xx" ]; then
+if [ "x${CROSSROADS_PS1}x" = "xx" ]; then
     export PS1="${RED}${CROSSROAD_PLATFORM}${SYMBOL}${NORMAL} ${PS1}"
 else
     export PS1="${CROSSROADS_PS1}"
