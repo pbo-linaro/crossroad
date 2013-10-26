@@ -330,7 +330,8 @@ if __name__ == "__main__":
         try:
             shell = os.environ['SHELL']
         except KeyError:
-            sys.stderr.write("No shell detected. Fallbacking to bash.")
+            sys.stderr.write("No shell detected ($SHELL missing). Fallbacking to bash.\n")
+            sys.stderr.flush()
             shell = 'bash'
 
         bashrc_path = os.path.join(install_datadir, 'crossroad/environments/bashrc.' + available_platforms[args[0]].name)
@@ -340,7 +341,8 @@ if __name__ == "__main__":
             command = [shell, '--rcfile', bashrc_path]
         else:
             command = ['bash', '--rcfile', bashrc_path]
-            sys.stderr.write("Warning: sorry, only bash is supported right now.")
+            sys.stderr.write("Warning: sorry, only bash is supported right now.\n")
+            sys.stderr.flush()
 
         env_path = os.path.join(xdg_data_home, 'crossroad/roads', available_platforms[args[0]].name)
         try:
