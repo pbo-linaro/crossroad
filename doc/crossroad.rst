@@ -135,7 +135,7 @@ This will set up a Windows 64-bit cross-compilation environment, and
 you will be greeted by a message telling you basics information.
 
 In order for you not to mistake several opened shells, a `crossroad`
-prompt will have be a modified version of your usual prompt.
+prompt will be a modified version of your usual prompt.
 A small red ``w64✘`` at the start (only adding information. Whatever
 prompt hack you may have made — for instance displaying information of
 a code repository — will be untouched) to show you are in your working
