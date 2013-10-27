@@ -67,6 +67,7 @@ class build_man(distutils.core.Command):
         '''
         try:
             os.makedirs('build/man/man1', exist_ok=True)
+            os.makedirs('build/doc', exist_ok=True)
         except os.error:
             sys.stderr.write('Build error: failure to create the build/ tree. Please check your permissions.\n')
             sys.exit(os.EX_CANTCREAT)
@@ -76,7 +77,9 @@ class build_man(distutils.core.Command):
         Create the manual.
         '''
         try:
-            subprocess.check_call(["rst2man", "doc/crossroad.rst", "build/man/man1/crossroad.1"])
+            shutil.copyfile('doc/crossroad.rst', 'build/doc/crossroad.rst')
+            update_scripts('build/doc')
+            subprocess.check_call(["rst2man", "build/doc/crossroad.rst", "build/man/man1/crossroad.1"])
         except subprocess.CalledProcessError:
             sys.stderr.write('Build error: `rst2man` failed to build the man page.')
             sys.exit(os.EX_CANTCREAT)
@@ -174,6 +177,7 @@ def update_scripts(build_dir):
                 contents = script.read()
                 # Make the necessary replacements.
                 contents = contents.replace('@DATADIR@', datadir)
+                contents = contents.replace('@VERSION@', version)
                 script.truncate(0)
                 script.seek(0)
                 script.write(contents)

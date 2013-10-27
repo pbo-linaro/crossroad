@@ -7,7 +7,7 @@ Cross-Compilation Environment Toolkit.
 --------------------------------------
 
 :Date: 2013-10-14
-:Version: 0.4.4
+:Version: @VERSION@
 :Manual section: 1
 :Author: jehan@girinstud.io
 
