@@ -563,6 +563,13 @@ if __name__ == "__main__":
                     except FileNotFoundError:
                         # Let's just ignore already removed files.
                         pass
+            # Finally I deleted any cached rpm and cpio.
+            for f in os.listdir(_packageCacheDirectory):
+                if f[:len(real_name)] == real_name:
+                    os.unlink(os.path.join(_packageCacheDirectory, f))
+            for f in os.listdir(_extractedCacheDirectory):
+                if f[:len(real_name)] == real_name:
+                    os.unlink(os.path.join(_extractedCacheDirectory, f))
     sys.exit(os.EX_OK)
 
   if options.clean:
