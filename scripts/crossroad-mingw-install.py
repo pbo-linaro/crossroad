@@ -7,6 +7,7 @@
 # compliance with the License. You may obtain a copy of the License at http://www.mozilla.org/MPL/
 
 from urllib.request import urlretrieve, urlopen
+import fnmatch
 import logging
 import os.path
 import sys
@@ -221,10 +222,9 @@ def _checkPackageRequirements(package, packageNames):
   return allProviders
 
 def packagesDownload(packageNames, withDependencies = False, srcpkg = False, nocache = False):
-  from fnmatch import fnmatchcase
   packageNames_new = {pn for pn in packageNames if pn.endswith('.rpm')}
   for packageName in packageNames - packageNames_new:
-    matchedpackages = {p['name'] for p in _packages if fnmatchcase(p['name'].replace('mingw32-', '').replace('mingw64-', ''), packageName) and p['arch'] == ('src' if srcpkg else 'noarch')}
+    matchedpackages = {p['name'] for p in _packages if fnmatch.fnmatchcase(p['name'].replace('mingw32-', '').replace('mingw64-', ''), packageName) and p['arch'] == ('src' if srcpkg else 'noarch')}
     packageNames_new |= matchedpackages if len(matchedpackages) > 0 else {packageName}
   packageNames = list(packageNames_new)
   allPackageNames = set(packageNames)
@@ -245,11 +245,22 @@ def packagesDownload(packageNames, withDependencies = False, srcpkg = False, noc
         packageNames.append(packName[:-6])
         allPackageNames.add(packName[:-6])
     localFilenameFull = os.path.join(_packageCacheDirectory, package['filename'])
+    # First removing any outdated version of the rpm.
+    package_basename = re.sub(r'-([0-9]|\.)+-[0-9]\.[0-9].(src|noarch).rpm$', '', package['filename'])
+    for f in os.listdir(_packageCacheDirectory):
+        if f[:len(package_basename)] == package_basename and f != package['filename']:
+            logging.warning('Deleting outdated cached version of {}.'.format(package_basename))
+            os.unlink(os.path.join(_packageCacheDirectory, f))
     if nocache or not os.path.exists(localFilenameFull):
-      logging.warning('Downloading %s', package['filename'])
-      urlretrieve(package['url'], localFilenameFull)
+        logging.warning('Downloading %s', package['filename'])
+        # When I download a rpm, I would also remove any extracted cpio
+        # of this package which may have been left behind.
+        for f in os.listdir(_extractedCacheDirectory):
+            if f[:len(package_basename)] == package_basename and f != package['filename']:
+                os.unlink(os.path.join(_extractedCacheDirectory, f))
+        urlretrieve(package['url'], localFilenameFull)
     else:
-      logging.warning('Using cached package %s', localFilenameFull)
+        logging.warning('Using cached package %s', localFilenameFull)
     packageFilenames.append(package['filename'])
   return (allPackageNames, packageFilenames)
 
