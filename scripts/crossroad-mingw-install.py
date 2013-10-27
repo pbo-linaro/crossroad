@@ -121,6 +121,12 @@ def OpenRepository(repositoryLocation):
         try:
           os.makedirs(dir)
         except OSError: pass
+      # Cleaning old files first.
+      for f in os.listdir(_repositoryCacheDirectory):
+        if f[-14:] == '-filelists.xml' and f != os.path.splitext(os.path.basename(filelist_url))[0]:
+            os.unlink(os.path.join(_repositoryCacheDirectory, f))
+        if f[-12:] == '-primary.xml' and f != os.path.splitext(os.path.basename(primary_url))[0]:
+            os.unlink(os.path.join(_repositoryCacheDirectory, f))
       # Download repository metadata (only if not already in cache)
       primary_filename = os.path.join(_repositoryCacheDirectory, os.path.splitext(os.path.basename(primary_url))[0])
       if not os.path.exists(primary_filename):
