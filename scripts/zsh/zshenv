@@ -1,0 +1,8 @@
+TEST_ZDOTDIR=$HOME
+if [ x"$CROSSROAD_OLD_ZDOTDIR"x != "xx" ]; then
+    TEST_ZDOTDIR=$CROSSROAD_OLD_ZDOTDIR
+fi
+
+if [ -f "$TEST_ZDOTDIR/.zshenv" ]; then
+    . $TEST_ZDOTDIR/.zshenv
+fi

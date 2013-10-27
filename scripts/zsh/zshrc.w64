@@ -1,0 +1,34 @@
+#!/bin/sh
+#
+# This file is part of crossroad.
+# Copyright (C) 2013 Jehan <jehan at girinstud.io>
+#
+# crossroad is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# crossroad is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with crossroad.  If not, see <http://www.gnu.org/licenses/>.
+
+TEST_ZDOTDIR=$HOME
+if [ x"$CROSSROAD_OLD_ZDOTDIR"x != "xx" ]; then
+    TEST_ZDOTDIR=$CROSSROAD_OLD_ZDOTDIR
+    export ZDOTDIR=$CROSSROAD_OLD_ZDOTDIR
+    unset CROSSROAD_OLD_ZDOTDIR
+fi
+
+if [ -f "$TEST_ZDOTDIR/.zshrc" ]; then
+    . $TEST_ZDOTDIR/.zshrc
+fi
+
+export CROSSROAD_PLATFORM_NICENAME="Windows 64-bit"
+export CROSSROAD_HOST=x86_64-w64-mingw32
+export CROSSROAD_PLATFORM=w64
+
+source @DATADIR@/share/crossroad/scripts/environment-64.sh

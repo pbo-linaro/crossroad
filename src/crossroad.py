@@ -326,23 +326,47 @@ if __name__ == "__main__":
         sys.exit(os.EX_USAGE)
 
     if args[0] in available_platforms:
-        # TODO: support more shells.
+        shell = None
+        environ = None
         try:
             shell = os.environ['SHELL']
         except KeyError:
-            sys.stderr.write("No shell detected ($SHELL missing). Fallbacking to bash.\n")
-            sys.stderr.flush()
-            shell = 'bash'
+            shell = None
 
-        bashrc_path = os.path.join(install_datadir, 'crossroad/environments/bashrc.' + available_platforms[args[0]].name)
+        if shell is None or (shell[-4:] != 'bash' and shell[-3:] != 'zsh'):
+            sys.stderr.write("Warning: sorry, only bash and zsh are supported right now (detected by $SHELL environment variable).")
+            shell = shutil.which('bash')
+            if shell is None:
+                shell = shutil.which('zsh')
+            if shell is None:
+                sys.stderr.write(" Neither bash nor zsh were found in your path.\n")
+                sys.exit(os.EX_UNAVAILABLE)
+            sys.stderr.write(" Defaulting to {}.\n".format(shell))
+            sys.stderr.flush()
+
         if shell[-4:] == 'bash':
             # I could set an updated environment. But bash would still run .bashrc
-            # which may overwrite some variables. So instead I set my own bashrc.
+            # which may overwrite some variables. So instead I set my own bashrc,
+            # where I make sure to first run the user rc files.
+            bashrc_path = os.path.join(install_datadir, 'crossroad/scripts/bash/bashrc.' + available_platforms[args[0]].name)
             command = [shell, '--rcfile', bashrc_path]
+        elif shell[-3:] == 'zsh':
+            zdotdir = os.path.join(install_datadir, 'crossroad/scripts/zsh.' + available_platforms[args[0]].name)
+            # SETUP the $ZDOTDIR env.
+            # If already set, save the old value and set it back at the end.
+            # I could not find a way in zsh to run another zshrc and still end up in an interactive shell.
+            # The option -i + a file lets think it will do so, but the shell still ends up immediately
+            # after the file ran. Modifying the $ZDOTDIR env is the only good way.
+            # I don't forget also to run the original .zshenv and .zshrc.
+            command = [shell]
+            environ = os.environ
+            if 'ZDOTDIR' in environ:
+                environ['CROSSROAD_OLD_ZDOTDIR'] = environ['ZDOTDIR']
+            environ['ZDOTDIR'] = zdotdir
         else:
-            command = ['bash', '--rcfile', bashrc_path]
-            sys.stderr.write("Warning: sorry, only bash is supported right now.\n")
-            sys.stderr.flush()
+            # We ensured that a shell is found, or we already exited. This should never be executed.
+            sys.stderr.write("Unexpected error. Please contact the developer.\n")
+            sys.exit(os.EX_SOFTWARE)
 
         env_path = os.path.join(xdg_data_home, 'crossroad/roads', available_platforms[args[0]].name)
         try:
@@ -355,7 +379,7 @@ if __name__ == "__main__":
             sys.exit(os.EX_CANTCREAT)
 
         print('\033[1;35mYou are now at the crossroads...\033[0m\n')
-        shell_proc = subprocess.Popen(command, shell=False)
+        shell_proc = subprocess.Popen(command, shell = False, env = environ)
         shell_proc.wait()
         print('\033[1;35mYou can run, you can run.\nTell your friend boy Greg T.\nthat you were standing at the crossroads.')
         print('I believe you were sinking down.\033[0m\n')

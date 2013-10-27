@@ -16,20 +16,9 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with crossroad.  If not, see <http://www.gnu.org/licenses/>.
 
-# Source the normal system-wide and user environment.
-if [ -f /etc/bash.bashrc ]; then
-    . /etc/bash.bashrc
-fi
-if [ -f ~/.bashrc ]; then
-    . ~/.bashrc
-fi
-
 # Some value for user usage.
-export CROSSROAD_HOST=x86_64-w64-mingw32
 export CROSSROAD_BUILD=`@DATADIR@/share/crossroad/scripts/config.guess`
-export CROSSROAD_PLATFORM=w64
-export CROSSROAD_PLATFORM_NICENAME="Windows 64-bit"
-export CROSSROAD_CMAKE_TOOLCHAIN_FILE="@DATADIR@/share/crossroad/environments/toolchain-w64.cmake"
+export CROSSROAD_CMAKE_TOOLCHAIN_FILE="@DATADIR@/share/crossroad/scripts/cmake/toolchain-${CROSSROAD_PLATFORM}.cmake"
 
 # ld is a mandatory file to enter this environment.
 # Also it is normally not touched by ccache, which makes it a better
@@ -58,34 +47,32 @@ unset host_ld
 export CROSSROAD_PREFIX="`crossroad -p $CROSSROAD_PLATFORM`"
 
 # Internal usage.
-export CROSSROAD_ROAD=w64
+export CROSSROAD_ROAD="${CROSSROAD_PLATFORM}"
 
 # Reset pkg-config to search *ONLY* libraries compiled for the cross-compiled platform target.
 export PKG_CONFIG_LIBDIR=
-export PKG_CONFIG_PATH=$CROSSROAD_PREFIX/lib64/pkgconfig:$CROSSROAD_PREFIX/share/pkgconfig:$CROSSROAD_PREFIX/lib/pkgconfig
-if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX" ]; then
-    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib64/pkconfig:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib/pkconfig"
+export PKG_CONFIG_PATH=$CROSSROAD_PREFIX/lib/pkgconfig:$CROSSROAD_PREFIX/share/pkgconfig
+if [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX" ]; then
+    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib32/pkconfig:$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib/pkconfig"
 fi
 if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX" ]; then
-    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$CROSSROAD_GUESSED_MINGW_PREFIX/lib64/pkconfig:$CROSSROAD_GUESSED_MINGW_PREFIX/lib/pkconfig"
+    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$CROSSROAD_GUESSED_MINGW_PREFIX/lib32/pkconfig:$CROSSROAD_GUESSED_MINGW_PREFIX/lib/pkconfig"
 fi
-export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/local/$CROSSROAD_HOST/lib64/pkconfig"
-export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/$CROSSROAD_HOST/lib64/pkconfig"
-export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/local/$CROSSROAD_HOST/lib/pkconfig"
-export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/$CROSSROAD_HOST/lib/pkconfig"
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/$CROSSROAD_HOST/lib/pkconfig
+export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/$CROSSROAD_HOST/lib/pkconfig
 
 export LD_LIBRARY_PATH=$CROSSROAD_PREFIX/lib
-if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX" ]; then
-    export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib64/:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib/"
+if [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX" ]; then
+    export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib32/:$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib/"
 fi
 if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX" ]; then
-    export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$CROSSROAD_GUESSED_MINGW_PREFIX/lib64/:$CROSSROAD_GUESSED_MINGW_PREFIX/lib/"
+    export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$CROSSROAD_GUESSED_MINGW_PREFIX/lib32/:$CROSSROAD_GUESSED_MINGW_PREFIX/lib/"
 fi
 # Adding some typical distribution paths.
 # Note: I could also try to guess the user path from `which ${CROSSROAD_HOST}-gcc`.
 # But it may not always work. For instance if the user uses ccache.
-export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/$CROSSROAD_HOST/lib64/:/usr/local/$CROSSROAD_HOST/lib/"
-export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/$CROSSROAD_HOST/lib64/:/usr/$CROSSROAD_HOST/lib/"
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/$CROSSROAD_HOST/lib/
+export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/$CROSSROAD_HOST/lib/
 
 mkdir -p $CROSSROAD_PREFIX/bin
 export PATH="$CROSSROAD_PREFIX/bin:$PATH"
@@ -102,16 +89,16 @@ export LDFLAGS="-L$CROSSROAD_PREFIX/lib"
 # Very important! The default -I list of directories when none is specified!
 export CPATH="$CROSSROAD_PREFIX/include"
 
-if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX" ]; then
-    if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/include" ]; then
-        export CFLAGS="$CFLAGS -I$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/include/"
-        export CPATH="$CPATH:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/include/"
+if [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX" ]; then
+    if [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/include" ]; then
+        export CFLAGS="$CFLAGS -I$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/include/"
+        export CPATH="$CPATH:$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/include/"
     fi
-    if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib64" ]; then
-        export LDFLAGS="$LDFLAGS -L$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib64"
+    if [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib32" ]; then
+        export LDFLAGS="$LDFLAGS -L$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib32"
     fi
-    if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib" ]; then
-        export LDFLAGS="$LDFLAGS -L$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib"
+    if [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib" ]; then
+        export LDFLAGS="$LDFLAGS -L$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib"
     fi
 fi
 if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX" ]; then
@@ -119,8 +106,8 @@ if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX" ]; then
         export CFLAGS="$CFLAGS -I$CROSSROAD_GUESSED_MINGW_PREFIX/include/"
         export CPATH="$CPATH:$CROSSROAD_GUESSED_MINGW_PREFIX/include/"
     fi
-    if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX/lib64" ]; then
-        export LDFLAGS="$LDFLAGS -L$CROSSROAD_GUESSED_MINGW_PREFIX/lib64"
+    if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX/lib32" ]; then
+        export LDFLAGS="$LDFLAGS -L$CROSSROAD_GUESSED_MINGW_PREFIX/lib32"
     fi
     if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX/lib" ]; then
         export LDFLAGS="$LDFLAGS -L$CROSSROAD_GUESSED_MINGW_PREFIX/lib"
@@ -134,12 +121,6 @@ fi
 if [ -d "/usr/$CROSSROAD_HOST/include" ]; then
     export CFLAGS="$CFLAGS -I/usr/$CROSSROAD_HOST/include/"
     export CPATH="$CPATH:/usr/$CROSSROAD_HOST/include/"
-fi
-if [ -d "/usr/local/$CROSSROAD_HOST/lib64" ]; then
-    export LDFLAGS="$LDFLAGS -L/usr/local/$CROSSROAD_HOST/lib64"
-fi
-if [ -d "/usr/$CROSSROAD_HOST/lib64" ]; then
-    export LDFLAGS="$LDFLAGS -L/usr/$CROSSROAD_HOST/lib64"
 fi
 if [ -d "/usr/local/$CROSSROAD_HOST/lib" ]; then
     export LDFLAGS="$LDFLAGS -L/usr/local/$CROSSROAD_HOST/lib"

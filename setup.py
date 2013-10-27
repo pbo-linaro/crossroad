@@ -105,19 +105,33 @@ class my_build(distutils.command.build.build):
         try:
             os.makedirs('build/bin', exist_ok = True)
             os.makedirs('build/platforms', exist_ok = True)
-            os.makedirs('build/environments', exist_ok = True)
-            os.makedirs('build/share/crossroad/scripts', exist_ok = True)
+            os.makedirs('build/share/crossroad/scripts/bash', exist_ok = True)
+            os.makedirs('build/share/crossroad/scripts/zsh.w32', exist_ok = True)
+            os.makedirs('build/share/crossroad/scripts/zsh.w64', exist_ok = True)
+            os.makedirs('build/share/crossroad/scripts/cmake', exist_ok = True)
         except os.error:
             sys.stderr.write('Build error: failure to create the build/ tree. Please check your permissions.\n')
             sys.exit(os.EX_CANTCREAT)
         shutil.copyfile('src/crossroad.py', 'build/bin/crossroad')
         shutil.copyfile('src/in-crossroad.py', 'build/share/crossroad/scripts/in-crossroad.py')
+        shutil.copyfile('scripts/environment-32.sh', 'build/share/crossroad/scripts/environment-32.sh')
+        shutil.copyfile('scripts/environment-64.sh', 'build/share/crossroad/scripts/environment-64.sh')
+        # Bash startup files.
+        for f in os.listdir('scripts/bash'):
+            if f[:7] == 'bashrc.':
+                shutil.copyfile(os.path.join('scripts/bash/', f), os.path.join('build/share/crossroad/scripts/bash/', f))
+        # Zsh startup files.
+        for f in os.listdir('scripts/zsh'):
+            if f[:6] == 'zshrc.':
+                platform = f[6:]
+                shutil.copyfile(os.path.join('scripts/zsh/', f), os.path.join('build/share/crossroad/scripts/zsh.' + platform, '.zshrc'))
+                shutil.copyfile('scripts/zsh/zshenv', os.path.join('build/share/crossroad/scripts/zsh.' + platform, '.zshenv'))
+        # CMake files.
+        shutil.copyfile('scripts/cmake/toolchain-w32.cmake', 'build/share/crossroad/scripts/cmake/toolchain-w32.cmake')
+        shutil.copyfile('scripts/cmake/toolchain-w64.cmake', 'build/share/crossroad/scripts/cmake/toolchain-w64.cmake')
         for f in os.listdir('platforms'):
             if f[-3:] == '.py':
                 shutil.copyfile(os.path.join('platforms', f), os.path.join('build/platforms', f))
-        for f in os.listdir('environments'):
-            if f[:7] == 'bashrc.' or f[-6:] == '.cmake':
-                shutil.copyfile(os.path.join('environments', f), os.path.join('build/environments', f))
         distutils.command.build.build.run(self)
 
 class my_install(install):
@@ -153,20 +167,21 @@ def update_scripts(build_dir):
     except IOError:
         sys.stderr.write('Warning: no build/data_dir file. You should run the `install` command. Defaulting to {}.\n'.format(datadir))
 
-    for f in os.listdir(build_dir):
-        try:
-            script = open(os.path.join(build_dir, f), 'r+')
-            contents = script.read()
-            # Make the necessary replacements.
-            contents = contents.replace('@DATADIR@', datadir)
-            script.truncate(0)
-            script.seek(0)
-            script.write(contents)
-            script.flush()
-            script.close()
-        except IOError:
-            sys.stderr.write('The script {} failed to update. Check your permissions.'.format(f))
-            sys.exit(os.EX_CANTCREAT)
+    for dirpath, dirnames, filenames in os.walk(build_dir):
+        for f in filenames:
+            try:
+                script = open(os.path.join(dirpath, f), 'r+')
+                contents = script.read()
+                # Make the necessary replacements.
+                contents = contents.replace('@DATADIR@', datadir)
+                script.truncate(0)
+                script.seek(0)
+                script.write(contents)
+                script.flush()
+                script.close()
+            except IOError:
+                sys.stderr.write('The script {} failed to update. Check your permissions.'.format(f))
+                sys.exit(os.EX_CANTCREAT)
 
 class my_install_data(distutils.command.install_data.install_data):
     '''
@@ -175,7 +190,6 @@ class my_install_data(distutils.command.install_data.install_data):
 
     def run(self):
         update_scripts('build/platforms')
-        update_scripts('build/environments')
         update_scripts('build/share/crossroad/scripts')
         distutils.command.install_data.install_data.run(self)
         datadir = '/usr/local'
@@ -211,8 +225,7 @@ class my_install_scripts(distutils.command.install_scripts.install_scripts):
 platform_list = os.listdir('platforms')
 platform_list = [os.path.join('build/platforms/', f) for f in platform_list if f[-3:] == '.py']
 
-environment_list = os.listdir('environments')
-environment_list = [os.path.join('build/environments/', f) for f in environment_list if f[:7] == 'bashrc.' or f[-6:] == '.cmake']
+bash_env = [os.path.join('build/share/crossroad/scripts/bash/', f) for f in os.listdir('scripts/bash/') if f[:7] == 'bashrc.']
 
 setup(
     name = 'crossroad',
@@ -237,9 +250,19 @@ setup(
     requires = [],
     scripts = ['build/bin/crossroad'],
     data_files = [('man/man1/', ['build/man/man1/crossroad.1.gz']),
-        ('share/crossroad/scripts/', ['scripts/crossroad-mingw-install.py', 'scripts/config.guess', 'build/share/crossroad/scripts/in-crossroad.py']),
+        ('share/crossroad/scripts/', ['scripts/crossroad-mingw-install.py', 'scripts/config.guess',
+                                      'build/share/crossroad/scripts/in-crossroad.py',
+                                      'build/share/crossroad/scripts/environment-32.sh',
+                                      'build/share/crossroad/scripts/environment-64.sh'
+                                      ]),
+        ('share/crossroad/scripts/bash', bash_env),
+        ('share/crossroad/scripts/zsh.w32', ['build/share/crossroad/scripts/zsh.w32/.zshenv',
+                                             'build/share/crossroad/scripts/zsh.w32/.zshrc']),
+        ('share/crossroad/scripts/zsh.w64', ['build/share/crossroad/scripts/zsh.w64/.zshenv',
+                                             'build/share/crossroad/scripts/zsh.w64/.zshrc']),
+        ('share/crossroad/scripts/cmake', ['build/share/crossroad/scripts/cmake/toolchain-w32.cmake',
+                                            'build/share/crossroad/scripts/cmake/toolchain-w64.cmake']),
         ('share/crossroad/platforms/', platform_list),
-        ('share/crossroad/environments/', environment_list),
         #('crossroad/projects/', ['projects']),
         ],
     )
