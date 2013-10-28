@@ -1,4 +1,4 @@
 include src/*.py scripts/*.py scripts/config.guess platforms/*.py
 include scripts/environment*sh scripts/bash/bashrc.* scripts/zsh/zsh*
 include scripts/cmake/*.cmake
-include README COPYING doc/*.rst
+include README README.rst COPYING doc/*.rst
