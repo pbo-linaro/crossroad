@@ -2,14 +2,15 @@
 crossroad
 =========
 
-`crossroad` is a set of scripts implementing a command line tool to
-easily set up a cross-compilation environment on a GNU/Linux
+**Crossroad** is a command line tool to easily set up your shell
+environment for cross-compilation, on a GNU/Linux
 distribution.
+
 Be aware that this is essentially a developer tool. Its target audience
 are developers working on UNIX systems (tested only under a GNU/Linux
 system though), and wishing to cross-compile projects from the same
 platform. It is not for end-users, and is useless in *running*
-software, only building them.
+software, only **building** them.
 
 Only two target environments are supported currently:
 
@@ -146,7 +147,7 @@ compilation system, for Windows 64-bit.
 
         $ crossroad w64
 
-    *Normally here your bash prompt will be modified.*
+    *Normally here your shell prompt will be modified at this point.*
 
 (2) **Enter your source code**::
 

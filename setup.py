@@ -237,7 +237,7 @@ setup(
         'install_data': my_install_data, 'install_scripts': my_install_scripts},
     version = version,
     description = 'Cross-Compilation Environment Toolkit.',
-    long_description = 'Crossroad is a developer tool to prepare your shell environment for Cross-Compilation.',
+    long_description = open('README').read(),
     author = 'Jehan',
     author_email = 'jehan at girinstud.io',
     url = 'http://girinstud.io',
