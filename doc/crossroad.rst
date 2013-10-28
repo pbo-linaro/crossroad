@@ -143,7 +143,7 @@ cross-compilation environment.
 For instance if your prompt is usually `user@host ~/some/path $`, your
 `crossroad` prompt will be `w64✘ user@host ~/some/path $`.
 
-*Note: only bash is supported right now.*
+*Note: only `bash` and `zsh` are supported right now.*
 
 All necessary environment variables for successful builds, like PATH,
 LD_LIBRARY_PATH, etc., are set for you.
