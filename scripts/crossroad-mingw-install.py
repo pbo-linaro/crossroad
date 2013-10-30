@@ -336,15 +336,20 @@ def packagesExtract(packageFilenames, srcpkg=False):
         # If using 7z, we have to make an intermediary step.
         cpioFilename = os.path.join(_extractedCacheDirectory, os.path.splitext(packageFilename)[0] + '.cpio')
         if not os.path.exists(cpioFilename) and not _extractFile(rpm_path, _extractedCacheDirectory):
-          return False
+            return False
         if srcpkg:
-          return _extractFile(cpioFilename, os.path.join(_extractedFilesDirectory, os.path.splitext(packageFilename)[0]))
+          if not _extractFile(cpioFilename, os.path.join(_extractedFilesDirectory, os.path.splitext(packageFilename)[0])):
+              return False
         else:
-          return _extractFile(cpioFilename, _extractedFilesDirectory)
+          if not _extractFile(cpioFilename, _extractedFilesDirectory):
+              return False
     elif srcpkg:
-        return _extractFile(rpm_path, os.path.join(_extractedFilesDirectory, os.path.splitext(packageFilename)[0]))
+        if not _extractFile(rpm_path, os.path.join(_extractedFilesDirectory, os.path.splitext(packageFilename)[0])):
+            return False
     else:
-        return _extractFile(rpm_path, _extractedFilesDirectory)
+        if not _extractFile(rpm_path, _extractedFilesDirectory):
+            return False
+  return True
 
 def move_files(from_file, to_file):
     if os.path.isdir(from_file):
