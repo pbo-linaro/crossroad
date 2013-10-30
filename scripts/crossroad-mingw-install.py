@@ -197,15 +197,24 @@ def OpenRepository(repositoryLocation):
         {'type': f.get('type', default='file'), 'path': f.text} for f in p.findall('{%s}file'%xmlns)
     ] for p in elements.findall('{%s}package'%xmlns) if p.get('arch') == 'src'}
 
-def search_packages(keyword, srcpkg=False):
+def search_packages(keyword, srcpkg = False, search_files = False):
   # Just in case the user was looking for a specific rpm file,
   # I trim out the filename parts and keep the main naming.
   keyword = re.sub('^mingw(32|64)-', '', packageBaseName(keyword.lower()))
-  filter_func = lambda p: \
-     re.sub('^mingw(32|64)-', '', p['name'].lower()).find(keyword) != -1 \
-     and p['arch'] == ('src' if srcpkg else 'noarch')
-  sort_func = lambda p: p['buildtime']
-  packages = sorted([p for p in _packages if filter_func(p)], key=sort_func, reverse=True)
+  packages = []
+  if search_files:
+      if srcpkg:
+          filelists = _package_src_filelists
+      else:
+          filelists = _package_filelists
+      filter_func = lambda p: \
+          len([f['path'] for f in filelists[p] if os.path.basename(f['path']).lower().find(keyword) != -1]) > 0
+      packages = sorted([p for p in filelists if filter_func(p)])
+  else:
+      filter_func = lambda p: \
+         re.sub('^mingw(32|64)-', '', p['name'].lower()).find(keyword) != -1 \
+         and p['arch'] == ('src' if srcpkg else 'noarch')
+      packages = sorted([p['name'] for p in _packages if filter_func(p)])
   return packages
 
 def _findPackage(packageName, project, srcpkg=False):
@@ -256,7 +265,7 @@ def packagesDownload(packageNames, project, withDependencies = False, srcpkg = F
       if len(alt_packages) > 0:
           logging.error('Did you mean:')
           for alt_pkg in alt_packages:
-              logging.error('\t- {}'.format(re.sub('^mingw(32|64)-', '', alt_pkg['name'])))
+              logging.error('\t- {}'.format(re.sub('^mingw(32|64)-', '', alt_pkg)))
       sys.exit(os.EX_NOINPUT)
     dependencies = _checkPackageRequirements(package, allPackageNames)
     if withDependencies and len(dependencies) > 0:
@@ -510,11 +519,17 @@ if __name__ == "__main__":
     for keyword in packages:
         alt_packages = search_packages(keyword, options.srcpkg)
         if len(alt_packages) > 0:
-            sys.stdout.write('The following package were found for the search "{}":\n'.format(keyword))
+            sys.stdout.write('The following packages were found for the search "{}":\n'.format(keyword))
             for alt_pkg in alt_packages:
-                sys.stdout.write('\t- {}\n'.format(re.sub('^mingw(32|64)-', '', alt_pkg['name'])))
+                sys.stdout.write('\t- {}\n'.format(re.sub('^mingw(32|64)-', '', alt_pkg)))
         else:
             sys.stdout.write('"{}" not found in any package name.\n'.format(keyword))
+        if options.list_files:
+            alt_packages = search_packages(keyword, options.srcpkg, options.list_files)
+            if len(alt_packages) > 0:
+                sys.stdout.write('The following packages have files matching the search "{}":\n'.format(keyword))
+                for alt_pkg in alt_packages:
+                    sys.stdout.write('\t- {}\n'.format(re.sub('^mingw(32|64)-', '', alt_pkg)))
     sys.exit(os.EX_OK)
 
   if options.list_files:
@@ -555,7 +570,7 @@ if __name__ == "__main__":
             if len(alt_packages) > 0:
                 logging.error('\tDid you mean:')
                 for alt_pkg in alt_packages:
-                    logging.error('\t- {}'.format(re.sub('^mingw(32|64)-', '', alt_pkg['name'])))
+                    logging.error('\t- {}'.format(re.sub('^mingw(32|64)-', '', alt_pkg)))
             continue
         sys.stdout.write('{} "{}":\n'.format(package_type, package['name']))
         sys.stdout.write('\tSummary: {}\n'.format(package['summary']))
@@ -636,7 +651,7 @@ if __name__ == "__main__":
       if len(alt_packages) > 0:
           logging.error('Did you mean:')
           for alt_pkg in alt_packages:
-              logging.error('\t- {}'.format(re.sub('^mingw(32|64)-', '', alt_pkg['name'])))
+              logging.error('\t- {}'.format(re.sub('^mingw(32|64)-', '', alt_pkg)))
       sys.exit(os.EX_UNAVAILABLE)
     packageBasename = re.sub('^mingw(32|64)-|\\.noarch|\\.rpm$', '', package['filename'])
 

@@ -153,9 +153,10 @@ def crossroad_uninstall(*packages, src:bool = False):
     command += list(packages)
     subprocess.call(command, shell=False)
 
-def crossroad_search(*keywords, src:bool = False):
+def crossroad_search(*keywords, src:bool = False, search_files:bool = False):
     '''
     Search keywords in package names.
+    If --search-files is also set, also search in files.
     '''
     if len(keywords) == 0:
         sys.stderr.write('Please provide at least one package name.\n')
@@ -165,6 +166,8 @@ def crossroad_search(*keywords, src:bool = False):
                '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win64', '--search']
     if src:
         command += ['--src']
+    if search_files:
+        command += ['--list-files']
     command += list(keywords)
     subprocess.call(command, shell=False)
 
