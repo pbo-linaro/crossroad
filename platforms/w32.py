@@ -102,7 +102,7 @@ def crossroad_install(*packages:list, src:bool = False):
         sys.exit(os.EX_USAGE)
 
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
-               '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win32', '--deps']
+               '-r', 'openSUSE_13.1', '-p', 'windows:mingw:win32', '--deps']
     if src:
         command += ['--src']
     command += list(packages)
@@ -117,7 +117,7 @@ def crossroad_list_files(*packages, src:bool = False):
         sys.exit(os.EX_USAGE)
 
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
-               '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win32', '--list-files']
+               '-r', 'openSUSE_13.1', '-p', 'windows:mingw:win32', '--list-files']
     if src:
         command += ['--src']
     command += packages
@@ -132,7 +132,7 @@ def crossroad_info(*packages, src:bool = False):
         sys.exit(os.EX_USAGE)
 
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
-               '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win32', '--info']
+               '-r', 'openSUSE_13.1', '-p', 'windows:mingw:win32', '--info']
     if src:
         command += ['--src']
     command += list(packages)
@@ -147,7 +147,7 @@ def crossroad_uninstall(*packages, src:bool = False):
         sys.exit(os.EX_USAGE)
 
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
-               '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win32', '--uninstall']
+               '-r', 'openSUSE_13.1', '-p', 'windows:mingw:win32', '--uninstall']
     if src:
         command += ['--src']
     command += list(packages)
@@ -163,7 +163,7 @@ def crossroad_search(*keywords, src:bool = False, search_files:bool = False):
         sys.exit(os.EX_USAGE)
 
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
-               '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win32', '--search']
+               '-r', 'openSUSE_13.1', '-p', 'windows:mingw:win32', '--search']
     if src:
         command += ['--src']
     if search_files:
