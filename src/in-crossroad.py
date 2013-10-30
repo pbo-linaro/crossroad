@@ -150,8 +150,8 @@ if __name__ == "__main__":
                 command_args.append(arg)
             continue
         elif show_help:
-            if arg in commands:
-                command_fun = getattr(platform, 'crossroad_' + arg)
+            if arg.replace('-', '_') in commands:
+                command_fun = getattr(platform, 'crossroad_' + arg.replace('-', '_'))
                 (args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations) = inspect.getfullargspec(command_fun)
                 command_usage = '{} {}'.format(program, arg)
                 for positional_arg in args:
@@ -162,7 +162,7 @@ if __name__ == "__main__":
                 if varargs is not None:
                     command_usage += ' <{}...>'.format(varargs)
                 for option in kwonlyargs:
-                    command_usage += ' [--{}]'.format(option)
+                    command_usage += ' [--{}]'.format(option.replace('_', '-'))
                 if command_fun.__doc__ is not None:
                     command_usage += '\n{}\n'.format(command_fun.__doc__)
                 else:
@@ -236,7 +236,7 @@ if __name__ == "__main__":
                 # shortdesc is the first line of the whole command description.
                 shortdesc = command_fun.__doc__.strip()
                 shortdesc = re.sub(r'\n.*', '', shortdesc)
-                command_list += '\n{:<20} {}'.format(command, shortdesc)
+                command_list += '\n{:<20} {}'.format(command.replace('_', '-'), shortdesc)
             else:
                 command_list += '\n{}'.format(command)
         command_list += '\n\nSee `crossroad help <command>` for more information on a specific command.\n'
