@@ -460,6 +460,7 @@ def GetOptions():
   packageOptions.add_option("--nocache", action="store_true", dest="nocache", default=False,
                             help="Force package download even if it is in cache.")
   packageOptions.add_option("--list-files", action="store_true", dest="list_files", default=False, help="Only list the files of a package")
+  packageOptions.add_option("--search", action="store_true", dest="search", default=False, help="Search packages.")
   packageOptions.add_option("--info", action="store_true", dest="info", default=False, help="Output information about a package")
   packageOptions.add_option("--uninstall", action="store_true", dest="uninstall", default=False, help="Uninstall the list of packages")
   parser.add_option_group(packageOptions)
@@ -497,6 +498,24 @@ if __name__ == "__main__":
     OpenRepository(repository)
   except Exception as e:
     sys.exit('Error opening repository:\n\t%s\n\t%s' % (repository, e))
+
+  if options.search:
+    if (len(packages) == 0):
+        logging.error('Please provide at least one package.\n')
+        sys.exit(os.EX_USAGE)
+    if options.srcpkg:
+        package_type = 'Source package'
+    else:
+        package_type = 'Package'
+    for keyword in packages:
+        alt_packages = search_packages(keyword, options.srcpkg)
+        if len(alt_packages) > 0:
+            sys.stdout.write('The following package were found for the search "{}":\n'.format(keyword))
+            for alt_pkg in alt_packages:
+                sys.stdout.write('\t- {}\n'.format(re.sub('^mingw(32|64)-', '', alt_pkg['name'])))
+        else:
+            sys.stdout.write('"{}" not found in any package name.\n'.format(keyword))
+    sys.exit(os.EX_OK)
 
   if options.list_files:
     if (len(packages) == 0):

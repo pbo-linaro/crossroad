@@ -153,3 +153,18 @@ def crossroad_uninstall(*packages, src:bool = False):
     command += list(packages)
     subprocess.call(command, shell=False)
 
+def crossroad_search(*keywords, src:bool = False):
+    '''
+    Search keywords in package names.
+    '''
+    if len(keywords) == 0:
+        sys.stderr.write('Please provide at least one package name.\n')
+        sys.exit(os.EX_USAGE)
+
+    command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
+               '-r', 'openSUSE_12.1', '-p', 'windows:mingw:win32', '--search']
+    if src:
+        command += ['--src']
+    command += list(keywords)
+    subprocess.call(command, shell=False)
+
