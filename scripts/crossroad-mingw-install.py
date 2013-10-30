@@ -197,8 +197,11 @@ def OpenRepository(repositoryLocation):
         {'type': f.get('type', default='file'), 'path': f.text} for f in p.findall('{%s}file'%xmlns)
     ] for p in elements.findall('{%s}package'%xmlns) if p.get('arch') == 'src'}
 
-def _findPackage(packageName, srcpkg=False):
-  filter_func = lambda p: (p['name'] == packageName or p['filename'] == packageName) and p['arch'] == ('src' if srcpkg else 'noarch')
+def _findPackage(packageName, project, srcpkg=False):
+  filter_func = lambda p: \
+    ((p['name'] == 'mingw64-' + packageName if project == 'windows:mingw:win64' else False)
+     or p['name'] == 'mingw32-' + packageName or p['name'] == packageName or p['filename'] == packageName) \
+    and p['arch'] == ('src' if srcpkg else 'noarch')
   sort_func = lambda p: p['buildtime']
   packages = sorted([p for p in _packages if filter_func(p)], key=sort_func, reverse=True)
   if len(packages) == 0:
@@ -224,7 +227,7 @@ def _checkPackageRequirements(package, packageNames):
 def packageBaseName(rpm):
     return re.sub(r'-([0-9]|\.)+-[0-9]\.[0-9].(src|noarch)\.(rpm|cpio)$', '', rpm)
 
-def packagesDownload(packageNames, withDependencies = False, srcpkg = False, nocache = False):
+def packagesDownload(packageNames, project, withDependencies = False, srcpkg = False, nocache = False):
   packageNames_new = {pn for pn in packageNames if pn.endswith('.rpm')}
   for packageName in packageNames - packageNames_new:
     matchedpackages = {p['name'] for p in _packages if fnmatch.fnmatchcase(p['name'].replace('mingw32-', '').replace('mingw64-', ''), packageName) and p['arch'] == ('src' if srcpkg else 'noarch')}
@@ -235,8 +238,8 @@ def packagesDownload(packageNames, withDependencies = False, srcpkg = False, noc
   packageFilenames = []
   while len(packageNames) > 0:
     packName = packageNames.pop()
-    package = _findPackage(packName, srcpkg)
-    if package == None:
+    package = _findPackage(packName, project, srcpkg)
+    if package is None:
       logging.error('Package %s not found', packName)
       sys.exit(os.EX_NOINPUT)
     dependencies = _checkPackageRequirements(package, allPackageNames)
@@ -510,15 +513,10 @@ if __name__ == "__main__":
     else:
         package_type = 'Package'
     for pkg in packages:
-        package = _findPackage(pkg, options.srcpkg)
+        package = _findPackage(pkg, options.project, options.srcpkg)
         if package is None:
-            if options.project == 'windows:mingw:win64':
-                package = _findPackage("mingw64-" + pkg, options.srcpkg)
-            elif options.project == 'windows:mingw:win32':
-                package = _findPackage("mingw32-" + pkg, options.srcpkg)
-            if package is None:
-                sys.stderr.write('{} "{}" unknown.\n'.format(package_type, pkg))
-                continue
+            sys.stderr.write('{} "{}" unknown.\n'.format(package_type, pkg))
+            continue
         sys.stdout.write('{} "{}":\n'.format(package_type, package['name']))
         sys.stdout.write('\tSummary: {}\n'.format(package['summary']))
         sys.stdout.write('\tProject URL: {}\n'.format(package['project_url']))
@@ -591,14 +589,12 @@ if __name__ == "__main__":
     sys.exit(os.EX_CANTCREAT)
 
   if options.makezip or options.metadata:
-    package = _findPackage(args[0]) #if args[0].endswith('.rpm') 
-    if package == None: package = _findPackage("mingw32-"+args[0], options.srcpkg)
-    if package == None: package = _findPackage("mingw64-"+args[0], options.srcpkg)
+    package = _findPackage(args[0], options.project, options.srcpkg)
     if package == None:
       sys.exit('Package not found:\n\t%s' % args[0])
     packageBasename = re.sub('^mingw(32|64)-|\\.noarch|\\.rpm$', '', package['filename'])
 
-  (packages, packages_rpm) = packagesDownload(packages, options.withdeps, options.srcpkg, options.nocache)
+  (packages, packages_rpm) = packagesDownload(packages, options.project, options.withdeps, options.srcpkg, options.nocache)
 
   if not packagesExtract(packages_rpm, options.srcpkg):
     logging.error('A package failed to extract. Please report a bug.')
