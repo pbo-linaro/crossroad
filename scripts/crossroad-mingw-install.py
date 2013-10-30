@@ -235,7 +235,7 @@ def packagesDownload(packageNames, withDependencies = False, srcpkg = False, noc
     package = _findPackage(packName, srcpkg)
     if package == None:
       logging.error('Package %s not found', packName)
-      continue
+      sys.exit(os.EX_NOINPUT)
     dependencies = _checkPackageRequirements(package, allPackageNames)
     if withDependencies and len(dependencies) > 0:
       packageNames.extend(dependencies)
