@@ -197,6 +197,17 @@ def OpenRepository(repositoryLocation):
         {'type': f.get('type', default='file'), 'path': f.text} for f in p.findall('{%s}file'%xmlns)
     ] for p in elements.findall('{%s}package'%xmlns) if p.get('arch') == 'src'}
 
+def search_packages(keyword, srcpkg=False):
+  # Just in case the user was looking for a specific rpm file,
+  # I trim out the filename parts and keep the main naming.
+  keyword = re.sub('^mingw(32|64)-', '', packageBaseName(keyword.lower()))
+  filter_func = lambda p: \
+     re.sub('^mingw(32|64)-', '', p['name'].lower()).find(keyword) != -1 \
+     and p['arch'] == ('src' if srcpkg else 'noarch')
+  sort_func = lambda p: p['buildtime']
+  packages = sorted([p for p in _packages if filter_func(p)], key=sort_func, reverse=True)
+  return packages
+
 def _findPackage(packageName, project, srcpkg=False):
   filter_func = lambda p: \
     ((p['name'] == 'mingw64-' + packageName if project == 'windows:mingw:win64' else False)
@@ -241,6 +252,11 @@ def packagesDownload(packageNames, project, withDependencies = False, srcpkg = F
     package = _findPackage(packName, project, srcpkg)
     if package is None:
       logging.error('Package %s not found', packName)
+      alt_packages = search_packages(packName, srcpkg)
+      if len(alt_packages) > 0:
+          logging.error('Did you mean:')
+          for alt_pkg in alt_packages:
+              logging.error('\t- {}'.format(re.sub('^mingw(32|64)-', '', alt_pkg['name'])))
       sys.exit(os.EX_NOINPUT)
     dependencies = _checkPackageRequirements(package, allPackageNames)
     if withDependencies and len(dependencies) > 0:
@@ -516,6 +532,11 @@ if __name__ == "__main__":
         package = _findPackage(pkg, options.project, options.srcpkg)
         if package is None:
             sys.stderr.write('{} "{}" unknown.\n'.format(package_type, pkg))
+            alt_packages = search_packages(pkg, options.srcpkg)
+            if len(alt_packages) > 0:
+                logging.error('\tDid you mean:')
+                for alt_pkg in alt_packages:
+                    logging.error('\t- {}'.format(re.sub('^mingw(32|64)-', '', alt_pkg['name'])))
             continue
         sys.stdout.write('{} "{}":\n'.format(package_type, package['name']))
         sys.stdout.write('\tSummary: {}\n'.format(package['summary']))
@@ -591,7 +612,13 @@ if __name__ == "__main__":
   if options.makezip or options.metadata:
     package = _findPackage(args[0], options.project, options.srcpkg)
     if package == None:
-      sys.exit('Package not found:\n\t%s' % args[0])
+      logging.error('Package not found:\n\t%s' % args[0])
+      alt_packages = search_packages(args[0], options.srcpkg)
+      if len(alt_packages) > 0:
+          logging.error('Did you mean:')
+          for alt_pkg in alt_packages:
+              logging.error('\t- {}'.format(re.sub('^mingw(32|64)-', '', alt_pkg['name'])))
+      sys.exit(os.EX_UNAVAILABLE)
     packageBasename = re.sub('^mingw(32|64)-|\\.noarch|\\.rpm$', '', package['filename'])
 
   (packages, packages_rpm) = packagesDownload(packages, options.project, options.withdeps, options.srcpkg, options.nocache)
