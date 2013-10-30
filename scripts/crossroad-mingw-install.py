@@ -221,6 +221,9 @@ def _checkPackageRequirements(package, packageNames):
         allProviders.add(providers.pop())
   return allProviders
 
+def packageBaseName(rpm):
+    return re.sub(r'-([0-9]|\.)+-[0-9]\.[0-9].(src|noarch)\.(rpm|cpio)$', '', rpm)
+
 def packagesDownload(packageNames, withDependencies = False, srcpkg = False, nocache = False):
   packageNames_new = {pn for pn in packageNames if pn.endswith('.rpm')}
   for packageName in packageNames - packageNames_new:
@@ -246,9 +249,9 @@ def packagesDownload(packageNames, withDependencies = False, srcpkg = False, noc
         allPackageNames.add(packName[:-6])
     localFilenameFull = os.path.join(_packageCacheDirectory, package['filename'])
     # First removing any outdated version of the rpm.
-    package_basename = re.sub(r'-([0-9]|\.)+-[0-9]\.[0-9].(src|noarch).rpm$', '', package['filename'])
+    package_basename = packageBaseName(package['filename'])
     for f in os.listdir(_packageCacheDirectory):
-        if f[:len(package_basename)] == package_basename and f != package['filename']:
+        if packageBaseName(f) == package_basename and f != package['filename']:
             logging.warning('Deleting outdated cached version of {}.'.format(package_basename))
             os.unlink(os.path.join(_packageCacheDirectory, f))
     if nocache or not os.path.exists(localFilenameFull):
@@ -256,7 +259,7 @@ def packagesDownload(packageNames, withDependencies = False, srcpkg = False, noc
         # When I download a rpm, I would also remove any extracted cpio
         # of this package which may have been left behind.
         for f in os.listdir(_extractedCacheDirectory):
-            if f[:len(package_basename)] == package_basename and f != package['filename']:
+            if packageBaseName(f) == package_basename:
                 os.unlink(os.path.join(_extractedCacheDirectory, f))
         urlretrieve(package['url'], localFilenameFull)
     else:
