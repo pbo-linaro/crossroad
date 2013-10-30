@@ -246,7 +246,7 @@ def packagesDownload(packageNames, project, withDependencies = False, srcpkg = F
     if withDependencies and len(dependencies) > 0:
       packageNames.extend(dependencies)
       allPackageNames |= dependencies
-    if packName[-6:] == '-devel':
+    if packName[-6:] == '-devel' and _findPackage(packName[:-6], project, srcpkg) is not None:
         logging.warning('{} is a devel package. Adding {}'.format(packName, packName[:-6]))
         packageNames.append(packName[:-6])
         allPackageNames.add(packName[:-6])
