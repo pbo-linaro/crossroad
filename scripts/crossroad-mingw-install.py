@@ -332,19 +332,19 @@ def packagesExtract(packageFilenames, srcpkg=False):
   for packageFilename in packageFilenames :
     logging.warning('Extracting %s', packageFilename)
     rpm_path = os.path.join(_packageCacheDirectory, packageFilename)
-    cpioFilename = os.path.join(_extractedCacheDirectory, os.path.splitext(packageFilename)[0] + '.cpio')
-    if shutil.which('rpm2cpio') is None and not os.path.exists(cpioFilename):
-      # If using 7z, we have to make an intermediary step.
-      if not _extractFile(rpm_path, _extractedCacheDirectory):
-        return False
-      if srcpkg:
-        return _extractFile(cpioFilename, os.path.join(_extractedFilesDirectory, os.path.splitext(packageFilename)[0]))
-      else:
-        return _extractFile(cpioFilename, _extractedFilesDirectory)
+    if shutil.which('rpm2cpio') is None:
+        # If using 7z, we have to make an intermediary step.
+        cpioFilename = os.path.join(_extractedCacheDirectory, os.path.splitext(packageFilename)[0] + '.cpio')
+        if not os.path.exists(cpioFilename) and not _extractFile(rpm_path, _extractedCacheDirectory):
+          return False
+        if srcpkg:
+          return _extractFile(cpioFilename, os.path.join(_extractedFilesDirectory, os.path.splitext(packageFilename)[0]))
+        else:
+          return _extractFile(cpioFilename, _extractedFilesDirectory)
     elif srcpkg:
-      return _extractFile(rpm_path, os.path.join(_extractedFilesDirectory, os.path.splitext(packageFilename)[0]))
+        return _extractFile(rpm_path, os.path.join(_extractedFilesDirectory, os.path.splitext(packageFilename)[0]))
     else:
-      return _extractFile(rpm_path, _extractedFilesDirectory)
+        return _extractFile(rpm_path, _extractedFilesDirectory)
 
 def move_files(from_file, to_file):
     if os.path.isdir(from_file):
