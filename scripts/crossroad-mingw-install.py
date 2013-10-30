@@ -266,6 +266,7 @@ def packagesDownload(packageNames, project, withDependencies = False, srcpkg = F
           logging.error('Did you mean:')
           for alt_pkg in alt_packages:
               logging.error('\t- {}'.format(re.sub('^mingw(32|64)-', '', alt_pkg)))
+      logging.error('Exiting without installing.')
       sys.exit(os.EX_NOINPUT)
     dependencies = _checkPackageRequirements(package, allPackageNames)
     if withDependencies and len(dependencies) > 0:
