@@ -668,12 +668,18 @@ if __name__ == "__main__":
     sys.exit(os.EX_CANTCREAT)
 
   extracted_prefix = GetBaseDirectory(options.project)
+  sys.stdout.write('Installing...\n')
+  sys.stdout.flush()
   move_files(extracted_prefix, prefix)
-  logging.warning ('Fixing symlinks')
+  sys.stdout.write('Fixing symlinks...\n')
   sys.stdout.flush()
   for package in packages:
       fix_package_symlinks (package, options)
+  sys.stdout.write('Make binaries executable...\n')
+  sys.stdout.flush()
   SetExecutableBit()
+  sys.stdout.write('All installations done!\n')
+  sys.stdout.flush()
 
   if options.metadata:
     cleanup = lambda n: re.sub('^mingw(?:32|64)-(.*)', '\\1', re.sub('^mingw(?:32|64)[(](.*)[)]', '\\1', n))
