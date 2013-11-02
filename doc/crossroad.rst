@@ -414,14 +414,18 @@ And these will be in $XDG_CONFIG_HOME/crossroad/
 Cache is saved in $XDG_CACHE_HOME/crossroad/ and cross-compiled data in
 $XDG_DATA_HOME/crossroad/.
 
-The only configuration right now is that in case you use a
+One of the only configuration right now is that in case you use a
 self-installed MinGW-w64 prefix of Windows libraries, if they are not in
 the same prefix as the MinGW-64 executables you run, you can set
-$CROSSROAD_CUSTOM_MINGW_W32_PREFIX and $CROSSROAD_CUSTOM_MINGW_W64_PREFIX
-respectively for your 32-bit and 64-bit installation of MinGW-w64.
-Normally you will not need these. In most usual installation of
-MinGW-w64, `crossroad` should be able to find your Windows libraries
-prefix.
+`$CROSSROAD_CUSTOM_MINGW_W32_PREFIX` and
+`$CROSSROAD_CUSTOM_MINGW_W64_PREFIX` respectively for your 32-bit and
+64-bit installation of MinGW-w64.  Normally you will not need these. In
+most usual installation of MinGW-w64, `crossroad` should be able to
+find your Windows libraries prefix.
+
+Also if the environment variable `$CROSSROAD_PS1` is set, it will be
+used as your new prompt, instead of constructing a new prompt from the
+currently set one.
 
 Contributing
 ============
