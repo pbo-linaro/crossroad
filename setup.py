@@ -257,7 +257,10 @@ setup(
         ('share/crossroad/scripts/', ['scripts/crossroad-mingw-install.py', 'scripts/config.guess',
                                       'build/share/crossroad/scripts/in-crossroad.py',
                                       'build/share/crossroad/scripts/environment-32.sh',
-                                      'build/share/crossroad/scripts/environment-64.sh'
+                                      'build/share/crossroad/scripts/environment-64.sh',
+                                      'scripts/pre-bash-env.sh',
+                                      'scripts/pre-zsh-env.sh',
+                                      'scripts/post-env.sh'
                                       ]),
         ('share/crossroad/scripts/bash', bash_env),
         ('share/crossroad/scripts/zsh.w32', ['build/share/crossroad/scripts/zsh.w32/.zshenv',

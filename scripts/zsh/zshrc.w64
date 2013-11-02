@@ -31,4 +31,6 @@ export CROSSROAD_PLATFORM_NICENAME="Windows 64-bit"
 export CROSSROAD_HOST=x86_64-w64-mingw32
 export CROSSROAD_PLATFORM=w64
 
+source @DATADIR@/share/crossroad/scripts/pre-zsh-env.sh
 source @DATADIR@/share/crossroad/scripts/environment-64.sh
+source @DATADIR@/share/crossroad/scripts/post-env.sh

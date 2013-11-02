@@ -16,21 +16,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with crossroad.  If not, see <http://www.gnu.org/licenses/>.
 
-TEST_ZDOTDIR=$HOME
-if [ x"$CROSSROAD_OLD_ZDOTDIR"x != "xx" ]; then
-    TEST_ZDOTDIR=$CROSSROAD_OLD_ZDOTDIR
-    export ZDOTDIR=$CROSSROAD_OLD_ZDOTDIR
-    unset CROSSROAD_OLD_ZDOTDIR
-fi
-
-if [ -f "$TEST_ZDOTDIR/.zshrc" ]; then
-    . $TEST_ZDOTDIR/.zshrc
-fi
-
-export CROSSROAD_PLATFORM_NICENAME="Windows 32-bit"
-export CROSSROAD_HOST=i686-w64-mingw32
-export CROSSROAD_PLATFORM=w32
-
-source @DATADIR@/share/crossroad/scripts/pre-zsh-env.sh
-source @DATADIR@/share/crossroad/scripts/environment-32.sh
-source @DATADIR@/share/crossroad/scripts/post-env.sh
+autoload -U colors && colors
+RED="%{$fg[red]%}"
+NORMAL="%{$reset_color%}"

@@ -16,21 +16,21 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with crossroad.  If not, see <http://www.gnu.org/licenses/>.
 
-TEST_ZDOTDIR=$HOME
-if [ x"$CROSSROAD_OLD_ZDOTDIR"x != "xx" ]; then
-    TEST_ZDOTDIR=$CROSSROAD_OLD_ZDOTDIR
-    export ZDOTDIR=$CROSSROAD_OLD_ZDOTDIR
-    unset CROSSROAD_OLD_ZDOTDIR
+
+# CHANGE the prompt to show you are in cross-comp env.
+if [ x"$(locale charmap)"x = "xUTF-8x" ]; then
+    SYMBOL="✘"
+else
+    SYMBOL="*"
+fi;
+
+# Leave the user override the default crossroads PS1.
+if [ "x${CROSSROADS_PS1}x" = "xx" ]; then
+    export PS1="${RED}${CROSSROAD_PLATFORM}${SYMBOL}${NORMAL} ${PS1}"
+else
+    export PS1="${CROSSROADS_PS1}"
 fi
 
-if [ -f "$TEST_ZDOTDIR/.zshrc" ]; then
-    . $TEST_ZDOTDIR/.zshrc
-fi
-
-export CROSSROAD_PLATFORM_NICENAME="Windows 32-bit"
-export CROSSROAD_HOST=i686-w64-mingw32
-export CROSSROAD_PLATFORM=w32
-
-source @DATADIR@/share/crossroad/scripts/pre-zsh-env.sh
-source @DATADIR@/share/crossroad/scripts/environment-32.sh
-source @DATADIR@/share/crossroad/scripts/post-env.sh
+echo "Your environment has been set to cross-compile for the '$CROSSROAD_PLATFORM_NICENAME' ($CROSSROAD_PLATFORM) environment."
+echo 'Use `crossroad help` to list available commands and `man crossroad` to get a full documentation of crossroad capabilities.'
+echo "To exit this cross-compilation environment, simply \`exit\` the current shell session."

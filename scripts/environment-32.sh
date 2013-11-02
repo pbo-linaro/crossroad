@@ -134,23 +134,3 @@ for dir in $(find $CROSSROAD_PREFIX/lib/ -name 'python*');
 do
     export PYTHONPATH=:${dir}:$PYTHONPATH
 done;
-
-# CHANGE the prompt to show you are in cross-comp env.
-RED=$'\e[0;31m'
-NORMAL=$'\e[0m'
-if [ x"$(locale charmap)"x = "xUTF-8x" ]; then
-    SYMBOL="✘"
-else
-    SYMBOL="*"
-fi;
-
-# Leave the user override the default crossroads PS1.
-if [ "x${CROSSROADS_PS1}x" = "xx" ]; then
-    export PS1="${RED}${CROSSROAD_PLATFORM}${SYMBOL}${NORMAL} ${PS1}"
-else
-    export PS1="${CROSSROADS_PS1}"
-fi
-
-echo "Your environment has been set to cross-compile for the '$CROSSROAD_PLATFORM_NICENAME' ($CROSSROAD_PLATFORM) environment."
-echo 'Use `crossroad help` to list available commands and `man crossroad` to get a full documentation of crossroad capabilities.'
-echo "To exit this cross-compilation environment, simply \`exit\` the current shell session."
