@@ -34,7 +34,7 @@ unset SCRIPT_DIR
 # The default -I list of directories.
 export CPATH="$CROSSROAD_PREFIX/include"
 # The default -L list of directories.
-export LIBRARY_PATH="$CROSSROAD_PREFIX/lib"
+export CROSSROAD_LDFLAGS=" -L$CROSSROAD_PREFIX/lib "
 
 if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX" ]; then
     if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/include" ]; then
@@ -42,11 +42,11 @@ if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX" ]; then
     fi
     if [ -n "$CROSSROAD_WORD_SIZE" ]; then
         if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib$CROSSROAD_WORD_SIZE" ]; then
-            export LIBRARY_PATH="$LIBRARY_PATH:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib$CROSSROAD_WORD_SIZE"
+            export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib$CROSSROAD_WORD_SIZE "
         fi
     fi
     if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib" ]; then
-        export LIBRARY_PATH="$LIBRARY_PATH:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib"
+        export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib "
     fi
 fi
 
@@ -56,11 +56,11 @@ if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX" ]; then
     fi
     if [ -n "$CROSSROAD_WORD_SIZE" ]; then
         if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX/lib$CROSSROAD_WORD_SIZE" ]; then
-            export LIBRARY_PATH="$LIBRARY_PATH:$CROSSROAD_GUESSED_MINGW_PREFIX/lib$CROSSROAD_WORD_SIZE"
+            export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L$CROSSROAD_GUESSED_MINGW_PREFIX/lib$CROSSROAD_WORD_SIZE "
         fi
     fi
     if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX/lib" ]; then
-        export LIBRARY_PATH="$LIBRARY_PATH:$CROSSROAD_GUESSED_MINGW_PREFIX/lib"
+        export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L'$CROSSROAD_GUESSED_MINGW_PREFIX/lib' "
     fi
 fi
 
@@ -74,18 +74,17 @@ fi
 
 if [ -n "$CROSSROAD_WORD_SIZE" ]; then
     if [ -d "/usr/local/$CROSSROAD_HOST/lib$CROSSROAD_WORD_SIZE" ]; then
-        export LIBRARY_PATH="$LIBRARY_PATH:/usr/local/$CROSSROAD_HOST/lib$CROSSROAD_WORD_SIZE"
+        export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L/usr/local/$CROSSROAD_HOST/lib$CROSSROAD_WORD_SIZE "
     fi
     if [ -d "/usr/$CROSSROAD_HOST/lib$CROSSROAD_WORD_SIZE" ]; then
-        export LIBRARY_PATH="$LIBRARY_PATH:/usr/$CROSSROAD_HOST/lib$CROSSROAD_WORD_SIZE"
+        export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L/usr/$CROSSROAD_HOST/lib$CROSSROAD_WORD_SIZE "
     fi
 fi
 if [ -d "/usr/local/$CROSSROAD_HOST/lib" ]; then
-    export LIBRARY_PATH="$LIBRARY_PATH:/usr/local/$CROSSROAD_HOST/lib"
+    export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L/usr/local/$CROSSROAD_HOST/lib "
 fi
 if [ -d "/usr/$CROSSROAD_HOST/lib" ]; then
-    export LIBRARY_PATH="$LIBRARY_PATH:/usr/$CROSSROAD_HOST/lib"
+    export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L/usr/$CROSSROAD_HOST/lib "
 fi
 
-#/usr/bin/${CROSSROAD_HOST}-gcc "$@"
-`which -a ${CROSSROAD_HOST}-gcc | grep -v $0 |head -n 1` "$@"
+`which -a ${CROSSROAD_HOST}-gcc | grep -v $0 |head -n 1` "$@" $CROSSROAD_LDFLAGS
