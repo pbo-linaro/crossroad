@@ -245,6 +245,14 @@ class my_install_data(distutils.command.install_data.install_data):
         except OSError:
             pass
         try:
+            os.unlink(os.path.join(datadir, 'share/crossroad/bin/x86_64-w64-mingw32-g++'))
+        except OSError:
+            pass
+        try:
+            os.unlink(os.path.join(datadir, 'share/crossroad/bin/i686-w64-mingw32-g++'))
+        except OSError:
+            pass
+        try:
             os.unlink(os.path.join(datadir, 'share/crossroad/bin/x86_64-w64-mingw32-cpp'))
         except OSError:
             pass
@@ -260,6 +268,10 @@ class my_install_data(distutils.command.install_data.install_data):
                    os.path.join(datadir, 'share/crossroad/bin/x86_64-w64-mingw32-gcc'))
         os.symlink(os.path.join(datadir, 'share/crossroad/scripts/crossroad-gcc'),
                    os.path.join(datadir, 'share/crossroad/bin/i686-w64-mingw32-gcc'))
+        os.symlink(os.path.join(datadir, 'share/crossroad/scripts/crossroad-gcc'),
+                   os.path.join(datadir, 'share/crossroad/bin/x86_64-w64-mingw32-g++'))
+        os.symlink(os.path.join(datadir, 'share/crossroad/scripts/crossroad-gcc'),
+                   os.path.join(datadir, 'share/crossroad/bin/i686-w64-mingw32-g++'))
         os.symlink(os.path.join(datadir, 'share/crossroad/scripts/crossroad-cpp'),
                    os.path.join(datadir, 'share/crossroad/bin/x86_64-w64-mingw32-cpp'))
         os.symlink(os.path.join(datadir, 'share/crossroad/scripts/crossroad-cpp'),
