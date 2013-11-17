@@ -369,14 +369,19 @@ if __name__ == "__main__":
             sys.exit(os.EX_SOFTWARE)
 
         env_path = os.path.join(xdg_data_home, 'crossroad/roads', available_platforms[args[0]].name)
-        try:
-            os.makedirs(env_path, exist_ok = True)
-        except PermissionError:
-            sys.stderr.write('"{}" cannot be created. Please verify your permissions. Aborting.\n'.format(env_path))
-            sys.exit(os.EX_CANTCREAT)
-        except NotADirectoryError:
-            sys.stderr.write('"{}" exists but is not a directory. Aborting.\n'.format(env_path))
-            sys.exit(os.EX_CANTCREAT)
+        if not os.path.exists(env_path):
+            try:
+                os.makedirs(env_path, exist_ok = True)
+            except PermissionError:
+                sys.stderr.write('"{}" cannot be created. Please verify your permissions. Aborting.\n'.format(env_path))
+                sys.exit(os.EX_CANTCREAT)
+            except NotADirectoryError:
+                sys.stderr.write('"{}" exists but is not a directory. Aborting.\n'.format(env_path))
+                sys.exit(os.EX_CANTCREAT)
+
+            if not available_platforms[args[0]].prepare(env_path):
+                sys.stderr.write('Crossroad failed to prepare the environment for "{}".\n{}'.format(available_platforms[args[0]].name))
+                sys.exit(os.EX_CANTCREAT)
 
         print('\033[1;35mYou are now at the crossroads...\033[0m\n')
         shell_proc = subprocess.Popen(command, shell = False, env = environ)

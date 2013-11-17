@@ -24,7 +24,8 @@ Setups a cross-compilation environment for Microsoft Windows operating systems (
 # Require python 3.3 for shutil.which
 import shutil
 import subprocess
-import os
+import glob
+import os.path
 import sys
 
 install_datadir = os.path.join(os.path.abspath('@DATADIR@'), 'share')
@@ -89,8 +90,28 @@ def language_list():
             installed_languages.append(name)
     return (installed_languages, uninstalled_languages)
 
-def prepare():
-    pass
+def prepare(prefix):
+    '''
+    Prepare the environment.
+    Note that copying these libs is unnecessary for building, since the
+    system can find these at build time. But when moving the prefix to a
+    Windows machine, if ever we linked against these dll and they are
+    absent, the executable won't run.
+    '''
+    try:
+        env_bin = os.path.join(prefix, 'bin')
+        os.makedirs(env_bin, exist_ok = True)
+    except PermissionError:
+        sys.stderr.write('"{}" cannot be created. Please verify your permissions. Aborting.\n'.format(env_path))
+        return False
+    gcc_libs = subprocess.check_output(['i686-w64-mingw32-gcc', '-print-file-name='], universal_newlines=True)
+    for dll in glob.glob(gcc_libs.strip() + '/*.dll'):
+        try:
+            os.symlink(dll, os.path.join(os.path.join(env_bin, os.path.basename(dll))))
+        except OSError:
+            # A failed symlink is not necessarily a no-go. Let's just output a warning.
+            sys.stderr.write('Warning: crossroad failed to symlink {} in {}.\n'.format(dll, env_bin))
+    return True
 
 def crossroad_install(*packages:list, src:bool = False):
     '''
