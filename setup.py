@@ -215,6 +215,55 @@ class my_install_data(distutils.command.install_data.install_data):
                               stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
                               stat.S_IRGRP | stat.S_IXGRP |
                               stat.S_IROTH | stat.S_IXOTH)
+        os.chmod(os.path.join(datadir, 'share/crossroad/scripts/crossroad-gcc'),
+                              stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
+                              stat.S_IRGRP | stat.S_IXGRP |
+                              stat.S_IROTH | stat.S_IXOTH)
+        os.chmod(os.path.join(datadir, 'share/crossroad/scripts/crossroad-cpp'),
+                              stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
+                              stat.S_IRGRP | stat.S_IXGRP |
+                              stat.S_IROTH | stat.S_IXOTH)
+        os.chmod(os.path.join(datadir, 'share/crossroad/scripts/crossroad-pkg-config'),
+                              stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
+                              stat.S_IRGRP | stat.S_IXGRP |
+                              stat.S_IROTH | stat.S_IXOTH)
+        os.makedirs(os.path.join(datadir, 'share/crossroad/bin/'), exist_ok=True)
+        try:
+            os.unlink(os.path.join(datadir, 'share/crossroad/bin/x86_64-w64-mingw32-pkg-config'))
+        except OSError:
+            pass
+        try:
+            os.unlink(os.path.join(datadir, 'share/crossroad/bin/i686-w64-mingw32-pkg-config'))
+        except OSError:
+            pass
+        try:
+            os.unlink(os.path.join(datadir, 'share/crossroad/bin/x86_64-w64-mingw32-gcc'))
+        except OSError:
+            pass
+        try:
+            os.unlink(os.path.join(datadir, 'share/crossroad/bin/i686-w64-mingw32-gcc'))
+        except OSError:
+            pass
+        try:
+            os.unlink(os.path.join(datadir, 'share/crossroad/bin/x86_64-w64-mingw32-cpp'))
+        except OSError:
+            pass
+        try:
+            os.unlink(os.path.join(datadir, 'share/crossroad/bin/i686-w64-mingw32-cpp'))
+        except OSError:
+            pass
+        os.symlink(os.path.join(datadir, 'share/crossroad/scripts/crossroad-pkg-config'),
+                   os.path.join(datadir, 'share/crossroad/bin/x86_64-w64-mingw32-pkg-config'))
+        os.symlink(os.path.join(datadir, 'share/crossroad/scripts/crossroad-pkg-config'),
+                   os.path.join(datadir, 'share/crossroad/bin/i686-w64-mingw32-pkg-config'))
+        os.symlink(os.path.join(datadir, 'share/crossroad/scripts/crossroad-gcc'),
+                   os.path.join(datadir, 'share/crossroad/bin/x86_64-w64-mingw32-gcc'))
+        os.symlink(os.path.join(datadir, 'share/crossroad/scripts/crossroad-gcc'),
+                   os.path.join(datadir, 'share/crossroad/bin/i686-w64-mingw32-gcc'))
+        os.symlink(os.path.join(datadir, 'share/crossroad/scripts/crossroad-cpp'),
+                   os.path.join(datadir, 'share/crossroad/bin/x86_64-w64-mingw32-cpp'))
+        os.symlink(os.path.join(datadir, 'share/crossroad/scripts/crossroad-cpp'),
+                   os.path.join(datadir, 'share/crossroad/bin/i686-w64-mingw32-cpp'))
 
 class my_install_scripts(distutils.command.install_scripts.install_scripts):
     '''
@@ -260,7 +309,9 @@ setup(
                                       'build/share/crossroad/scripts/environment-64.sh',
                                       'scripts/pre-bash-env.sh',
                                       'scripts/pre-zsh-env.sh',
-                                      'scripts/post-env.sh'
+                                      'scripts/post-env.sh',
+                                      'scripts/crossroad-gcc', 'scripts/crossroad-pkg-config',
+                                      'scripts/crossroad-cpp',
                                       ]),
         ('share/crossroad/scripts/bash', bash_env),
         ('share/crossroad/scripts/zsh.w32', ['build/share/crossroad/scripts/zsh.w32/.zshenv',

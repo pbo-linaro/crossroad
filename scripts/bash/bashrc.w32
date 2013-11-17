@@ -27,6 +27,7 @@ fi
 export CROSSROAD_PLATFORM_NICENAME="Windows 32-bit"
 export CROSSROAD_HOST=i686-w64-mingw32
 export CROSSROAD_PLATFORM=w32
+export CROSSROAD_WORD_SIZE=32
 
 source @DATADIR@/share/crossroad/scripts/pre-bash-env.sh
 source @DATADIR@/share/crossroad/scripts/environment-32.sh

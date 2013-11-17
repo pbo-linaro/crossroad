@@ -1,0 +1,91 @@
+#!/bin/sh
+#
+# This file is part of crossroad.
+# Copyright (C) 2013 Jehan <jehan at girinstud.io>
+#
+# crossroad is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# crossroad is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with crossroad.  If not, see <http://www.gnu.org/licenses/>.
+
+# In the particular where ccache is the next script with the same name,
+# we would end up in an infinite loop (we call ccache, ccache calls us,
+# and so on). To prevent this, I make sure that ccache won't call us back.
+SCRIPT_DIR="`dirname $0`"
+if [ -z "$CCACHE_PATH" ]; then
+    CCACHE_PATH="$PATH"
+fi
+# TODO: there is a bug in this approach. sed assumes that $SCRIPT_DIR is a regexp.
+# Of course in most case, a path prefix would not have any special character,
+# so it should not be much a problem (and the chosen delimiter "%" as well is unlikely
+# present in a path). But there is still potential for failure.
+# If there was a small script doing basic search and replace, it would be much better.
+export CCACHE_PATH=`echo $CCACHE_PATH | sed -e "s%${SCRIPT_DIR}/\?:\?%%"`
+unset SCRIPT_DIR
+
+# The default -I list of directories.
+export CPATH="$CROSSROAD_PREFIX/include"
+# The default -L list of directories.
+export LIBRARY_PATH="$CROSSROAD_PREFIX/lib"
+
+if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX" ]; then
+    if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/include" ]; then
+        export CPATH="$CPATH:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/include/"
+    fi
+    if [ -n "$CROSSROAD_WORD_SIZE" ]; then
+        if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib$CROSSROAD_WORD_SIZE" ]; then
+            export LIBRARY_PATH="$LIBRARY_PATH:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib$CROSSROAD_WORD_SIZE"
+        fi
+    fi
+    if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib" ]; then
+        export LIBRARY_PATH="$LIBRARY_PATH:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib"
+    fi
+fi
+
+if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX" ]; then
+    if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX/include" ]; then
+        export CPATH="$CPATH:$CROSSROAD_GUESSED_MINGW_PREFIX/include/"
+    fi
+    if [ -n "$CROSSROAD_WORD_SIZE" ]; then
+        if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX/lib$CROSSROAD_WORD_SIZE" ]; then
+            export LIBRARY_PATH="$LIBRARY_PATH:$CROSSROAD_GUESSED_MINGW_PREFIX/lib$CROSSROAD_WORD_SIZE"
+        fi
+    fi
+    if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX/lib" ]; then
+        export LIBRARY_PATH="$LIBRARY_PATH:$CROSSROAD_GUESSED_MINGW_PREFIX/lib"
+    fi
+fi
+
+# Adding some user-installed or common distribution prefixes.
+if [ -d "/usr/local/$CROSSROAD_HOST/include" ]; then
+    export CPATH="$CPATH:/usr/local/$CROSSROAD_HOST/include/"
+fi
+if [ -d "/usr/$CROSSROAD_HOST/include" ]; then
+    export CPATH="$CPATH:/usr/$CROSSROAD_HOST/include/"
+fi
+
+if [ -n "$CROSSROAD_WORD_SIZE" ]; then
+    if [ -d "/usr/local/$CROSSROAD_HOST/lib$CROSSROAD_WORD_SIZE" ]; then
+        export LIBRARY_PATH="$LIBRARY_PATH:/usr/local/$CROSSROAD_HOST/lib$CROSSROAD_WORD_SIZE"
+    fi
+    if [ -d "/usr/$CROSSROAD_HOST/lib$CROSSROAD_WORD_SIZE" ]; then
+        export LIBRARY_PATH="$LIBRARY_PATH:/usr/$CROSSROAD_HOST/lib$CROSSROAD_WORD_SIZE"
+    fi
+fi
+if [ -d "/usr/local/$CROSSROAD_HOST/lib" ]; then
+    export LIBRARY_PATH="$LIBRARY_PATH:/usr/local/$CROSSROAD_HOST/lib"
+fi
+if [ -d "/usr/$CROSSROAD_HOST/lib" ]; then
+    export LIBRARY_PATH="$LIBRARY_PATH:/usr/$CROSSROAD_HOST/lib"
+fi
+
+#/usr/bin/${CROSSROAD_HOST}-gcc "$@"
+`which -a ${CROSSROAD_HOST}-gcc | grep -v $0 |head -n 1` "$@"

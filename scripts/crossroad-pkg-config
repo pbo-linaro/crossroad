@@ -1,0 +1,49 @@
+#!/bin/sh
+#
+# This file is part of crossroad.
+# Copyright (C) 2013 Jehan <jehan at girinstud.io>
+#
+# crossroad is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# crossroad is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with crossroad.  If not, see <http://www.gnu.org/licenses/>.
+
+# Reset pkg-config to search *ONLY* libraries compiled for the cross-compiled platform target.
+export PKG_CONFIG_LIBDIR=
+export PKG_CONFIG_PATH=$CROSSROAD_PREFIX/lib64/pkgconfig:$CROSSROAD_PREFIX/share/pkgconfig:$CROSSROAD_PREFIX/lib/pkgconfig
+
+# Some MinGW-w64 specific paths.
+if [ "$CROSSROAD_HOST" = "x86_64-w64-mingw32" ]; then
+    if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX" ]; then
+        export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib64/pkconfig:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib/pkconfig"
+    fi
+    if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX" ]; then
+        export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$CROSSROAD_GUESSED_MINGW_PREFIX/lib64/pkconfig:$CROSSROAD_GUESSED_MINGW_PREFIX/lib/pkconfig"
+    fi
+elif [ "$CROSSROAD_HOST" = "i686-w64-mingw32" ]; then
+    if [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX" ]; then
+        export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib32/pkconfig:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib/pkconfig"
+    fi
+    if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX" ]; then
+        export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$CROSSROAD_GUESSED_MINGW_PREFIX/lib32/pkconfig:$CROSSROAD_GUESSED_MINGW_PREFIX/lib/pkconfig"
+    fi
+fi
+
+# Some common system paths.
+if [ -n "$CROSSROAD_WORD_SIZE" ]; then
+    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/local/$CROSSROAD_HOST/lib${CROSSROAD_WORD_SIZE}/pkconfig"
+    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/$CROSSROAD_HOST/lib${CROSSROAD_WORD_SIZE}/pkconfig"
+fi
+export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/local/$CROSSROAD_HOST/lib/pkconfig"
+export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/$CROSSROAD_HOST/lib/pkconfig"
+#export PKG_CONFIG_SYSROOT_DIR="$CROSSROAD_PREFIX"
+
+pkg-config "$@"

@@ -1,4 +1,8 @@
-include src/*.py scripts/*.py scripts/config.guess platforms/*.py
+include src/*.py platforms/*.py
 include scripts/environment*sh scripts/bash/bashrc.* scripts/zsh/zsh*
+include scripts/*.py scripts/*.sh
+include scripts/config.guess scripts/crossroad-gcc scripts/crossroad-pkg-config scripts/crossroad-cpp
+include scripts/bash/bashrc.*
+include scripts/zsh/zsh*
 include scripts/cmake/*.cmake
 include README README.rst COPYING doc/*.rst

@@ -1,0 +1,41 @@
+#!/bin/sh
+#
+# This file is part of crossroad.
+# Copyright (C) 2013 Jehan <jehan at girinstud.io>
+#
+# crossroad is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# crossroad is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with crossroad.  If not, see <http://www.gnu.org/licenses/>.
+
+# The default -I list of directories.
+export CPATH="$CROSSROAD_PREFIX/include"
+if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX" ]; then
+    if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/include" ]; then
+        export CPATH="$CPATH:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/include/"
+    fi
+fi
+
+if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX" ]; then
+    if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX/include" ]; then
+        export CPATH="$CPATH:$CROSSROAD_GUESSED_MINGW_PREFIX/include/"
+    fi
+fi
+
+# Adding some user-installed or common distribution prefixes.
+if [ -d "/usr/local/$CROSSROAD_HOST/include" ]; then
+    export CPATH="$CPATH:/usr/local/$CROSSROAD_HOST/include/"
+fi
+if [ -d "/usr/$CROSSROAD_HOST/include" ]; then
+    export CPATH="$CPATH:/usr/$CROSSROAD_HOST/include/"
+fi
+
+`which -a ${CROSSROAD_HOST}-cpp | grep -v $0 |head -n 1` "$@"

@@ -49,18 +49,6 @@ export CROSSROAD_PREFIX="`crossroad -p $CROSSROAD_PLATFORM`"
 # Internal usage.
 export CROSSROAD_ROAD="${CROSSROAD_PLATFORM}"
 
-# Reset pkg-config to search *ONLY* libraries compiled for the cross-compiled platform target.
-export PKG_CONFIG_LIBDIR=
-export PKG_CONFIG_PATH=$CROSSROAD_PREFIX/lib/pkgconfig:$CROSSROAD_PREFIX/share/pkgconfig
-if [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX" ]; then
-    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib32/pkconfig:$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib/pkconfig"
-fi
-if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX" ]; then
-    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$CROSSROAD_GUESSED_MINGW_PREFIX/lib32/pkconfig:$CROSSROAD_GUESSED_MINGW_PREFIX/lib/pkconfig"
-fi
-export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/local/$CROSSROAD_HOST/lib/pkconfig
-export PKG_CONFIG_PATH=$PKG_CONFIG_PATH:/usr/$CROSSROAD_HOST/lib/pkconfig
-
 export LD_LIBRARY_PATH=$CROSSROAD_PREFIX/lib
 if [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX" ]; then
     export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib32/:$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib/"
@@ -75,59 +63,14 @@ export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/local/$CROSSROAD_HOST/lib/
 export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/$CROSSROAD_HOST/lib/
 
 mkdir -p $CROSSROAD_PREFIX/bin
-export PATH="$CROSSROAD_PREFIX/bin:$PATH"
+export PATH="@DATADIR@/share/crossroad/bin:$CROSSROAD_PREFIX/bin:$PATH"
 
 # no such file or directory error on non-existing aclocal.
 mkdir -p $CROSSROAD_PREFIX/share/aclocal
 export ACLOCAL_FLAGS="-I $CROSSROAD_PREFIX/share/aclocal"
 # no such file or directory warning on non-existing include.
 mkdir -p $CROSSROAD_PREFIX/include
-export CFLAGS="-I$CROSSROAD_PREFIX/include"
 mkdir -p $CROSSROAD_PREFIX/lib
-export LDFLAGS="-L$CROSSROAD_PREFIX/lib"
-
-# Very important! The default -I list of directories when none is specified!
-export CPATH="$CROSSROAD_PREFIX/include"
-
-if [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX" ]; then
-    if [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/include" ]; then
-        export CFLAGS="$CFLAGS -I$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/include/"
-        export CPATH="$CPATH:$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/include/"
-    fi
-    if [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib32" ]; then
-        export LDFLAGS="$LDFLAGS -L$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib32"
-    fi
-    if [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib" ]; then
-        export LDFLAGS="$LDFLAGS -L$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib"
-    fi
-fi
-if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX" ]; then
-    if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX/include" ]; then
-        export CFLAGS="$CFLAGS -I$CROSSROAD_GUESSED_MINGW_PREFIX/include/"
-        export CPATH="$CPATH:$CROSSROAD_GUESSED_MINGW_PREFIX/include/"
-    fi
-    if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX/lib32" ]; then
-        export LDFLAGS="$LDFLAGS -L$CROSSROAD_GUESSED_MINGW_PREFIX/lib32"
-    fi
-    if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX/lib" ]; then
-        export LDFLAGS="$LDFLAGS -L$CROSSROAD_GUESSED_MINGW_PREFIX/lib"
-    fi
-fi
-# Adding some user-installed or distribution common installation path.
-if [ -d "/usr/local/$CROSSROAD_HOST/include" ]; then
-    export CFLAGS="$CFLAGS -I/usr/local/$CROSSROAD_HOST/include/"
-    export CPATH="$CPATH:/usr/local/$CROSSROAD_HOST/include/"
-fi
-if [ -d "/usr/$CROSSROAD_HOST/include" ]; then
-    export CFLAGS="$CFLAGS -I/usr/$CROSSROAD_HOST/include/"
-    export CPATH="$CPATH:/usr/$CROSSROAD_HOST/include/"
-fi
-if [ -d "/usr/local/$CROSSROAD_HOST/lib" ]; then
-    export LDFLAGS="$LDFLAGS -L/usr/local/$CROSSROAD_HOST/lib"
-fi
-if [ -d "/usr/$CROSSROAD_HOST/lib" ]; then
-    export LDFLAGS="$LDFLAGS -L/usr/$CROSSROAD_HOST/lib"
-fi
 
 # So that the system-wide python can still find any locale lib.
 for dir in $(find $CROSSROAD_PREFIX/lib/ -name 'python*');
