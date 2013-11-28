@@ -441,11 +441,23 @@ def SetExecutableBit():
     bin_dir = os.path.join(prefix, 'bin')
     if os.path.isdir(bin_dir):
         for f in os.listdir(bin_dir):
-            os.chmod(os.path.join(bin_dir, f), 0o755)
+            # Make sure I chmod only binary in prefix/ and not linked from elsewhere
+            # because I have only control on prefix for sure.
+            fullpath = os.path.join(bin_dir, f)
+            if os.path.islink (fullpath):
+                link_path = os.path.abspath (os.readlink (fullpath))
+                if link_path.find (os.path.abspath (prefix)) != 0:
+                    continue
+            os.chmod(fullpath, 0o755)
     # set executable bit on libraries and executables whatever the path.
     for root, dirs, files in os.walk(prefix):
         for filename in {f for f in files if f.endswith('.dll') or f.endswith('.exe')} | set(dirs):
-            os.chmod(os.path.join(root, filename), 0o755)
+            fullpath = os.path.join(root, filename)
+            if os.path.islink (fullpath):
+                link_path = os.path.abspath (os.readlink (fullpath))
+                if link_path.find (os.path.abspath (prefix)) != 0:
+                    continue
+            os.chmod(fullpath, 0o755)
 
 def GetOptions():
   from optparse import OptionParser, OptionGroup #3.2: use argparse
