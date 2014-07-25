@@ -1,0 +1,47 @@
+Release procedure
+=================
+
+* Create a dist file:
+
+    $ ./setup.py sdist
+
+* Install the dist file. Let's suppose current version is 0.4.4:
+
+    $ cd dist
+    $ tar xzf crossroad-0.4.4.tar.gz
+    $ cd crossroad-0.4.4
+    $ ./setup.py build
+    $ ./setup.py install --prefix=/home/jehan/.local
+
+* Test it. If it does not well, fix the repository and go back to the
+first step.
+
+* Update `version` variable in setup.py.
+The versionning scheme used would be the typical X.Y.Z (also called
+semantic versionning by some people: http://semver.org/), though
+I may be lax on this scheme until 1.0.
+
+* Commit the version bump:
+
+    $ git commit setup.py
+
+* Tag the commit. Add a list of the main changes in the tag message:
+
+    $ git tag -a v0.5
+    # note: replace 0.5 with actual version.
+
+* Push the tag:
+
+    $ git push origin v0.5
+
+* Upload to pypi by running:
+
+    $ ./setup.py sdist upload
+* Check that the upload worked:
+
+    https://pypi.python.org/pypi/crossroad/
+
+* Install crossroad from pypi and ensure everything worked out fine:
+
+    $ sudo pip3 install --upgrade crossroad
+
