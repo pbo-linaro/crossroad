@@ -13,8 +13,10 @@ Release procedure
     $ ./setup.py build
     $ ./setup.py install --prefix=/home/jehan/.local
 
-* Test it. If it does not well, fix the repository and go back to the
-first step.
+* Test it. If it does not work well, fix the repository and go back to
+the first step.
+In particular, check that all the right scripts are there (else fix the
+setup.py and MANIFEST.in)
 
 * Update `version` variable in setup.py.
 The versionning scheme used would be the typical X.Y.Z (also called
