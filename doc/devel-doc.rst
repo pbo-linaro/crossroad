@@ -57,7 +57,13 @@ Then the `crossroad help search` output will be automatically generated this way
 3/ You may create any other internal variables and functions. As long as they don't start
 as "crossroad_", they will be hidden from the outside world.
 
-4/ Add scripts/bash/bashrc.${short_name} and scripts/zsh/zshrc.${short_name} for bash and zsh respectively.
+4/ If needed to support any of your additional platform-specific features,
+you can add more complex scripts under scripts/.
+To use them in your platform code, know that they will be available under:
+`@DATADIR@/share/crossroad/scripts`. `@DATADIR@` will be automatically changed
+into the actual datadir at install time, depending on your chosen prefix.
+
+5/ Add scripts/bash/bashrc.${short_name} and scripts/zsh/zshrc.${short_name} for bash and zsh respectively.
 These will be run each time you enter your environment, thus must set up basic information about it. These includes:
 - CROSSROAD_PLATFORM_NICENAME: as the name applies, some natural language name of the platform.
 - CROSSROAD_PLATFORM: the small name, usually same as ${short_name}.
@@ -65,9 +71,9 @@ These will be run each time you enter your environment, thus must set up basic i
 - CROSSROAD_WORD_SIZE: usually 32 or 64 (bit implied).
 Add and do anything else which is specific to the shell.
 
-5/ Add a scripts/cmake/toolchain-${short_name}.cmake file, which will be the cmake toolchain
+6/ Add a scripts/cmake/toolchain-${short_name}.cmake file, which will be the cmake toolchain
 for this environment. Check current platforms as example.
 There is nothing to add for autotools. Support is automatic.
 
-6/ Normally that's it. You should not have to update setup.py. You should still check that everyone works fine from there.
+7/ Normally that's it. You should not have to update setup.py. You should still check that everyone works fine from there.
 
