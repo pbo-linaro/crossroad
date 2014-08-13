@@ -562,6 +562,11 @@ if __name__ == "__main__":
         (real_name, file_list) = get_package_files (package, options)
         if file_list is None:
             sys.stderr.write('{} "{}" unknown.\n'.format(package_type, package))
+            alt_packages = search_packages(package, options.srcpkg)
+            if len(alt_packages) > 0:
+                logging.error('\tDid you mean:')
+                for alt_pkg in alt_packages:
+                    logging.error('\t- {}'.format(re.sub('^mingw(32|64)-', '', alt_pkg)))
         else:
             sys.stdout.write('{} "{}":\n'.format(package_type, real_name))
             for f in file_list:
