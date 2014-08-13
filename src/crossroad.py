@@ -252,10 +252,7 @@ if __name__ == "__main__":
             # I support only this for now.
             sys.stderr.write('Error: sorry, only zip format archives are supported for the time being.\n')
             sys.exit(os.EX_UNAVAILABLE)
-        if crossroad_road:
-            platforms = [crossroad_road]
-        else:
-            platforms = args
+        platforms = args
         if len(platforms) == 0:
             sys.stderr.write('You must name at least one platform to include in your archive.\n')
             sys.exit(os.EX_USAGE)
