@@ -613,19 +613,30 @@ if __name__ == "__main__":
         package_type = 'Source package'
     else:
         package_type = 'Package'
-    sys.stdout.write('Crossroad will uninstall the following packages: {}\nin'.format(" ".join(packages)))
-    for i in range(5, 0, -1):
-        sys.stdout.write(' {}'.format(i))
-        sys.stdout.flush()
-        time.sleep(1)
-    sys.stdout.write('...\nUninstalling...\n')
-    sys.stdout.flush()
+    file_lists = {}
     for package in packages:
         (real_name, file_list) = get_package_files (package, options)
         if file_list is None:
             sys.stderr.write('{} "{}" unknown.\n'.format(package_type, package))
+            alt_packages = search_packages(package, options.srcpkg)
+            if len(alt_packages) > 0:
+                logging.error('\tDid you mean:')
+                for alt_pkg in alt_packages:
+                    logging.error('\t- {}'.format(re.sub('^mingw(32|64)-', '', alt_pkg)))
         else:
-            sys.stdout.write('Deleting {} "{}"...\n'.format(package_type, real_name))
+            file_lists[package] = (real_name, file_list)
+    # Do we still have a positive number of packages?
+    if (len(file_lists) > 0):
+        sys.stdout.write('Crossroad will uninstall the following packages: {}\nin'.format(" ".join(file_lists)))
+        for i in range(5, 0, -1):
+            sys.stdout.write(' {}'.format(i))
+            sys.stdout.flush()
+            time.sleep(1)
+        sys.stdout.write('...\nUninstalling...\n')
+        sys.stdout.flush()
+        for package in file_lists:
+            (real_name, file_list) = file_lists[package]
+            sys.stdout.write('Deleting {} "{}"...\n'.format(package_type, package))
             sys.stdout.flush()
             for f in file_list:
                 if f['type'] == 'dir':
@@ -649,7 +660,10 @@ if __name__ == "__main__":
             for f in os.listdir(_extractedCacheDirectory):
                 if f[:len(real_name)] == real_name:
                     os.unlink(os.path.join(_extractedCacheDirectory, f))
-    sys.exit(os.EX_OK)
+        sys.exit(os.EX_OK)
+    else:
+        logging.error('Exiting without uninstalling.')
+        sys.exit(os.EX_NOINPUT)
 
   if options.clean:
     CleanExtracted()
