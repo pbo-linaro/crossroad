@@ -41,3 +41,16 @@ if [ X"`id -u`" = "X0" ]; then
     printf "then it is likely you are doing something wrong.\n"
     printf "This said, you are the boss. This warning will be the only one from crossroad.\033[00m\n"
 fi
+
+# Run a user script. We do it like this through an interactive shell,
+# because it allows us to stay in here if we want (basically allowing a
+# user to run a startup script, before working manually), and also
+# because otherwise some shell would not run their default startup script
+# (bash for instance would not run the specified bashrc), which breaks
+# some things for our environment.
+if [ "x${CROSSROAD_SCRIPT}x" != "xx" ]; then
+    . ${CROSSROAD_SCRIPT}
+    if [ "x${CROSSROAD_SCRIPT_EXIT}x" = "xyesx" ]; then
+        exit
+    fi
+fi

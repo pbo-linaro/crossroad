@@ -137,8 +137,8 @@ def load_platforms():
 version = '@VERSION@'
 maintainer = '<jehan at girinstud.io>'
 
-usage  = 'Usage: crossroad [<TARGET>] [--help] [--version] [--list-all] [--reset <TARGET 1> [<TARGET 2>...]]\n'
-usage += '                 [--symlink <TARGET> [<link-name>]] [--compress <archive.zip> <TARGET 1> [<TARGET 2>...]]'
+usage  = 'Usage: crossroad [<TARGET>] [--help] [--version] [--run=<script> [--no-exit-after-run]] [--reset <TARGET 1> [<TARGET 2>...]]\n'
+usage += '                 [--list-all] [--symlink <TARGET> [<link-name>]] [--compress=<archive.zip> <TARGET 1> [<TARGET 2>...]]'
 
 platform_list = "Available targets:\n"
 for name in available_platforms:
@@ -154,6 +154,12 @@ cmdline = optparse.OptionParser(usage,
         version="%prog, version " + version,
         description = "Set a cross-compilation environment for the target platform TARGET",
         conflict_handler="resolve")
+cmdline.add_option('-r', '--run',
+    help = 'Run the given shell script inside the cross-build environment.',
+    action = 'store', type="string", dest = 'script', default = None)
+cmdline.add_option('-n', '--no-exit-after-run',
+    help = "Do not exit the cross-build environment after running the script. Otherwise exit immediately and return the script's return value.",
+    action = 'store_true', dest = 'no_exit', default = False)
 cmdline.add_option('-l', '--list-all',
     help = 'list all known platforms',
     action = 'store_true', dest = 'list_all', default = False)
@@ -324,12 +330,26 @@ if __name__ == "__main__":
 
     if args[0] in available_platforms:
         shell = None
-        environ = None
+        environ = os.environ
         try:
+            # NOTE: $SHELL is usually the default shell of the user,
+            # not necessarilly the current shell. $0 would return the
+            # current shell. But is it really what we want?
             shell = os.environ['SHELL']
         except KeyError:
             shell = None
 
+        # Do we have a script to run?
+        if options.script is not None:
+            if not os.path.isfile(options.script):
+                sys.stderr.write('The script "{}" does not exist.\n'.format(options.script))
+                sys.exit(os.EX_NOINPUT)
+            environ['CROSSROAD_SCRIPT'] = os.path.abspath(options.script)
+            if not options.no_exit:
+                environ['CROSSROAD_SCRIPT_EXIT'] = 'yes'
+        elif options.no_exit:
+            sys.stderr.write('The --no-exit-after-run option is meaningless without --script being set. Exiting.')
+            sys.exit(os.EX_NOINPUT)
         if shell is None or (shell[-4:] != 'bash' and shell[-3:] != 'zsh'):
             sys.stderr.write("Warning: sorry, only bash and zsh are supported right now (detected by $SHELL environment variable).")
             shell = shutil.which('bash')
@@ -356,7 +376,6 @@ if __name__ == "__main__":
             # after the file ran. Modifying the $ZDOTDIR env is the only good way.
             # I don't forget also to run the original .zshenv and .zshrc.
             command = [shell]
-            environ = os.environ
             if 'ZDOTDIR' in environ:
                 environ['CROSSROAD_OLD_ZDOTDIR'] = environ['ZDOTDIR']
             environ['ZDOTDIR'] = zdotdir
