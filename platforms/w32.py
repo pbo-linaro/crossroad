@@ -74,7 +74,7 @@ def requires():
 
 def language_list():
     '''
-    Return a couple of (installed, uninstalled) language list.
+    Return a couple of (installed, uninstalled) language lists.
     '''
     uninstalled_languages = {}
     installed_languages = []
