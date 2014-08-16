@@ -122,16 +122,10 @@ def OpenRepository(repositoryLocation):
         try:
           os.makedirs(dir)
         except OSError: pass
-      # Cleaning old files first.
-      for f in os.listdir(_repositoryCacheDirectory):
-        if f[-14:] == '-filelists.xml' and f != os.path.splitext(os.path.basename(filelist_url))[0]:
-            os.unlink(os.path.join(_repositoryCacheDirectory, f))
-        if f[-12:] == '-primary.xml' and f != os.path.splitext(os.path.basename(primary_url))[0]:
-            os.unlink(os.path.join(_repositoryCacheDirectory, f))
       # Download repository metadata (only if not already in cache)
       primary_filename = os.path.join(_repositoryCacheDirectory, os.path.splitext(os.path.basename(primary_url))[0])
       if not os.path.exists(primary_filename):
-        logging.warning('Dowloading repository data')
+        logging.warning('Dowloading repository data.')
         with urlopen(repositoryLocation + primary_url, timeout = 5.0) as primaryGzFile:
           import io, gzip
           primaryGzString = io.BytesIO(primaryGzFile.read()) #3.2: use gzip.decompress
@@ -141,13 +135,19 @@ def OpenRepository(repositoryLocation):
       # Also download the filelist.
       filelist_filename = os.path.join(_repositoryCacheDirectory, os.path.splitext(os.path.basename(filelist_url))[0])
       if not os.path.exists(filelist_filename):
-        logging.warning('Dowloading repository file list')
+        logging.warning('Dowloading repository file list.')
         with urlopen(repositoryLocation + filelist_url, timeout = 5.0) as GzFile:
           import io, gzip
           GzString = io.BytesIO(GzFile.read()) #3.2: use gzip.decompress
           with gzip.GzipFile(fileobj=GzString) as primaryGzipFile:
             with open(filelist_filename, 'wb') as filelist_file:
               filelist_file.writelines(primaryGzipFile)
+      # Cleaning old files at the end, so that we still have some old repo data if download failed.
+      for f in os.listdir(_repositoryCacheDirectory):
+        if f[-14:] == '-filelists.xml' and f != os.path.splitext(os.path.basename(filelist_url))[0]:
+            os.unlink(os.path.join(_repositoryCacheDirectory, f))
+        if f[-12:] == '-primary.xml' and f != os.path.splitext(os.path.basename(primary_url))[0]:
+            os.unlink(os.path.join(_repositoryCacheDirectory, f))
   except:
     raise
     # If we can't download but there is already a primary.xml and filelists.xml, let's use them.
