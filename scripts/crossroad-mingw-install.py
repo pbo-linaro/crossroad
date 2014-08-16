@@ -519,6 +519,22 @@ if __name__ == "__main__":
   packages = set(args)
   logging.basicConfig(level=(logging.WARNING if options.verbose else logging.ERROR), format='%(message)s', stream=sys.stderr)
 
+  if options.project != 'w32' and options.project != 'w64':
+    logging.error('"{}" is not a known mingw project.\n'.format(options.project))
+    sys.exit(os.EX_USAGE)
+
+  # Update the cache directories.
+  _packageCacheDirectory = os.path.join(_packageCacheDirectory, options.project)
+  _repositoryCacheDirectory = os.path.join(_repositoryCacheDirectory, options.project)
+  _extractedCacheDirectory = os.path.join(_extractedCacheDirectory, options.project)
+  _extractedFilesDirectory = os.path.join(_extractedFilesDirectory, options.project)
+
+  # Update the project to the URL naming.
+  if options.project == 'w32':
+    options.project = 'windows:mingw:win32'
+  else:
+    options.project = 'windows:mingw:win64'
+
   # Open repository
   repository = options.repo_url.replace("PROJECT", options.project.replace(':', ':/')).replace("REPOSITORY", options.repository)
   try:
