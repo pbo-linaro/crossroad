@@ -14,6 +14,7 @@ import shutil
 
 version = '0.5'
 
+srcdir = os.path.dirname(os.path.realpath(sys.argv[0]))
 use_setuptools = False
 
 if 'USE_SETUPTOOLS' in os.environ or 'setuptools' in sys.modules:
@@ -77,7 +78,7 @@ class build_man(distutils.core.Command):
         Create the manual.
         '''
         try:
-            shutil.copyfile('doc/crossroad.rst', 'build/doc/crossroad.rst')
+            shutil.copyfile(os.path.join(srcdir, 'doc/crossroad.rst'), 'build/doc/crossroad.rst')
             update_scripts('build/doc')
             subprocess.check_call(["rst2man", "build/doc/crossroad.rst", "build/man/man1/crossroad.1"])
         except subprocess.CalledProcessError:
@@ -115,26 +116,26 @@ class my_build(distutils.command.build.build):
         except os.error:
             sys.stderr.write('Build error: failure to create the build/ tree. Please check your permissions.\n')
             sys.exit(os.EX_CANTCREAT)
-        shutil.copyfile('src/crossroad.py', 'build/bin/crossroad')
-        shutil.copyfile('src/in-crossroad.py', 'build/share/crossroad/scripts/in-crossroad.py')
-        shutil.copyfile('scripts/environment-32.sh', 'build/share/crossroad/scripts/environment-32.sh')
-        shutil.copyfile('scripts/environment-64.sh', 'build/share/crossroad/scripts/environment-64.sh')
+        shutil.copyfile(os.path.join(srcdir, 'src/crossroad.py'), 'build/bin/crossroad')
+        shutil.copyfile(os.path.join(srcdir, 'src/in-crossroad.py'), 'build/share/crossroad/scripts/in-crossroad.py')
+        shutil.copyfile(os.path.join(srcdir, 'scripts/environment-32.sh'), 'build/share/crossroad/scripts/environment-32.sh')
+        shutil.copyfile(os.path.join(srcdir, 'scripts/environment-64.sh'), 'build/share/crossroad/scripts/environment-64.sh')
         # Bash startup files.
-        for f in os.listdir('scripts/bash'):
+        for f in os.listdir(os.path.join(srcdir, 'scripts/bash')):
             if f[:7] == 'bashrc.':
-                shutil.copyfile(os.path.join('scripts/bash/', f), os.path.join('build/share/crossroad/scripts/bash/', f))
+                shutil.copyfile(os.path.join(srcdir, 'scripts/bash/', f), os.path.join('build/share/crossroad/scripts/bash/', f))
         # Zsh startup files.
-        for f in os.listdir('scripts/zsh'):
+        for f in os.listdir(os.path.join(srcdir, 'scripts/zsh')):
             if f[:6] == 'zshrc.':
                 platform = f[6:]
-                shutil.copyfile(os.path.join('scripts/zsh/', f), os.path.join('build/share/crossroad/scripts/zsh.' + platform, '.zshrc'))
-                shutil.copyfile('scripts/zsh/zshenv', os.path.join('build/share/crossroad/scripts/zsh.' + platform, '.zshenv'))
+                shutil.copyfile(os.path.join(srcdir, 'scripts/zsh/', f), os.path.join('build/share/crossroad/scripts/zsh.' + platform, '.zshrc'))
+                shutil.copyfile(os.path.join(srcdir, 'scripts/zsh/zshenv'), os.path.join('build/share/crossroad/scripts/zsh.' + platform, '.zshenv'))
         # CMake files.
-        shutil.copyfile('scripts/cmake/toolchain-w32.cmake', 'build/share/crossroad/scripts/cmake/toolchain-w32.cmake')
-        shutil.copyfile('scripts/cmake/toolchain-w64.cmake', 'build/share/crossroad/scripts/cmake/toolchain-w64.cmake')
-        for f in os.listdir('platforms'):
+        shutil.copyfile(os.path.join(srcdir, 'scripts/cmake/toolchain-w32.cmake'), 'build/share/crossroad/scripts/cmake/toolchain-w32.cmake')
+        shutil.copyfile(os.path.join(srcdir, 'scripts/cmake/toolchain-w64.cmake'), 'build/share/crossroad/scripts/cmake/toolchain-w64.cmake')
+        for f in os.listdir(os.path.join(srcdir, 'platforms')):
             if f[-3:] == '.py':
-                shutil.copyfile(os.path.join('platforms', f), os.path.join('build/platforms', f))
+                shutil.copyfile(os.path.join(srcdir, 'platforms', f), os.path.join('build/platforms', f))
         distutils.command.build.build.run(self)
 
 class my_install(install):
@@ -287,10 +288,10 @@ class my_install_scripts(distutils.command.install_scripts.install_scripts):
         distutils.command.install_scripts.install_scripts.run(self)
 
 
-platform_list = os.listdir('platforms')
+platform_list = os.listdir(os.path.join(srcdir, 'platforms'))
 platform_list = [os.path.join('build/platforms/', f) for f in platform_list if f[-3:] == '.py']
 
-bash_env = [os.path.join('build/share/crossroad/scripts/bash/', f) for f in os.listdir('scripts/bash/') if f[:7] == 'bashrc.']
+bash_env = [os.path.join('build/share/crossroad/scripts/bash/', f) for f in os.listdir(os.path.join(srcdir, 'scripts/bash/')) if f[:7] == 'bashrc.']
 
 setup(
     name = 'crossroad',
@@ -298,7 +299,7 @@ setup(
         'install_data': my_install_data, 'install_scripts': my_install_scripts},
     version = version,
     description = 'Cross-Compilation Environment Toolkit.',
-    long_description = open('README').read(),
+    long_description = open(os.path.join(srcdir, 'README')).read(),
     author = 'Jehan',
     author_email = 'jehan at girinstud.io',
     url = 'http://girinstud.io',
@@ -315,15 +316,17 @@ setup(
     requires = [],
     scripts = ['build/bin/crossroad'],
     data_files = [('man/man1/', ['build/man/man1/crossroad.1.gz']),
-        ('share/crossroad/scripts/', ['scripts/crossroad-mingw-install.py', 'scripts/config.guess',
+        ('share/crossroad/scripts/', [os.path.join(srcdir, 'scripts/crossroad-mingw-install.py'),
+                                      os.path.join(srcdir, 'scripts/config.guess'),
                                       'build/share/crossroad/scripts/in-crossroad.py',
                                       'build/share/crossroad/scripts/environment-32.sh',
                                       'build/share/crossroad/scripts/environment-64.sh',
-                                      'scripts/pre-bash-env.sh',
-                                      'scripts/pre-zsh-env.sh',
-                                      'scripts/post-env.sh',
-                                      'scripts/crossroad-gcc', 'scripts/crossroad-pkg-config',
-                                      'scripts/crossroad-cpp',
+                                      os.path.join(srcdir, 'scripts/pre-bash-env.sh'),
+                                      os.path.join(srcdir, 'scripts/pre-zsh-env.sh'),
+                                      os.path.join(srcdir, 'scripts/post-env.sh'),
+                                      os.path.join(srcdir, 'scripts/crossroad-gcc'),
+                                      os.path.join(srcdir, 'scripts/crossroad-pkg-config'),
+                                      os.path.join(srcdir, 'scripts/crossroad-cpp'),
                                       ]),
         ('share/crossroad/scripts/bash', bash_env),
         ('share/crossroad/scripts/zsh.w32', ['build/share/crossroad/scripts/zsh.w32/.zshenv',
