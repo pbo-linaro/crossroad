@@ -327,7 +327,7 @@ def GetBaseDirectory(project):
     return os.path.join(_extractedFilesDirectory, 'usr/i686-w64-mingw32/sys-root/mingw')
   elif project == 'windows:mingw:win64' and os.path.exists(os.path.join(_extractedFilesDirectory, 'usr/x86_64-w64-mingw32/sys-root/mingw')):
     return os.path.join(_extractedFilesDirectory, 'usr/x86_64-w64-mingw32/sys-root/mingw')
-  return _extractedFilesDirectory
+  return None
 
 def packagesExtract(packageFilenames, srcpkg=False):
   for packageFilename in packageFilenames :
@@ -715,6 +715,9 @@ if __name__ == "__main__":
     sys.exit(os.EX_CANTCREAT)
 
   extracted_prefix = GetBaseDirectory(options.project)
+  if extracted_prefix is None:
+    logging.error('Unexpected error: files were not extracted. Please report a bug.')
+    sys.exit(os.EX_CANTCREAT)
   sys.stdout.write('Installing...\n')
   sys.stdout.flush()
   move_files(extracted_prefix, prefix)
