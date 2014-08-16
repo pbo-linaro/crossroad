@@ -406,7 +406,7 @@ if __name__ == "__main__":
         print('I believe you were sinking down.\033[0m\n')
         sys.exit(os.EX_OK)
     elif args[0] in other_platforms:
-        sys.stderr.write('"{}" is not available. Some requirements are missing:\n{}'.format(args[0], other_platforms[args[0]].requires()))
+        sys.stderr.write('The platform "{}" is not available. Some requirements are missing:\n{}'.format(args[0], other_platforms[args[0]].requires()))
         sys.exit(os.EX_UNAVAILABLE)
     else:
         sys.stderr.write('"{}" is not a platform known by `crossroad`. Do not hesitate to contribute: {}\n'.format(args[0], maintainer))
