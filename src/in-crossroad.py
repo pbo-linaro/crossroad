@@ -182,22 +182,46 @@ if __name__ == "__main__":
             prefix = os.path.join(xdg_data_home, 'crossroad/roads', crossroad_road)
             sys.stdout.write(prefix)
             sys.exit(os.EX_OK)
-        elif arg == 'configure':
-            if not os.path.exists('configure') and os.path.exists('autogen.sh'):
-                sys.stderr.write('Warning: there is no ./configure script in the current directory, but there is an autogen.sh. Running it first.\n')
-                # NOTE: some project would configure their autogen.sh to actually run ./configure
+        elif arg == 'configure' or arg.endswith('/configure'):
+            conf_dir = os.path.dirname(arg)
+            if conf_dir == '':
+                conf_dir = '.'
+            if not os.path.exists(conf_dir):
+                sys.stderr.write('Error: directory "{}" does not exist.\n'.format(conf_dir))
+                sys.exit(os.EX_NOINPUT)
+            if not os.path.exists(arg) and os.path.exists(os.path.join(conf_dir, 'autogen.sh')):
+                if arg == 'configure' or arg == './configure':
+                    sys.stderr.write('Warning: there is no ./configure script in the current directory, but there is an autogen.sh. Running it first.\n')
+                else:
+                    sys.stderr.write('Warning: there is no configure script in "{}", but there is an autogen.sh. Running it first.\n'.format(conf_dir))
+                # autogen.sh is usually not meant to handle VPATH builds. Better cd to it first.
+                cwd = os.getcwd()
+                os.chdir(conf_dir)
+                # NOTE: some projects would configure their autogen.sh to actually run ./configure
                 # To be on the safe side, I would add the prefix/host/build info there.
+                # Though I'd prefer not to run ./configure if possible, because that would make it twice.
+                # Some projects (in GNOME projects at least) use $NOCONFIGURE env variable. So I set it.
                 command = './autogen.sh --prefix=$CROSSROAD_PREFIX --host=$CROSSROAD_HOST --build=$CROSSROAD_BUILD'
+                environ = os.environ
+                environ['NOCONFIGURE'] = '1'
                 sys.stdout.write('crossroad info: running "{}"\n'.format(command))
-                subprocess.call(command, shell=True)
-            if not os.path.exists('configure'):
-                sys.stderr.write('There is no ./configure script in the current directory.\n')
+                autogen_return = subprocess.call(command, shell=True, env=environ)
+                # run autoreconf by hand if there is a configure.ac otherwise?
+                os.chdir(cwd)
+                if autogen_return != 0:
+                    sys.stderr.write('autogen.sh failed.\n')
+                    sys.exit(autogen_return)
+            if not os.path.exists(arg):
+                if arg == 'configure' or arg == './configure':
+                    sys.stderr.write('Error: there is no ./configure script in the current directory.\n')
+                else:
+                    sys.stderr.write('Error: there is no configure script in "{}".\n'.format(conf_dir))
                 sys.exit(os.EX_USAGE)
             # The position should normally be 2 since any other command or option before
             # would be an error. But just in case the logics evolve.
             arg_pos = sys.argv.index(arg)
             # NOTE: with shell=True, subprocess does not deal well with list as a command.
-            command = './configure --prefix=$CROSSROAD_PREFIX --host=$CROSSROAD_HOST --build=$CROSSROAD_BUILD ' + ' '.join(sys.argv[arg_pos + 1:])
+            command = '{} --prefix=$CROSSROAD_PREFIX --host=$CROSSROAD_HOST --build=$CROSSROAD_BUILD '.format(arg) + ' '.join(sys.argv[arg_pos + 1:])
             sys.stdout.write('crossroad info: running "{}"\n'.format(command))
             sys.exit(subprocess.call(command, shell=True))
         elif arg == 'cmake' or arg == 'ccmake':
