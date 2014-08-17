@@ -18,18 +18,34 @@ __crossroad ()
                   "$command" == "ccmake"    ||
                   "$command" == "prefix"    ]]; then
                 COMPREPLY=()
+            elif [[ "$command" == "install"    ||
+                    "$command" == "info"       ||
+                    "$command" == "list-files" ||
+                    "$command" == "uninstall"  ]]; then
+                if [[ x"$CROSSROAD_ROAD" == "xw64" ||
+                      x"$CROSSROAD_ROAD" == "xw32" ]]; then
+                    # TODO: support XDG for cache dir.
+                    COMPREPLY=( $( compgen -W '$( crossroad -h $command 2>/dev/null |grep --colour=NEVER -o "\--[-a-zA-Z]\+=\?" | sort -u )
+                                               $(cat $HOME/.cache/crossroad/repository/${CROSSROAD_ROAD}/*primary.xml 2>/dev/null |
+                                                 grep "<name>mingw[^<]*</name>" | sed "s@^.*<name>ming${CROSSROAD_ROAD}-\([^<]\+\)</name>.*\$@\1@")
+                                              ' -- $cur ) )
+                    # alternative but slower: cat repository/w64/*filelists.xml |grep '<package[^>]*>' |sed 's/^.*name="mingw[36][24]\([^"]*\)".*$/\1/'
+                else
+                    COMPREPLY=( $( compgen -W '$( crossroad -h $command 2>/dev/null |grep --colour=NEVER -o "\--[-a-zA-Z]\+=\?" | sort -u )
+                                              ' -- $cur ) )
+                fi
             else
-                COMPREPLY=( $( crossroad -h $command 2>/dev/null |grep --colour=NEVER -o "\--[-a-zA-Z]\+=\?" | sort -u ) )
-                # COMPREPLY=( $( crossroad -h $command 2>/dev/null |grep --colour=NEVER -o "\--[-a-zA-Z]\+=\?" | sort | uniq ) )
+                COMPREPLY=( $( compgen -W '$( crossroad -h $command 2>/dev/null |grep --colour=NEVER -o "\--[-a-zA-Z]\+=\?" | sort -u )
+                                          ' -- $cur ) )
             fi
-# TODO: if install, do I want to search in package titles starting with $cur?
         fi
     else
         if [[ "$COMP_CWORD" -eq 1 ]]; then
         # TODO: replace with @DATADIR@/crossroad/platforms/
 #COMPREPLY=( $( compgen -W '$( find /usr/local/share/crossroad/platforms/ -name "*.py" | sed "s@^.*/\([^/]\+\).py@\1@" )' -- $cur ) )
             COMPREPLY=( $( compgen -W '$( crossroad --list-all | sed -e "s/^[^-].*$//" -e "s/^- \([0-9a-zA-Z_-]\+\) .*$/\1/" )
-                        $( crossroad -h | grep --colour=NEVER -o " -[-a-zA-Z]\+=\?" )' -- $cur ) )
+                        $( crossroad -h | grep --colour=NEVER -o " -[-a-zA-Z]\+=\?" )
+                        ' -- $cur ) )
         fi
     fi
 
