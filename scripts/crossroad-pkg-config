@@ -18,7 +18,7 @@
 
 # Reset pkg-config to search *ONLY* libraries compiled for the cross-compiled platform target.
 export PKG_CONFIG_LIBDIR=
-export PKG_CONFIG_PATH=$CROSSROAD_PREFIX/lib64/pkgconfig:$CROSSROAD_PREFIX/share/pkgconfig:$CROSSROAD_PREFIX/lib/pkgconfig
+export PKG_CONFIG_PATH=$CROSSROAD_PREFIX/share/pkgconfig:$CROSSROAD_PREFIX/lib/pkgconfig
 
 # Some MinGW-w64 specific paths.
 if [ "$CROSSROAD_HOST" = "x86_64-w64-mingw32" ]; then
@@ -39,11 +39,14 @@ fi
 
 # Some common system paths.
 if [ -n "$CROSSROAD_WORD_SIZE" ]; then
+    export PKG_CONFIG_PATH="$CROSSROAD_PREFIX/lib${CROSSROAD_WORD_SIZE}/pkconfig:$PKG_CONFIG_PATH"
     export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/local/$CROSSROAD_HOST/lib${CROSSROAD_WORD_SIZE}/pkconfig"
     export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/$CROSSROAD_HOST/lib${CROSSROAD_WORD_SIZE}/pkconfig"
 fi
 export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/local/$CROSSROAD_HOST/lib/pkconfig"
 export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/$CROSSROAD_HOST/lib/pkconfig"
+export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/local/$CROSSROAD_HOST/share/pkconfig"
+export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:/usr/$CROSSROAD_HOST/share/pkconfig"
 #export PKG_CONFIG_SYSROOT_DIR="$CROSSROAD_PREFIX"
 
 pkg-config "$@"
