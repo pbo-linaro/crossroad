@@ -143,7 +143,7 @@ usage += '                 [--list-all] [--symlink <TARGET> [<link-name>]] [--co
 platform_list = "Available targets:\n"
 for name in available_platforms:
     platform = available_platforms[name]
-    platform_list += "{:<20} {}\n".format(platform.name, platform.short_description.strip())
+    platform_list += "- {:<20} {}\n".format(platform.name, platform.short_description.strip())
 
 unavailable_platform_list = '\nUninstalled targets:\n'
 for name in other_platforms:

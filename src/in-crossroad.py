@@ -224,10 +224,10 @@ if __name__ == "__main__":
     if show_help:
         command_list = usage
         command_list += '\n\nAny crossroad environment provides the following commands:'
-        command_list += '\n{:<20} {}'.format('configure', 'Run `./configure` in the following directory for your cross-compilation environment.')
-        command_list += '\n{:<20} {}'.format('cmake', 'Run cmake for your cross-compilation environment.')
-        command_list += '\n{:<20} {}'.format('ccmake', 'Run ccmake for your cross-compilation environment.')
-        command_list += '\n{:<20} {}'.format('prefix', 'Return the installation prefix.')
+        command_list += '\n- {:<20} {}'.format('configure', 'Run `./configure` in the following directory for your cross-compilation environment.')
+        command_list += '\n- {:<20} {}'.format('cmake', 'Run cmake for your cross-compilation environment.')
+        command_list += '\n- {:<20} {}'.format('ccmake', 'Run ccmake for your cross-compilation environment.')
+        command_list += '\n- {:<20} {}'.format('prefix', 'Return the installation prefix.')
         command_list += "\n\nCrossroad's {} environment proposes the following commands:".format(crossroad_road)
         for command in commands:
             command_fun = getattr(platform, 'crossroad_' + command)
@@ -236,7 +236,7 @@ if __name__ == "__main__":
                 # shortdesc is the first line of the whole command description.
                 shortdesc = command_fun.__doc__.strip()
                 shortdesc = re.sub(r'\n.*', '', shortdesc)
-                command_list += '\n{:<20} {}'.format(command.replace('_', '-'), shortdesc)
+                command_list += '\n- {:<20} {}'.format(command.replace('_', '-'), shortdesc)
             else:
                 command_list += '\n{}'.format(command)
         command_list += '\n\nSee `crossroad help <command>` for more information on a specific command.\n'
