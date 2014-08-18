@@ -174,6 +174,11 @@ compilation system, for Windows 64-bit.
     See the `./configure --help` of a project for listing of its
     available options.
 
+    Note: VPATH builds are also supported. You can run a configure from
+    another directory this way::
+
+        $ crossroad ../some/other/path/configure --without-libjpeg
+
 (4) Here the configure may fail if you miss any **dependency**. You may
     install many dependencies easily through crossroad. Crossroad relies
     on the `Fedora MinGW project`_ for this feature and provides
@@ -192,7 +197,20 @@ compilation system, for Windows 64-bit.
         $ make
         $ make install
 
-(6) All done! Just exit your cross-compilation environment with
+(6) **Test**::
+
+        $ make check
+
+    This one may seem weird, but actually if you have Wine installed and
+    registered in `binfmt_misc` to execute win32 binaries, `crossroad`
+    set up properly the Wine environment so that it can find the
+    executables and DLLs you installed with `make install`. As a
+    consequence, a `make check` might just work, even though there is no
+    certaincy, since this is not exactly the same as running on the native
+    win32 platform. For the records, I have been able to run successful
+    `make check` on projects as complicated as **GIMP**.
+
+(7) All done! Just exit your cross-compilation environment with
     *ctrl-d* or `exit`.
     To test your binaries on an actual Windows machine, `crossroad`
     provides 2 tools.
@@ -219,7 +237,7 @@ compilation system, for Windows 64-bit.
        Since the directory is shared, it should be visible in Windows as
        a normal directory.
 
-(7) Then run your app, and enjoy!
+(8) Then run your app, and enjoy!
 
 *Note: this has been tested with success on many GNU projects,
 cross-compiled for Windows: cairo, babl, GEGL, glib, GTK+, libpng,
