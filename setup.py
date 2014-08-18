@@ -329,6 +329,7 @@ setup(
                                       os.path.join(srcdir, 'scripts/crossroad-cpp'),
                                       ]),
         ('share/crossroad/scripts/bash', bash_env),
+        ('share/crossroad/scripts/bash_completion.d', [os.path.join(srcdir, 'scripts/bash_completion.d/crossroad')]),
         ('share/crossroad/scripts/zsh.w32', ['build/share/crossroad/scripts/zsh.w32/.zshenv',
                                              'build/share/crossroad/scripts/zsh.w32/.zshrc']),
         ('share/crossroad/scripts/zsh.w64', ['build/share/crossroad/scripts/zsh.w64/.zshenv',
