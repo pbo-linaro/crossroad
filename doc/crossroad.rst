@@ -267,6 +267,12 @@ compilation system, for Windows 64-bit.
 
     See the `./configure --help` for listing of available options.
 
+    Note that crossroad also supports VPATH builds. If you wish to build
+    a project whose source is in ../myproject/ for instance, you could
+    run::
+
+        $ crossroad ../myproject/configure --without-libjpeg
+
 (3) If your configure fails because you miss any dependency, you can try
     and install it with the `Pre-Built Dependency Manager`_ or by
     compiling it too.
@@ -403,6 +409,26 @@ To test your binaries on an actual Windows machine, `crossroad` provides
 
 **Finally run your app, and enjoy!**
 
+Bonus: testing your w32 binaries on the build platform with Wine
+================================================================
+
+A `crossroad` environment is actually set-up with a few environment
+variables so that `Wine` can find the DLLs and win32 tools that you
+installed through a `make install`.
+Of course you will also need to ensure that Wine is registred in
+`binfmt_misc` to execute win32 binaries automatically, otherwise it
+won't work.
+
+This means that you may attempt to test your software, or even run some
+`make check` tests, and it may work. A lot of "*may*", since obviously
+there is no certaincy when it comes to `Wine`. Sometimes it may work great,
+sometimes not. Newer versions of Wine even often have regressions: things
+which used to work suddenly won't.
+So do not consider this feature as perfect as testing on a native win32
+platform. Nevertheless this is still a big conveniency.
+For the records, I have been able to run successfull `make check` on
+projects as complicated as **GIMP**.
+
 Configuration
 =============
 
@@ -424,8 +450,21 @@ most usual installation of MinGW-w64, `crossroad` should be able to
 find your Windows libraries prefix.
 
 Also if the environment variable `$CROSSROAD_PS1` is set, it will be
-used as your new prompt, instead of constructing a new prompt from the
-currently set one.
+used as your crossroad prompt, instead of constructing a new prompt from
+the currently set one.
+
+Finally a bash-completion script is available in::
+
+    @DATADIR@/share/crossroad/scripts/bash_completion.d/crossroad
+
+If you wish bash completion on the `crossroad` command, which can be very
+useful, you should copy or link this file in `/etc/bash_completion.d/`, or
+wherever else your distribution stores its bash completion scripts. Finally
+refresh your shell by re-running /etc/bash_completion::
+
+    $ cd /etc/bash_completion.d
+    $ ln -s @DATADIR@/share/crossroad/scripts/bash_completion.d/crossroad
+    $ . /etc/bash_completion
 
 Contributing
 ============
