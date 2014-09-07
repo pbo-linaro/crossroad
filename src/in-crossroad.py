@@ -219,9 +219,12 @@ if __name__ == "__main__":
                 sys.exit(os.EX_USAGE)
             # The position should normally be 2 since any other command or option before
             # would be an error. But just in case the logics evolve.
+            configure = arg
+            if arg == 'configure':
+                configure = './configure'
             arg_pos = sys.argv.index(arg)
             # NOTE: with shell=True, subprocess does not deal well with list as a command.
-            command = '{} --prefix=$CROSSROAD_PREFIX --host=$CROSSROAD_HOST --build=$CROSSROAD_BUILD '.format(arg) + ' '.join(sys.argv[arg_pos + 1:])
+            command = '{} --prefix=$CROSSROAD_PREFIX --host=$CROSSROAD_HOST --build=$CROSSROAD_BUILD '.format(configure) + ' '.join(sys.argv[arg_pos + 1:])
             sys.stdout.write('crossroad info: running "{}"\n'.format(command))
             sys.exit(subprocess.call(command, shell=True))
         elif arg == 'cmake' or arg == 'ccmake':
