@@ -43,12 +43,6 @@ unset host_ld_bin
 unset host_ld_dir
 unset host_ld
 
-# Here is our root.
-export CROSSROAD_PREFIX="`crossroad -p $CROSSROAD_PLATFORM`"
-
-# Internal usage.
-export CROSSROAD_ROAD="${CROSSROAD_PLATFORM}"
-
 export LD_LIBRARY_PATH=$CROSSROAD_PREFIX/lib
 if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX" ]; then
     export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib64/:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib/"

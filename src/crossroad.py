@@ -28,14 +28,14 @@ import zipfile
 
 ### Current Crossroad Environment ###
 
-crossroad_road = None
+crossroad_platform = None
 try:
-    crossroad_road = os.environ['CROSSROAD_ROAD']
+    crossroad_platform = os.environ['CROSSROAD_PLATFORM']
 except KeyError:
     pass
 
 # Redirect to the in-crossroad binary.
-if crossroad_road is not None:
+if crossroad_platform is not None:
     in_crossroad = os.path.join('@DATADIR@', 'share/crossroad/scripts/in-crossroad.py')
     sys.exit(subprocess.call([in_crossroad] + sys.argv[1:], shell=False))
 
@@ -130,6 +130,14 @@ def load_platforms():
 
     return (available_platforms, other_platforms)
 
+def get_projects(target):
+    '''
+    All projects are available in $XDG_DATA_HOME/crossroad/roads/{target}/.
+    '''
+    target_path = os.path.join(xdg_data_home, 'crossroad/roads', target)
+    available_projects = os.listdir(target_path)
+    return available_projects
+
 (available_platforms, other_platforms) = load_platforms()
 
 ### Start the Program ###
@@ -137,8 +145,9 @@ def load_platforms():
 version = '@VERSION@'
 maintainer = '<jehan at girinstud.io>'
 
-usage  = 'Usage: crossroad [<TARGET>] [--help] [--version] [--run=<script> [--no-exit-after-run]] [--reset <TARGET 1> [<TARGET 2>...]]\n'
-usage += '                 [--list-all] [--symlink <TARGET> [<link-name>]] [--compress=<archive.zip> <TARGET 1> [<TARGET 2>...]]'
+usage  = 'Usage: crossroad [--help] [--version] [<TARGET> [<PROJECT>] [--copy=<PROJECT>] [--run=<script> [--no-exit-after-run]]\n'
+usage += '                 [--reset <TARGET 1>[:<PROJECT>] [<TARGET 2>...]] [--list-targets] [--list-projects <TARGET>]\n'
+usage += '                 [--symlink <TARGET>[:<PROJECT> [<link-name>]] [--compress=<archive.zip> <TARGET 1>[:<PROJECT>] [<TARGET 2>...]]\n'
 
 platform_list = "Available targets:\n"
 for name in available_platforms:
@@ -160,19 +169,24 @@ cmdline.add_option('-r', '--run',
 cmdline.add_option('-n', '--no-exit-after-run',
     help = "Do not exit the cross-build environment after running the script. Otherwise exit immediately and return the script's return value.",
     action = 'store_true', dest = 'no_exit', default = False)
-cmdline.add_option('-l', '--list-all',
-    help = 'list all known platforms',
-    action = 'store_true', dest = 'list_all', default = False)
+cmdline.add_option('-l', '--list-targets',
+    help = 'list all known targets.',
+    action = 'store_true', dest = 'list_targets', default = False)
+cmdline.add_option('-L', '--list-projects',
+    help = 'list all existing projects for a given target.',
+    action = 'store', type="string", dest = 'list_projects', default = None)
 cmdline.add_option('-h', '--help',
     help = 'show this help message and exit. If a TARGET is provided, show information about this platform.',
     action = 'store_true', dest = 'help', default = False)
-# TODO: do the same for --host?
-cmdline.add_option('-p', '--prefix',
-    help = 'outputs the prefix of the named platform.',
-    action = 'store', type="string", dest = 'prefix', default = False)
 cmdline.add_option('-c', '--compress',
     help = 'compress an archive (zip only), with the given name, of the named platforms.',
     action = 'store', type="string", dest = 'archive', default = None)
+cmdline.add_option('-w', '--read-only',
+    help = 'Render the project read-only.',
+    action = 'store', type="string", dest = 'read_only', default = False)
+cmdline.add_option('+w', '--read-write',
+    help = 'Make the project writable (default).',
+    action = 'store_true', type="string", dest = 'read_write', default = False)
 cmdline.add_option('-s', '--symlink',
     help = 'create a symbolic link of the named platform.',
     action = 'store_true', dest = 'symlink', default = False)
@@ -208,9 +222,11 @@ if __name__ == "__main__":
                     uninstalled = [ "{:<20}Common package name providing the feature: {}".format(name, ", ".join(uninstalled[name])) for name in uninstalled]
                     uninstalled.sort()
                     print("Uninstalled language list:\n- {}".format("\n- ".join(uninstalled)))
+                if projects != []:
+                    print("Current projects on this target:\n- {}".format("\n- ".join(installed)))
         sys.exit(os.EX_OK)
             
-    if options.list_all:
+    if options.list_targets:
         cmdline.print_version()
         sys.stdout.write(platform_list)
         if len(other_platforms) > 0:
@@ -218,28 +234,52 @@ if __name__ == "__main__":
         sys.stdout.write('\nSee details about any target with `crossroad --help <TARGET>`.\n')
         sys.exit(os.EX_OK)
 
-    if options.prefix:
-        platform_name = options.prefix
-        if platform_name not in available_platforms:
-            sys.stderr.write('Not a valid platform: {}\n'.format(platform_name))
+    if options.list_projects is not None:
+        if options.list_projects not in available_platforms:
+            sys.stderr.write('Not a valid platform: {}\n'.format(options.list_projects))
             sys.exit(os.EX_USAGE)
-
-        prefix = os.path.join(xdg_data_home, 'crossroad/roads', platform_name)
-        sys.stdout.write(prefix)
+        projects = get_projects(options.list_projects)
+        # That's not pretty. This is not the way to localize!
+        # But hey right now, crossroad is not localized at all. That's an English only tool.
+        final_point = ':'
+        if len(projects) == 0:
+            final_point = 's.'
+        elif len(projects) > 1:
+            final_point = 's:'
+        sys.stdout.write('Target {} has {} current project{}\n'.format(options.list_projects,
+                                                                       len(projects) if len(projects) > 0 else 'no',
+                                                                       final_point))
+        for project in projects:
+            sys.stdout.write (' - {}\n'.format(project))
         sys.exit(os.EX_OK)
+
+    #if options.prefix:
+        #platform_name = options.prefix
+        #if platform_name not in available_platforms:
+            #sys.stderr.write('Not a valid platform: {}\n'.format(platform_name))
+            #sys.exit(os.EX_USAGE)
+
+        #prefix = os.path.join(xdg_data_home, 'crossroad/roads', platform_name)
+        #sys.stdout.write(prefix)
+        #sys.exit(os.EX_OK)
 
     if options.reset:
         if len(args) == 0:
             sys.stderr.write('You must specify at least one platform name for --reset.\n')
             sys.exit(os.EX_USAGE)
 
-        for platform_name in args:
-            if platform_name not in available_platforms:
-                sys.stderr.write('Not a valid platform: {}\n'.format(platform_name))
+        for platform_project in args:
+            platform = platform_project
+            project  = 'default'
+            # Split project and platform names.
+            if ':' in platform_project:
+                [platform, project] = platform_project.split(':', 1)
+            if platform not in available_platforms:
+                sys.stderr.write('Not a valid platform: {}\n'.format(platform))
                 continue
-            platform_path = os.path.join(xdg_data_home, 'crossroad/roads', platform_name)
+            platform_path = os.path.join(xdg_data_home, 'crossroad/roads', platform, project)
             # XXX Or a --force option?
-            sys.stdout.write('Platform {} ({}) is going to be deleted in'.format(platform_name, platform_path))
+            sys.stdout.write('Project "{}" for target {} ({}) is going to be deleted in'.format(project, platform, platform_path))
             for i in range(5, 0, -1):
                 sys.stdout.write(' {}'.format(i))
                 sys.stdout.flush()
@@ -258,13 +298,17 @@ if __name__ == "__main__":
             # I support only this for now.
             sys.stderr.write('Error: sorry, only zip format archives are supported for the time being.\n')
             sys.exit(os.EX_UNAVAILABLE)
-        platforms = args
-        if len(platforms) == 0:
+        if len(args) == 0:
             sys.stderr.write('You must name at least one platform to include in your archive.\n')
             sys.exit(os.EX_USAGE)
-        for platform in platforms:
+        for platform_project in args:
+            platform = platform_project
+            project  = 'default'
+            # Split project and platform names.
+            if ':' in platform_project:
+                [platform, project] = platform_project.split(':', 1)
             # Test existence and readability of the platform.
-            platform_path = os.path.join(xdg_data_home, 'crossroad/roads', platform)
+            platform_path = os.path.join(xdg_data_home, 'crossroad/roads', platform, project)
             if platform not in available_platforms or not os.access(platform_path, os.R_OK):
                 sys.stderr.write('Platform {} is not built, or unreadable.\n'.format(platform))
                 sys.exit(os.EX_NOPERM)
@@ -317,7 +361,7 @@ if __name__ == "__main__":
         sys.exit(os.EX_OK)
 
     # If we are here, it means we want to enter a crossroad environment.
-    if len(args) != 1:
+    if len(args) != 1 and len(args) != 2:
         cmdline.print_version()
         cmdline.print_usage()
         if len(available_platforms) == 0:
@@ -329,6 +373,9 @@ if __name__ == "__main__":
         sys.exit(os.EX_USAGE)
 
     if args[0] in available_platforms:
+        project = 'default'
+        if len(args) == 2:
+            project = args[1]
         shell = None
         environ = os.environ
         try:
@@ -339,6 +386,7 @@ if __name__ == "__main__":
         except KeyError:
             shell = None
 
+        environ['CROSSROAD_PROJECT'] = project
         # Do we have a script to run?
         if options.script is not None:
             if not os.path.isfile(options.script):
@@ -348,10 +396,10 @@ if __name__ == "__main__":
             if not options.no_exit:
                 environ['CROSSROAD_SCRIPT_EXIT'] = 'yes'
         elif options.no_exit:
-            sys.stderr.write('The --no-exit-after-run option is meaningless without --script being set. Exiting.')
+            sys.stderr.write('The --no-exit-after-run option is meaningless without --script being set. Exiting.\n')
             sys.exit(os.EX_NOINPUT)
         if shell is None or (shell[-4:] != 'bash' and shell[-3:] != 'zsh'):
-            sys.stderr.write("Warning: sorry, only bash and zsh are supported right now (detected by $SHELL environment variable).")
+            sys.stderr.write("Warning: sorry, only bash and zsh are supported right now (detected by $SHELL environment variable).\n")
             shell = shutil.which('bash')
             if shell is None:
                 shell = shutil.which('zsh')
@@ -384,9 +432,10 @@ if __name__ == "__main__":
             sys.stderr.write("Unexpected error. Please contact the developer.\n")
             sys.exit(os.EX_SOFTWARE)
 
-        env_path = os.path.join(xdg_data_home, 'crossroad/roads', available_platforms[args[0]].name)
+        env_path = os.path.join(xdg_data_home, 'crossroad/roads', available_platforms[args[0]].name, project)
         if not os.path.exists(env_path):
             try:
+                sys.stdout.write('Creating project "{}" for target {}...\n'.format(project, available_platforms[args[0]].name))
                 os.makedirs(env_path, exist_ok = True)
             except PermissionError:
                 sys.stderr.write('"{}" cannot be created. Please verify your permissions. Aborting.\n'.format(env_path))
@@ -398,6 +447,7 @@ if __name__ == "__main__":
             if not available_platforms[args[0]].prepare(env_path):
                 sys.stderr.write('Crossroad failed to prepare the environment for "{}".\n{}'.format(available_platforms[args[0]].name))
                 sys.exit(os.EX_CANTCREAT)
+        environ['CROSSROAD_PREFIX'] = env_path
 
         print('\033[1;35mYou are now at the crossroads...\033[0m\n')
         shell_proc = subprocess.Popen(command, shell = False, env = environ)

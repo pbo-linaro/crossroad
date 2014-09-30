@@ -7,7 +7,7 @@ __crossroad ()
     cur=${COMP_WORDS[COMP_CWORD]}
     prev=${COMP_WORDS[COMP_CWORD-1]}
 
-    if [[ -v CROSSROAD_ROAD ]]; then
+    if [[ -v CROSSROAD_PLATFORM ]]; then
         if [[ "$COMP_CWORD" -eq 1 ]]; then
             COMPREPLY=( $( compgen -W '$( crossroad -h | sed -e "s/^[^-].*$//" -e "s/^- \([a-zA-Z_-]\+\) .*$/\1/" ) --help -h --version -v' -- $cur ) )
         else
@@ -22,12 +22,12 @@ __crossroad ()
                     "$command" == "info"       ||
                     "$command" == "list-files" ||
                     "$command" == "uninstall"  ]]; then
-                if [[ x"$CROSSROAD_ROAD" == "xw64" ||
-                      x"$CROSSROAD_ROAD" == "xw32" ]]; then
+                if [[ x"$CROSSROAD_PLATFORM" == "xw64" ||
+                      x"$CROSSROAD_PLATFORM" == "xw32" ]]; then
                     # TODO: support XDG for cache dir.
                     COMPREPLY=( $( compgen -W '$( crossroad -h $command 2>/dev/null |grep --colour=NEVER -o "\--[-a-zA-Z]\+=\?" | sort -u )
-                                               $(cat $HOME/.cache/crossroad/repository/${CROSSROAD_ROAD}/*primary.xml 2>/dev/null |
-                                                 grep "<name>mingw[^<]*</name>" | sed "s@^.*<name>ming${CROSSROAD_ROAD}-\([^<]\+\)</name>.*\$@\1@")
+                                               $(cat $HOME/.cache/crossroad/repository/${CROSSROAD_PLATFORM}/*primary.xml 2>/dev/null |
+                                                 grep "<name>mingw[^<]*</name>" | sed "s@^.*<name>ming${CROSSROAD_PLATFORM}-\([^<]\+\)</name>.*\$@\1@")
                                               ' -- $cur ) )
                     # alternative but slower: cat repository/w64/*filelists.xml |grep '<package[^>]*>' |sed 's/^.*name="mingw[36][24]\([^"]*\)".*$/\1/'
                 else
@@ -43,10 +43,11 @@ __crossroad ()
         if [[ "$COMP_CWORD" -eq 1 ]]; then
         # TODO: replace with @DATADIR@/crossroad/platforms/
 #COMPREPLY=( $( compgen -W '$( find /usr/local/share/crossroad/platforms/ -name "*.py" | sed "s@^.*/\([^/]\+\).py@\1@" )' -- $cur ) )
-            COMPREPLY=( $( compgen -W '$( crossroad --list-all | sed -e "s/^[^-].*$//" -e "s/^- \([0-9a-zA-Z_-]\+\) .*$/\1/" )
+            COMPREPLY=( $( compgen -W '$( crossroad --list-targets | sed -e "s/^[^-].*$//" -e "s/^- \([0-9a-zA-Z_-]\+\) .*$/\1/" )
                         $( crossroad -h | grep --colour=NEVER -o " -[-a-zA-Z]\+=\?" )
                         ' -- $cur ) )
         fi
+        # TODO: check platforms with --list-projects
     fi
 
 }

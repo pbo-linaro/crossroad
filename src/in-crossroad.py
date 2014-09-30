@@ -25,9 +25,9 @@ import sys
 import re
 
 ### Current Crossroad Environment ###
-crossroad_road = None
+crossroad_platform = None
 try:
-    crossroad_road = os.environ['CROSSROAD_ROAD']
+    crossroad_platform = os.environ['CROSSROAD_PLATFORM']
 except KeyError:
     sys.stderr.write('Error: no Crossroad environment found. Contact the developers.')
     sys.exit(os.EX_DATAERR)
@@ -100,7 +100,7 @@ def load_platform(platform_name):
         return None
     return platform
 
-platform = load_platform(crossroad_road)
+platform = load_platform(crossroad_platform)
 if platform is None:
     sys.stderr.write('Error: the current crossroad environment does not seem to exist. Contact the developers.')
     sys.exit(os.EX_DATAERR)
@@ -178,10 +178,10 @@ if __name__ == "__main__":
         elif arg == '-h' or arg == '--help' or arg == 'help':
             show_help = True
             continue
-        elif arg == 'prefix':
-            prefix = os.path.join(xdg_data_home, 'crossroad/roads', crossroad_road)
-            sys.stdout.write(prefix)
-            sys.exit(os.EX_OK)
+        #elif arg == 'prefix':
+            #prefix = os.path.join(xdg_data_home, 'crossroad/roads', crossroad_platform)
+            #sys.stdout.write(prefix)
+            #sys.exit(os.EX_OK)
         elif arg == 'configure' or arg.endswith('/configure'):
             conf_dir = os.path.dirname(arg)
             if conf_dir == '':
@@ -255,7 +255,7 @@ if __name__ == "__main__":
         command_list += '\n- {:<20} {}'.format('cmake', 'Run cmake for your cross-compilation environment.')
         command_list += '\n- {:<20} {}'.format('ccmake', 'Run ccmake for your cross-compilation environment.')
         command_list += '\n- {:<20} {}'.format('prefix', 'Return the installation prefix.')
-        command_list += "\n\nCrossroad's {} environment proposes the following commands:".format(crossroad_road)
+        command_list += "\n\nCrossroad's {} environment proposes the following commands:".format(crossroad_platform)
         for command in commands:
             command_fun = getattr(platform, 'crossroad_' + command)
             (args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations) = inspect.getfullargspec(command_fun)
