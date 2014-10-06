@@ -75,4 +75,5 @@ done;
 # Allowing wine to search dll and binaries in our prefix.
 export WINEPATH="$CROSSROAD_PREFIX/bin/"
 export WINEARCH=win64
+export WINEPREFIX="$CROSSROAD_PREFIX/wine"
 
