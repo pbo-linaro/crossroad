@@ -133,6 +133,7 @@ class my_build(distutils.command.build.build):
         # CMake files.
         shutil.copyfile(os.path.join(srcdir, 'scripts/cmake/toolchain-w32.cmake'), 'build/share/crossroad/scripts/cmake/toolchain-w32.cmake')
         shutil.copyfile(os.path.join(srcdir, 'scripts/cmake/toolchain-w64.cmake'), 'build/share/crossroad/scripts/cmake/toolchain-w64.cmake')
+        shutil.copyfile(os.path.join(srcdir, 'scripts/cmake/toolchain-android-arm.cmake'), 'build/share/crossroad/scripts/cmake/toolchain-android-arm.cmake')
         for f in os.listdir(os.path.join(srcdir, 'platforms')):
             if f[-3:] == '.py':
                 shutil.copyfile(os.path.join(srcdir, 'platforms', f), os.path.join('build/platforms', f))
@@ -335,7 +336,8 @@ setup(
         ('share/crossroad/scripts/zsh.w64', ['build/share/crossroad/scripts/zsh.w64/.zshenv',
                                              'build/share/crossroad/scripts/zsh.w64/.zshrc']),
         ('share/crossroad/scripts/cmake', ['build/share/crossroad/scripts/cmake/toolchain-w32.cmake',
-                                            'build/share/crossroad/scripts/cmake/toolchain-w64.cmake']),
+                                            'build/share/crossroad/scripts/cmake/toolchain-w64.cmake',
+                                            'build/share/crossroad/scripts/cmake/toolchain-android-arm.cmake']),
         ('share/crossroad/platforms/', platform_list),
         #('crossroad/projects/', ['projects']),
         ],
