@@ -41,13 +41,47 @@ __crossroad ()
         fi
     else
         if [[ "$COMP_CWORD" -eq 1 ]]; then
-        # TODO: replace with @DATADIR@/crossroad/platforms/
-#COMPREPLY=( $( compgen -W '$( find /usr/local/share/crossroad/platforms/ -name "*.py" | sed "s@^.*/\([^/]\+\).py@\1@" )' -- $cur ) )
             COMPREPLY=( $( compgen -W '$( crossroad --list-targets | sed -e "s/^[^-].*$//" -e "s/^- \([0-9a-zA-Z_-]\+\) .*$/\1/" )
                         $( crossroad -h | grep --colour=NEVER -o " -[-a-zA-Z]\+=\?" )
                         ' -- $cur ) )
+        elif [[ "$COMP_CWORD" -eq 2 ]] && [[ x"${prev:0:1}" != x"-" ]]; then
+            COMPREPLY=( $( compgen -W '$( crossroad --list-projects=$prev 2>/dev/null | sed -e "s/^[^-].*$//" -e "s/^- \([0-9a-zA-Z_-]\+\)$/\1/" )
+                        ' -- $cur ) )
+        elif [[ "$COMP_CWORD" -gt 1 ]]; then
+            if [[ x${COMP_WORDS[1]} == x"--reset" ]]; then
+                if [[ $(($COMP_CWORD % 2)) -eq 1 ]]; then
+                    COMPREPLY=( $( compgen -W '$( crossroad --list-projects=$prev 2>/dev/null | sed -e "s/^[^-].*$//" -e "s/^- \([0-9a-zA-Z_-]\+\)$/\1/" )
+                                ' -- $cur ) )
+                else
+                    COMPREPLY=( $( compgen -W '$( crossroad --list-targets | sed -e "s/^[^-].*$//" -e "s/^- \([0-9a-zA-Z_-]\+\) .*$/\1/" )
+                            ' -- $cur ) )
+                fi
+            elif [[ x${COMP_WORDS[1]} == x"--symlink" ]] || [[ x${COMP_WORDS[1]} == x"-s" ]]; then
+                if [[ "$COMP_CWORD" -eq 2 ]]; then
+                    COMPREPLY=( $( compgen -W '$( crossroad --list-targets | sed -e "s/^[^-].*$//" -e "s/^- \([0-9a-zA-Z_-]\+\) .*$/\1/" )
+                            ' -- $cur ) )
+                elif [[ "$COMP_CWORD" -eq 3 ]]; then
+                    COMPREPLY=( $( compgen -W '$( crossroad --list-projects=$prev 2>/dev/null | sed -e "s/^[^-].*$//" -e "s/^- \([0-9a-zA-Z_-]\+\)$/\1/" )
+                                ' -- $cur ) )
+                fi
+            elif [[ x${COMP_WORDS[1]} == x"--compress" ]] && [[ "$COMP_CWORD" -gt 3 ]]; then
+                if [[ $(($COMP_CWORD %2)) -eq 0 ]]; then
+                    COMPREPLY=( $( compgen -W '$( crossroad --list-targets | sed -e "s/^[^-].*$//" -e "s/^- \([0-9a-zA-Z_-]\+\) .*$/\1/" )
+                            ' -- $cur ) )
+                else
+                    COMPREPLY=( $( compgen -W '$( crossroad --list-projects=$prev 2>/dev/null | sed -e "s/^[^-].*$//" -e "s/^- \([0-9a-zA-Z_-]\+\)$/\1/" )
+                                ' -- $cur ) )
+                fi
+            elif [[ x${COMP_WORDS[1]} == x"-c" ]] && [[ "$COMP_CWORD" -gt 2 ]]; then
+                if [[ $(($COMP_CWORD %2)) -eq 1 ]]; then
+                    COMPREPLY=( $( compgen -W '$( crossroad --list-targets | sed -e "s/^[^-].*$//" -e "s/^- \([0-9a-zA-Z_-]\+\) .*$/\1/" )
+                            ' -- $cur ) )
+                else
+                    COMPREPLY=( $( compgen -W '$( crossroad --list-projects=$prev 2>/dev/null | sed -e "s/^[^-].*$//" -e "s/^- \([0-9a-zA-Z_-]\+\)$/\1/" )
+                                ' -- $cur ) )
+                fi
+            fi
         fi
-        # TODO: check platforms with --list-projects
     fi
 
 }
