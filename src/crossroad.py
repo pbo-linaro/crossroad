@@ -146,7 +146,7 @@ version = '@VERSION@'
 maintainer = '<jehan at girinstud.io>'
 
 usage  = 'Usage: crossroad [--help] [--version] [<TARGET> <PROJECT> [--copy=<PROJECT>] [--run=<script> [--no-exit-after-run]]\n'
-usage += '                 [--reset <TARGET> <PROJECT>] [...]] [--list-targets] [--list-projects <TARGET>]\n'
+usage += '                 [--reset <TARGET> <PROJECT>] [...]] [--list-targets] [--list-projects=<TARGET>]\n'
 usage += '                 [--symlink <TARGET> <PROJECT> [<link-name>]] [--compress=<archive.zip> <TARGET> <PROJECT> [...]]\n'
 
 platform_list = "Available targets:\n"

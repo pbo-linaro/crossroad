@@ -16,7 +16,7 @@ SYNOPSIS
 
 In a normal environment:
 ~~~~~~~~~~~~~~~~~~~~~~~~
-**crossroad** [--help] [--version] [--list-all] [--compress <ARCHIVE.zip> <TARGET 1> [<TARGET 2>...]] [--reset <TARGET 1> [<TARGET 2>...]] [--symlink <TARGET> [<LINK_NAME>]] [<TARGET>]
+**crossroad** [--help] [--version] [--list-targets] [--compress=<ARCHIVE.zip> <TARGET> <PROJECT> [...]] [--reset <TARGET> <PROJECT> [...]] [--symlink <TARGET> <PROJECT> [<LINK_NAME>]] [<TARGET> <PROJECT>]
 
 In a crossroad environment:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -32,8 +32,9 @@ OPTIONS
 
 --version                               Show program's version number and exit
 -h, --help                              Show the help message and exit. If a *TARGET* is provided, show information about this platform.
--l, --list-all                          List all known platforms
--c, --compress                          Compress an archive (zip support only), with the given name, of the named platforms.
+-l, --list-targets                      List all known targets
+-L, --list-targets                      List all projects for a given target.
+-c, --compress                          Compress an archive (zip support only), with the given name, of the named platform/projects.
 -s, --symlink                           Create a symbolic link of the named platform.
 --reset                                 Effectively delete TARGET's tree. Don't do this if you have important data saved in there.
 
@@ -49,7 +50,7 @@ a cross-compilation environment until this is installed.
 
 List available and unavailable targets with::
 
-    $ crossroad --list-all
+    $ crossroad --list-targets
     crossroad, version 0.4.4
     Available targets:
     w64                  Windows 64-bit
@@ -79,7 +80,7 @@ still give a useful hint to search in your package manager).
 
 Install the missing requirements and run crossroad again::
 
-    $ crossroad --list-all
+    $ crossroad --list-targets
     crossroad, version 0.4.4
     Available targets:
     w32                  Windows 32-bit
@@ -109,13 +110,13 @@ Optional Step: cleaning any previous cross-compilation
 
 `Crossroad` saves your work state from one use to another, which
 allows you to pause a compilation work and continue later. It also means
-that your cross-compiled tree will get filled with time. If you start a
-new project or want to start from scratch with a clean prefix, reset
+that your cross-compiled tree will get filled with time. If you want to
+restart your project from scratch with a clean prefix, reset
 your project before you enter it with this optional step:
 
 ::
 
-    $ crossroad --reset w64
+    $ crossroad --reset w64 myproject
 
 This is an optional step, and you should not run it if you are actually
 expecting to continue where you left `crossroad` the previous time.
@@ -129,19 +130,22 @@ Entering a Cross-Compilation Environment
 
 ::
 
-    $ crossroad w64
+    $ crossroad w64 myproject
 
-This will set up a Windows 64-bit cross-compilation environment, and 
-you will be greeted by a message telling you basics information.
+This will set up a Windows 64-bit cross-compilation environment for a
+project called `myproject`, and you will be greeted by a message telling
+you basics information. "myproject" is obviously to be replaced by
+any name which fits your specific job, for instance the name of the
+program you wish to crossbuild.
 
 In order for you not to mistake several opened shells, a `crossroad`
 prompt will be a modified version of your usual prompt.
-A small red ``w64✘`` at the start (only adding information. Whatever
-prompt hack you may have made — for instance displaying information of
-a code repository — will be untouched) to show you are in your working
-cross-compilation environment.
+A small red ``w64✘myproject`` at the start (only adding information.
+Whatever prompt hack you may have made — for instance displaying
+information of a code repository — will be untouched) to show you are
+in your working cross-compilation environment.
 For instance if your prompt is usually `user@host ~/some/path $`, your
-`crossroad` prompt will be `w64✘ user@host ~/some/path $`.
+`crossroad` prompt will be `w64✘myproject user@host ~/some/path $`.
 
 *Note: only `bash` and `zsh` are supported right now.*
 
@@ -157,8 +161,8 @@ platform.
 In a crossroad environment
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Pre-Built Dependency Manager
-............................
+Get available actions
+.....................
 
 Once in a crossroad environment, crossroad will behave differently and
 have a list of commands.
@@ -172,7 +176,6 @@ Display the list of commands with::
     configure            Run `./configure` in the following directory for your cross-compilation environment.
     cmake                Run cmake for your cross-compilation environment.
     ccmake               Run ccmake for your cross-compilation environment.
-    prefix               Return the installation prefix.
 
     Crossroad's w64 environment proposes the following commands:
     info                 Display package details.
@@ -182,8 +185,15 @@ Display the list of commands with::
 
     See `crossroad help <command>` for more information on a specific command.
 
-This specific environment for instance allows you to install various
-dependency packages. Let's say your app requires gtk2 and zlib.
+Each target share some base commands (configure, cmake and ccmake) and
+may have its own custom list of commands.
+
+Windows only: Pre-Built Dependency Manager
+..........................................
+
+The targets `w32` and `w64`, respectively for Windows 32 and 64-bit,
+allow to install various dependency packages.
+Let's say your app requires gtk2 and zlib.
 
 First you can see if the pre-built gtk2 version is sufficient::
 
@@ -214,11 +224,11 @@ package, or with inadequate version, you will have to compile it
 (see `Build a Project`_ section).
 
 *Note: even though `crossroad` already has a nice built-in dependency
-manager, many feature are still missing. In particular there is no
+manager, many features are still missing. In particular there is no
 dependency support on uninstall (so be aware you may end up with a
-broken prefix when you uninstall carelessly), there is no way to search
-packages, there is no track of what you already installed (so you
-can endlessly reinstall the same packages).*
+broken prefix when you uninstall carelessly), and there is no track
+of what you already installed (so you can endlessly reinstall the
+same packages).*
 
 Also the package manager will overwrite any file in the crossroad tree.
 This is by-design, and you should never consider the crossroad tree as a
@@ -249,11 +259,10 @@ compilation system, for Windows 64-bit.
 
     In a typical GNU code, you should have access to a `./configure`
     script, or with ways to build one, for instance by running an
-    `./autogen.sh` first. You should not run it directly, but run it
-    though this command instead::
+    `./autogen.sh` first. You should not run `./configure` directly,
+    but run it through this command instead::
 
         $ crossroad configure
-
 
     There is no need to add a --prefix, a --host, or a --build. These
     are automatically and appropriately set up for you.
@@ -274,8 +283,8 @@ compilation system, for Windows 64-bit.
         $ crossroad ../myproject/configure --without-libjpeg
 
 (3) If your configure fails because you miss any dependency, you can try
-    and install it with the `Pre-Built Dependency Manager`_ or by
-    compiling it too.
+    and install it with the `Pre-Built Dependency Manager`_ (if for Windows)
+    or by compiling it too.
 
     Do this step as many times as necessary, until the configure step (2)
     succeeds. Then go to the next step.
@@ -316,8 +325,8 @@ Alternatively crossroad allows also to use the curses interface of
 The rest will be the same as a normal CMake build, and you can add
 any options to your build the usual way.
 
-INFO: This has been tested with success on allegro 5, cross-compiled for
-Windows.
+INFO: This has been tested with success on allegro 5 and GExiv2,
+cross-compiled for Windows.
 
 Other Build System
 ******************
@@ -337,9 +346,9 @@ For instance `crossroad configure` is the equivalent of running::
 
     $ ./configure --prefix=$CROSSROAD_PREFIX --host=$CROSSROAD_HOST --build=$CROSSROAD_BUILD
 
-And `crossroad cmake .` is nothing more than::
+And `crossroad cmake /some/path` is nothing more than::
 
-    $ cmake . -DCMAKE_INSTALL_PREFIX:PATH=$CROSSROAD_PREFIX -DCMAKE_TOOLCHAIN_FILE=$CROSSROAD_CMAKE_TOOLCHAIN_FILE
+    $ cmake /some/path -DCMAKE_INSTALL_PREFIX:PATH=$CROSSROAD_PREFIX -DCMAKE_TOOLCHAIN_FILE=$CROSSROAD_CMAKE_TOOLCHAIN_FILE
 
 Here is the list of useful, easy-to-remember and ready-to-use,
 environment variables, prepared by crossroad:
@@ -355,6 +364,10 @@ environment variables, prepared by crossroad:
 - $CROSSROAD_PLATFORM
 
 - $CROSSROAD_PLATFORM_NICENAME
+
+- $CROSSROAD_PROJECT
+
+- $CROSSROAD_WORD_SIZE
 
 What it means is that you can use these for other compilation systems.
 You can also use your `crossroad` prefix, even for systems which do not
@@ -378,6 +391,11 @@ WARNING: as said previously in the `Pre-Built Dependency Manager`_ section, do
 not perform there or leave any unique work that has not been saved
 somewhere else as well.
 
+WARNING: these environment variables are set up by `crossroad` and it is
+unadvisable to modify them. You are likely to break your cross-build
+environment if you do so. The only CROSSROAD_\* variable that you can
+safely change are the ones listed in **CONFIGURATION**.
+
 Import your Project to your Target Platform
 ............................................
 
@@ -386,7 +404,7 @@ To test your binaries on an actual Windows machine, `crossroad` provides
 
 (1) Make a zip of your whole cross-compiled tree::
 
-        $ crossroad -c mysoftware.zip w64
+        $ crossroad -c mysoftware.zip w64 myproject w64 otherproject
 
     This will create a zip file `mysoftware.zip` that you can just move over
     to your test Windows OS. Then uncompress it, and set or update your PATH
@@ -402,15 +420,15 @@ To test your binaries on an actual Windows machine, `crossroad` provides
 
         $ crossroad -s w64 myproject
 
-    This will create a symlink directory named "myproject" linking to
-    the "w64" target. Since the directory is shared, it should be
-    visible in Windows as a normal directory.
+    This will create a symlink directory named "crossroad-w64-myproject" linking to
+    the "myproject" project's prefix for w64. Since the directory is
+    shared, it should be visible in Windows as a normal directory.
 
 
 **Finally run your app, and enjoy!**
 
-Bonus: testing your w32 binaries on the build platform with Wine
-================================================================
+Bonus: testing your win32 binaries on the build platform with Wine
+==================================================================
 
 A `crossroad` environment is actually set-up with a few environment
 variables so that `Wine` can find the DLLs and win32 tools that you
@@ -427,7 +445,28 @@ which used to work suddenly won't.
 So do not consider this feature as perfect as testing on a native win32
 platform. Nevertheless this is still a big conveniency.
 For the records, I have been able to run successfull `make check` on
-projects as complicated as **GIMP**.
+projects as complex as **GIMP**.
+
+Bonus 2: install win32 software with Wine
+=========================================
+
+Some software have proved extremely hard to cross-compile, mostly because
+of weird custom build systems or strange designs. I had this case for
+Python, which even went as far as forbidding cross-builds for hosts they
+didn't approve with specific configure tests.
+I have been therefore unable to crossbuild it. One solution could be to
+fix the build system (which I started to do for Python until I discovered
+bug reports with patches for specifically this, and opened for eons), or
+to install in Windows, and import the data (but then you lose the
+flexibility or building all on the same machine).
+
+My other workaround has been to install with Wine. In my Python example, I
+have indeed been able to run the 32-bit installer (not the 64-bit one).
+When doing so in a crossroad environment, the data will be automatically
+installed under `$CROSSROAD_PREFIX/wine/`.
+Then you just have to update any necessary environment variable in order
+for your builds to discover any library/header if necessary (I don't see
+how to do so automatically with a Windows tree being so "random").
 
 Configuration
 =============

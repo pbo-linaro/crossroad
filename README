@@ -7,15 +7,17 @@ environment for cross-compilation, on a GNU/Linux
 distribution.
 
 Be aware that this is essentially a developer tool. Its target audience
-are developers working on UNIX systems (tested only under a GNU/Linux
-system though), and wishing to cross-compile projects from the same
+are developers working on UNIX systems (tested only under GNU/Linux
+systems: Linux Mint, and Mageia, but expected to work on other
+distributions), and wishing to cross-compile projects from the same
 platform. It is not for end-users, and is useless in *running*
 software, only **building** them.
 
-Only two target environments are supported currently:
+Only 3 target environments are supported currently:
 
 - Windows (x86) 32-bit;
 - Windows (x86) 64-bit.
+- Android on ARM
 
 *Note: no differences are made between Windows platforms other than
 32/64-bit (in particular no software API versioning).
@@ -48,13 +50,14 @@ Or download from the archive::
 Setting-UP
 ==========
 
-`Crossroad` does not need any particular cross-compilation tool to run,
-but it will tell you what you are missing, and you won't be able to enter
-a cross-compilation environment until this is installed.
+`Crossroad` does not need any particular cross-compilation tool to run
+at first, but it will tell you what you are missing to go further, and
+you won't be able to enter a cross-compilation environment until this is
+installed.
 
 List targets with::
 
-    $ crossroad --list-all
+    $ crossroad --list-targets
     crossroad, version 0.4.4
     Available targets:
     w64                  Windows 64-bit
@@ -84,7 +87,7 @@ still give a useful hint for searching in your package manager).
 
 Install the missing requirements and run crossroad again::
 
-    $ crossroad --list-all
+    $ crossroad --list-targets
     crossroad, version 0.4.4
     Available targets:
     w32                  Windows 32-bit
@@ -117,9 +120,10 @@ with `man crossroad`. The below preview presents the main usage examples.
 
 From a command line, run::
 
-    $ crossroad w64
+    $ crossroad w64 myproject
 
-This will set up a *Windows 64-bit* cross-compilation environment.
+This will set up a *Windows 64-bit* cross-compilation environment called
+"myproject".
 
 Your prompt will also be slightly modified (only adding information.
 Whatever custom prompt hack you may have — for instance displaying
@@ -137,6 +141,13 @@ list of commands.
 You are now ready to configure and compile any project for your target
 platform.
 
+Note that several projects, even for a same target, won't share any data.
+For instance if you have a GIMP and Blender both using libpng, you would
+have to install it in both environments. This is because you usually
+don't want to mix data from various projects and keep a clean slate.
+Nevertheless if you wish a holdall project for a given target, you can
+also do so.
+
 Example: autotools
 ~~~~~~~~~~~~~~~~~~
 
@@ -145,7 +156,7 @@ compilation system, for Windows 64-bit.
 
 (1) **First enter crossroad**::
 
-        $ crossroad w64
+        $ crossroad w64 myproject
 
     *Normally here your shell prompt will be modified at this point.*
 
@@ -192,7 +203,7 @@ compilation system, for Windows 64-bit.
     Do this step as many times as necessary, until the configure step
     *3.* succeeds. Then go to the next step.
 
-(5) **Build**::
+(5) **Build** and install in the most common way possible::
 
         $ make
         $ make install
@@ -217,7 +228,7 @@ compilation system, for Windows 64-bit.
 
     a) Make a zip of your whole cross-compiled tree with the following::
 
-            $ crossroad -c mysoftware.zip w64
+            $ crossroad -c mysoftware.zip w64 myproject
 
        This will create a zip file `mysoftware.zip` that you can just
        move over to your test Windows OS. Then uncompress it, and set or
@@ -233,7 +244,8 @@ compilation system, for Windows 64-bit.
 
             $ crossroad -s w64 myproject
 
-       This will create a symlink named `myproject/` to the "w64" target.
+       This will create a symlink named `crossroad-w64-myproject/` to the
+       "myproject" project for the "w64" target.
        Since the directory is shared, it should be visible in Windows as
        a normal directory.
 
@@ -263,10 +275,11 @@ Alternatively crossroad allows also to use the curses interface of
 
     $ crossroad ccmake .
 
-The rest should be the same, and you can add any options to your build.
+The rest should be the same, with `make && make install`, and you can
+add any options to your build the usual way.
 
-This has been tested with success on allegro 5, cross-compiled for
-Windows.
+This has been tested with success on allegro 5, and gexiv2 libraries,
+cross-compiled for Windows.
 
 Example: other
 ~~~~~~~~~~~~~~
@@ -286,9 +299,9 @@ For instance `crossroad configure` is the equivalent of running::
 
     $ ./configure --prefix=$CROSSROAD_PREFIX --host=$CROSSROAD_HOST --build=$CROSSROAD_BUILD
 
-And `crossroad cmake` is nothing more than::
+And `crossroad cmake /some/path` is nothing more than::
 
-    $ cmake . -DCMAKE_INSTALL_PREFIX:PATH=$CROSSROAD_PREFIX -DCMAKE_TOOLCHAIN_FILE=$CROSSROAD_CMAKE_TOOLCHAIN_FILE
+    $ cmake /some/path -DCMAKE_INSTALL_PREFIX:PATH=$CROSSROAD_PREFIX -DCMAKE_TOOLCHAIN_FILE=$CROSSROAD_CMAKE_TOOLCHAIN_FILE
 
 Here is the list of useful, easy-to-remember and ready-to-use,
 environment variables, prepared by crossroad:
@@ -305,14 +318,22 @@ environment variables, prepared by crossroad:
 
 - $CROSSROAD_PLATFORM_NICENAME
 
-What it means is that you can use these for other compilation system.
-You can also use your `crossroad` prefix, even for systems which do not
-require any compilation. Let's say for instance you wish to include a
-pure python project in your build. No per-platform compilation is needed,
-but you still want to carry all the files in the same prefix.
-So just run:
+- $CROSSROAD_PROJECT
 
-$ ./setup.py --prefix=$CROSSROAD_PREFIX
+- $CROSSROAD_WORD_SIZE
+
+Do **not** modify these environment variables. They have been set-up
+for your builds to work successfully. If you modify these, you will get
+into trouble.
+
+What it means though is that you can use these for other compilation
+systems.  You can also use your `crossroad` prefix, even for systems
+which do not require any compilation. Let's say for instance you wish
+to include a pure python project in your build. No per-platform
+compilation is needed, but you still want to carry all the files in the
+same prefix. So just run:
+
+$ ./setup.py install --prefix=$CROSSROAD_PREFIX
 
 and so on.
 
@@ -322,6 +343,27 @@ Though in most cases, you should not need to manually go there do
 anything, you still can (for instance to change software settings, etc.)
 with `cd $CROSSROAD_PREFIX`.*
 
+Special case: Wine
+~~~~~~~~~~~~~~~~~~
+
+Some software have proved extremely hard to cross-compile, mostly because
+of weird custom build systems or strange designs. I had this case for
+Python, which even went as far as forbidding cross-builds for hosts they
+didn't approve with specific configure tests.
+I have been therefore unable to crossbuild it. One solution could be to
+fix the build system (which I started to do for Python until I discovered
+bug reports with patches for specifically this, and opened for eons), or
+to install in Windows, and import the data (but then you lose the
+flexibility or building all on the same machine).
+
+My other workaround has been to install with Wine. In my Python example, I
+have indeed been able to run the 32-bit installer (not the 64-bit one).
+When doing so in a crossroad environment, the data will be automatically
+installed under `$CROSSROAD_PREFIX/wine/`.
+Then you just have to update any necessary environment variable in order
+for your builds to discover any library/header if necessary (I don't see
+how to do so automatically with a Windows tree being so "random").
+
 Configuration
 =============
 
@@ -329,7 +371,7 @@ Configuration
 Right now it does not need any configuration file, but it will soon probably.
 And these will be in $XDG_CONFIG_HOME/crossroad/ (defaults to $HOME/.config/crossroad/).
 
-Cache is saved in $XDG_CACHE_HOME/crossroad/ and data $XDG_DATA_HOME/crossroad/.
+Cache is saved in $XDG_CACHE_HOME/crossroad/ and data in $XDG_DATA_HOME/crossroad/.
 
 The only configuration right now is that in case you use a
 self-installed MinGW-w64 prefix of Windows libraries, if they are not in
@@ -344,7 +386,6 @@ Help
 installing a man page in section 1::
 
     $ man crossroad
-
 
 Contributing
 ============
