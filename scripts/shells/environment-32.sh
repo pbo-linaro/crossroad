@@ -71,9 +71,3 @@ for dir in $(find $CROSSROAD_PREFIX/lib/ -name 'python*');
 do
     export PYTHONPATH=:${dir}:$PYTHONPATH
 done;
-
-# Allowing wine to search dll and binaries in our prefix.
-export WINEPATH="$CROSSROAD_PREFIX/bin/"
-export WINEARCH=win32
-export WINEPREFIX="$CROSSROAD_PREFIX/wine"
-

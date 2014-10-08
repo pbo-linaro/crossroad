@@ -138,6 +138,7 @@ class my_build(distutils.command.build.build):
         for f in os.listdir(os.path.join(srcdir, 'platforms/env/')):
             if f[-5:] == '.conf':
                 config = configparser.ConfigParser()
+                config.optionxform = str
                 config.read([os.path.join(srcdir, 'platforms/env', f)])
                 if not config.has_section('Platform') or not config.has_option('Platform', 'shortname') or \
                    not config.has_option('Platform', 'nicename') or not config.has_option('Platform', 'host') or \
@@ -152,6 +153,12 @@ class my_build(distutils.command.build.build):
                 env_variables += 'export CROSSROAD_PLATFORM_NICENAME="{}"\n'.format(config.get('Platform', 'nicename'))
                 env_variables += 'export CROSSROAD_HOST="{}"\n'.format(config.get('Platform', 'host'))
                 env_variables += 'export CROSSROAD_WORD_SIZE="{}"\n'.format(config.getint('Platform', 'word-size'))
+
+                if config.has_section('Environment'):
+                    custom_env_vars = config.items('Environment')
+                    for (env_var, env_val) in custom_env_vars:
+                        env_variables += 'export {}="{}"\n'.format(env_var, env_val)
+
                 # Platform file.
                 shutil.copy(os.path.join(srcdir, 'platforms/modules/', shortname + '.py'), 'build/platforms')
                 # Cmake file.
