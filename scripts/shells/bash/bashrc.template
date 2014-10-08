@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # This file is part of crossroad.
-# Copyright (C) 2013 Jehan <jehan at girinstud.io>
+# Copyright (C) 2013-2014 Jehan <jehan at girinstud.io>
 #
 # crossroad is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as published by
@@ -24,11 +24,8 @@ if [ -f ~/.bashrc ]; then
     . ~/.bashrc
 fi
 
-export CROSSROAD_PLATFORM_NICENAME="Windows 64-bit"
-export CROSSROAD_HOST=x86_64-w64-mingw32
-export CROSSROAD_PLATFORM=w64
-export CROSSROAD_WORD_SIZE=64
+@ENV_VARIABLES@
 
-source @DATADIR@/share/crossroad/scripts/pre-bash-env.sh
-source @DATADIR@/share/crossroad/scripts/environment-64.sh
-source @DATADIR@/share/crossroad/scripts/post-env.sh
+source @DATADIR@/share/crossroad/scripts/shells/pre-bash-env.sh
+source @DATADIR@/share/crossroad/scripts/shells/environment-${CROSSROAD_WORD_SIZE}.sh
+source @DATADIR@/share/crossroad/scripts/shells/post-env.sh

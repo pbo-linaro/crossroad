@@ -1,5 +1,21 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
+#
+# This file is part of crossroad.
+# Copyright (C) 2013-2014 Jehan <jehan at girinstud.io>
+#
+# crossroad is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# crossroad is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with crossroad.  If not, see <http://www.gnu.org/licenses/>.
 
 import distutils.command.build
 import distutils.command.build_scripts
@@ -11,6 +27,7 @@ import os
 import stat
 import subprocess
 import shutil
+import configparser
 
 version = '0.5'
 
@@ -109,34 +126,70 @@ class my_build(distutils.command.build.build):
         try:
             os.makedirs('build/bin', exist_ok = True)
             os.makedirs('build/platforms', exist_ok = True)
-            os.makedirs('build/share/crossroad/scripts/bash', exist_ok = True)
-            os.makedirs('build/share/crossroad/scripts/zsh.w32', exist_ok = True)
-            os.makedirs('build/share/crossroad/scripts/zsh.w64', exist_ok = True)
+            os.makedirs('build/share/crossroad/scripts/shells/bash', exist_ok = True)
             os.makedirs('build/share/crossroad/scripts/cmake', exist_ok = True)
         except os.error:
             sys.stderr.write('Build error: failure to create the build/ tree. Please check your permissions.\n')
             sys.exit(os.EX_CANTCREAT)
         shutil.copyfile(os.path.join(srcdir, 'src/crossroad.py'), 'build/bin/crossroad')
         shutil.copyfile(os.path.join(srcdir, 'src/in-crossroad.py'), 'build/share/crossroad/scripts/in-crossroad.py')
-        shutil.copyfile(os.path.join(srcdir, 'scripts/environment-32.sh'), 'build/share/crossroad/scripts/environment-32.sh')
-        shutil.copyfile(os.path.join(srcdir, 'scripts/environment-64.sh'), 'build/share/crossroad/scripts/environment-64.sh')
-        # Bash startup files.
-        for f in os.listdir(os.path.join(srcdir, 'scripts/bash')):
-            if f[:7] == 'bashrc.':
-                shutil.copyfile(os.path.join(srcdir, 'scripts/bash/', f), os.path.join('build/share/crossroad/scripts/bash/', f))
-        # Zsh startup files.
-        for f in os.listdir(os.path.join(srcdir, 'scripts/zsh')):
-            if f[:6] == 'zshrc.':
-                platform = f[6:]
-                shutil.copyfile(os.path.join(srcdir, 'scripts/zsh/', f), os.path.join('build/share/crossroad/scripts/zsh.' + platform, '.zshrc'))
-                shutil.copyfile(os.path.join(srcdir, 'scripts/zsh/zshenv'), os.path.join('build/share/crossroad/scripts/zsh.' + platform, '.zshenv'))
-        # CMake files.
-        shutil.copyfile(os.path.join(srcdir, 'scripts/cmake/toolchain-w32.cmake'), 'build/share/crossroad/scripts/cmake/toolchain-w32.cmake')
-        shutil.copyfile(os.path.join(srcdir, 'scripts/cmake/toolchain-w64.cmake'), 'build/share/crossroad/scripts/cmake/toolchain-w64.cmake')
-        shutil.copyfile(os.path.join(srcdir, 'scripts/cmake/toolchain-android-arm.cmake'), 'build/share/crossroad/scripts/cmake/toolchain-android-arm.cmake')
-        for f in os.listdir(os.path.join(srcdir, 'platforms')):
-            if f[-3:] == '.py':
-                shutil.copyfile(os.path.join(srcdir, 'platforms', f), os.path.join('build/platforms', f))
+        shutil.copyfile(os.path.join(srcdir, 'scripts/shells/environment-32.sh'), 'build/share/crossroad/scripts/shells/environment-32.sh')
+        shutil.copyfile(os.path.join(srcdir, 'scripts/shells/environment-64.sh'), 'build/share/crossroad/scripts/shells/environment-64.sh')
+        for f in os.listdir(os.path.join(srcdir, 'platforms/env/')):
+            if f[-5:] == '.conf':
+                config = configparser.ConfigParser()
+                config.read([os.path.join(srcdir, 'platforms/env', f)])
+                if not config.has_section('Platform') or not config.has_option('Platform', 'shortname') or \
+                   not config.has_option('Platform', 'nicename') or not config.has_option('Platform', 'host') or \
+                   not config.has_option('Platform', 'word-size'):
+                    sys.stderr.write('Build error: file {} miss required options.\n'. f)
+                    sys.exit(os.EX_CANTCREAT)
+                shortname = config.get('Platform', 'shortname')
+                nicename = config.get('Platform', 'nicename')
+                sys.stdout.write('Configuring platform "{}"\n'.format(nicename))
+
+                env_variables = '\nexport CROSSROAD_PLATFORM="{}"\n'.format(config.get('Platform', 'shortname'))
+                env_variables += 'export CROSSROAD_PLATFORM_NICENAME="{}"\n'.format(config.get('Platform', 'nicename'))
+                env_variables += 'export CROSSROAD_HOST="{}"\n'.format(config.get('Platform', 'host'))
+                env_variables += 'export CROSSROAD_WORD_SIZE="{}"\n'.format(config.getint('Platform', 'word-size'))
+                # Platform file.
+                shutil.copy(os.path.join(srcdir, 'platforms/modules/', shortname + '.py'), 'build/platforms')
+                # Cmake file.
+                shutil.copy(os.path.join(srcdir, 'platforms/cmake/', 'toolchain-' + shortname + '.cmake'), 'build/share/crossroad/scripts/cmake/')
+                # Bash startup file.
+                built_bashrc = os.path.join('build/share/crossroad/scripts/shells/bash/', 'bashrc.' + shortname)
+                shutil.copyfile(os.path.join(srcdir, 'scripts/shells/bash/bashrc.template'), built_bashrc)
+                try:
+                    fd = open(built_bashrc, 'r+')
+                    contents = fd.read()
+                    contents = contents.replace('@ENV_VARIABLES@', env_variables)
+                    fd.truncate(0)
+                    fd.seek(0)
+                    fd.write(contents)
+                    fd.flush()
+                    fd.close()
+                except IOError:
+                    sys.stderr.write('"{}" failed to update. Check your permissions.'.format(built_bashrc))
+                    sys.exit(os.EX_CANTCREAT)
+                # Zsh startup files.
+                zsh_startup_dir = 'build/share/crossroad/scripts/shells/zsh.' + shortname
+                os.makedirs(zsh_startup_dir, exist_ok = True)
+                built_zshenv = os.path.join(zsh_startup_dir, '.zshenv')
+                shutil.copyfile(os.path.join(srcdir, 'scripts/shells/zsh/zshenv'), built_zshenv)
+                built_zshrc = os.path.join(zsh_startup_dir, '.zshrc')
+                shutil.copyfile(os.path.join(srcdir, 'scripts/shells/zsh/zshrc.template'), built_zshrc)
+                try:
+                    fd = open(built_zshrc, 'r+')
+                    contents = fd.read()
+                    contents = contents.replace('@ENV_VARIABLES@', env_variables)
+                    fd.truncate(0)
+                    fd.seek(0)
+                    fd.write(contents)
+                    fd.flush()
+                    fd.close()
+                except IOError:
+                    sys.stderr.write('"{}" failed to update. Check your permissions.'.format(built_zshrc))
+                    sys.exit(os.EX_CANTCREAT)
         distutils.command.build.build.run(self)
 
 class my_install(install):
@@ -217,67 +270,49 @@ class my_install_data(distutils.command.install_data.install_data):
                               stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
                               stat.S_IRGRP | stat.S_IXGRP |
                               stat.S_IROTH | stat.S_IXOTH)
-        os.chmod(os.path.join(datadir, 'share/crossroad/scripts/crossroad-gcc'),
+        os.chmod(os.path.join(datadir, 'share/crossroad/scripts/bin-wrappers/crossroad-gcc'),
                               stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
                               stat.S_IRGRP | stat.S_IXGRP |
                               stat.S_IROTH | stat.S_IXOTH)
-        os.chmod(os.path.join(datadir, 'share/crossroad/scripts/crossroad-cpp'),
+        os.chmod(os.path.join(datadir, 'share/crossroad/scripts/bin-wrappers/crossroad-cpp'),
                               stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
                               stat.S_IRGRP | stat.S_IXGRP |
                               stat.S_IROTH | stat.S_IXOTH)
-        os.chmod(os.path.join(datadir, 'share/crossroad/scripts/crossroad-pkg-config'),
+        os.chmod(os.path.join(datadir, 'share/crossroad/scripts/bin-wrappers/crossroad-pkg-config'),
                               stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
                               stat.S_IRGRP | stat.S_IXGRP |
                               stat.S_IROTH | stat.S_IXOTH)
         os.makedirs(os.path.join(datadir, 'share/crossroad/bin/'), exist_ok=True)
-        try:
-            os.unlink(os.path.join(datadir, 'share/crossroad/bin/x86_64-w64-mingw32-pkg-config'))
-        except OSError:
-            pass
-        try:
-            os.unlink(os.path.join(datadir, 'share/crossroad/bin/i686-w64-mingw32-pkg-config'))
-        except OSError:
-            pass
-        try:
-            os.unlink(os.path.join(datadir, 'share/crossroad/bin/x86_64-w64-mingw32-gcc'))
-        except OSError:
-            pass
-        try:
-            os.unlink(os.path.join(datadir, 'share/crossroad/bin/i686-w64-mingw32-gcc'))
-        except OSError:
-            pass
-        try:
-            os.unlink(os.path.join(datadir, 'share/crossroad/bin/x86_64-w64-mingw32-g++'))
-        except OSError:
-            pass
-        try:
-            os.unlink(os.path.join(datadir, 'share/crossroad/bin/i686-w64-mingw32-g++'))
-        except OSError:
-            pass
-        try:
-            os.unlink(os.path.join(datadir, 'share/crossroad/bin/x86_64-w64-mingw32-cpp'))
-        except OSError:
-            pass
-        try:
-            os.unlink(os.path.join(datadir, 'share/crossroad/bin/i686-w64-mingw32-cpp'))
-        except OSError:
-            pass
-        os.symlink(os.path.join(datadir, 'share/crossroad/scripts/crossroad-pkg-config'),
-                   os.path.join(datadir, 'share/crossroad/bin/x86_64-w64-mingw32-pkg-config'))
-        os.symlink(os.path.join(datadir, 'share/crossroad/scripts/crossroad-pkg-config'),
-                   os.path.join(datadir, 'share/crossroad/bin/i686-w64-mingw32-pkg-config'))
-        os.symlink(os.path.join(datadir, 'share/crossroad/scripts/crossroad-gcc'),
-                   os.path.join(datadir, 'share/crossroad/bin/x86_64-w64-mingw32-gcc'))
-        os.symlink(os.path.join(datadir, 'share/crossroad/scripts/crossroad-gcc'),
-                   os.path.join(datadir, 'share/crossroad/bin/i686-w64-mingw32-gcc'))
-        os.symlink(os.path.join(datadir, 'share/crossroad/scripts/crossroad-gcc'),
-                   os.path.join(datadir, 'share/crossroad/bin/x86_64-w64-mingw32-g++'))
-        os.symlink(os.path.join(datadir, 'share/crossroad/scripts/crossroad-gcc'),
-                   os.path.join(datadir, 'share/crossroad/bin/i686-w64-mingw32-g++'))
-        os.symlink(os.path.join(datadir, 'share/crossroad/scripts/crossroad-cpp'),
-                   os.path.join(datadir, 'share/crossroad/bin/x86_64-w64-mingw32-cpp'))
-        os.symlink(os.path.join(datadir, 'share/crossroad/scripts/crossroad-cpp'),
-                   os.path.join(datadir, 'share/crossroad/bin/i686-w64-mingw32-cpp'))
+        # Automatically generate binaries for each platform.
+        for f in os.listdir(os.path.join(srcdir, 'platforms/env/')):
+            if f[-5:] == '.conf':
+                config = configparser.ConfigParser()
+                config.read([os.path.join(srcdir, 'platforms/env', f)])
+                host = config.get('Platform', 'host')
+                try:
+                    os.unlink(os.path.join(datadir, 'share/crossroad/bin/' + host + '-pkg-config'))
+                except OSError:
+                    pass
+                try:
+                    os.unlink(os.path.join(datadir, 'share/crossroad/bin/' + host + '-gcc'))
+                except OSError:
+                    pass
+                try:
+                    os.unlink(os.path.join(datadir, 'share/crossroad/bin/' + host + '-g++'))
+                except OSError:
+                    pass
+                try:
+                    os.unlink(os.path.join(datadir, 'share/crossroad/bin/' + host + '-cpp'))
+                except OSError:
+                    pass
+                os.symlink(os.path.join(datadir, 'share/crossroad/scripts/bin-wrappers/crossroad-pkg-config'),
+                           os.path.join(datadir, 'share/crossroad/bin/' + host + '-pkg-config'))
+                os.symlink(os.path.join(datadir, 'share/crossroad/scripts/bin-wrappers/crossroad-gcc'),
+                           os.path.join(datadir, 'share/crossroad/bin/' + host + '-gcc'))
+                os.symlink(os.path.join(datadir, 'share/crossroad/scripts/bin-wrappers/crossroad-gcc'),
+                           os.path.join(datadir, 'share/crossroad/bin/' + host + '-g++'))
+                os.symlink(os.path.join(datadir, 'share/crossroad/scripts/bin-wrappers/crossroad-cpp'),
+                           os.path.join(datadir, 'share/crossroad/bin/' + host + '-cpp'))
 
 class my_install_scripts(distutils.command.install_scripts.install_scripts):
     '''
@@ -289,10 +324,30 @@ class my_install_scripts(distutils.command.install_scripts.install_scripts):
         distutils.command.install_scripts.install_scripts.run(self)
 
 
-platform_list = os.listdir(os.path.join(srcdir, 'platforms'))
+platform_list = os.listdir(os.path.join(srcdir, 'platforms/modules'))
 platform_list = [os.path.join('build/platforms/', f) for f in platform_list if f[-3:] == '.py']
 
-bash_env = [os.path.join('build/share/crossroad/scripts/bash/', f) for f in os.listdir(os.path.join(srcdir, 'scripts/bash/')) if f[:7] == 'bashrc.']
+cmake_toolchains = [os.path.join('build/share/crossroad/scripts/cmake/', f) for f in os.listdir(os.path.join(srcdir, 'platforms/cmake/')) if f[-6:] == '.cmake']
+
+def get_built_data_files():
+    bashrc_files = []
+    zsh_files = []
+    for f in os.listdir(os.path.join(srcdir, 'platforms/env/')):
+        if f[-5:] == '.conf':
+            config = configparser.ConfigParser()
+            config.read([os.path.join(srcdir, 'platforms/env', f)])
+            shortname = config.get('Platform', 'shortname')
+            # bash
+            built_bashrc = os.path.join('build/share/crossroad/scripts/shells/bash/', 'bashrc.' + shortname)
+            bashrc_files += [built_bashrc]
+            # ZSH
+            zsh_startup_dir = 'build/share/crossroad/scripts/shells/zsh.' + shortname
+            built_zshenv = os.path.join(zsh_startup_dir, '.zshenv')
+            built_zshrc = os.path.join(zsh_startup_dir, '.zshrc')
+            zsh_files += [('share/crossroad/scripts/shells/zsh.' + shortname, [built_zshrc, built_zshenv])]
+    return [('share/crossroad/scripts/shells/bash', bashrc_files)] + zsh_files
+
+built_data_files = get_built_data_files()
 
 setup(
     name = 'crossroad',
@@ -320,26 +375,22 @@ setup(
         ('share/crossroad/scripts/', [os.path.join(srcdir, 'scripts/crossroad-mingw-install.py'),
                                       os.path.join(srcdir, 'scripts/config.guess'),
                                       'build/share/crossroad/scripts/in-crossroad.py',
-                                      'build/share/crossroad/scripts/environment-32.sh',
-                                      'build/share/crossroad/scripts/environment-64.sh',
-                                      os.path.join(srcdir, 'scripts/pre-bash-env.sh'),
-                                      os.path.join(srcdir, 'scripts/pre-zsh-env.sh'),
-                                      os.path.join(srcdir, 'scripts/post-env.sh'),
-                                      os.path.join(srcdir, 'scripts/crossroad-gcc'),
-                                      os.path.join(srcdir, 'scripts/crossroad-pkg-config'),
-                                      os.path.join(srcdir, 'scripts/crossroad-cpp'),
                                       ]),
-        ('share/crossroad/scripts/bash', bash_env),
-        ('share/crossroad/scripts/bash_completion.d', [os.path.join(srcdir, 'scripts/bash_completion.d/crossroad')]),
-        ('share/crossroad/scripts/zsh.w32', ['build/share/crossroad/scripts/zsh.w32/.zshenv',
-                                             'build/share/crossroad/scripts/zsh.w32/.zshrc']),
-        ('share/crossroad/scripts/zsh.w64', ['build/share/crossroad/scripts/zsh.w64/.zshenv',
-                                             'build/share/crossroad/scripts/zsh.w64/.zshrc']),
-        ('share/crossroad/scripts/cmake', ['build/share/crossroad/scripts/cmake/toolchain-w32.cmake',
-                                            'build/share/crossroad/scripts/cmake/toolchain-w64.cmake',
-                                            'build/share/crossroad/scripts/cmake/toolchain-android-arm.cmake']),
+        ('share/crossroad/scripts/bin-wrappers/',
+                                     [os.path.join(srcdir, 'scripts/bin-wrappers/crossroad-gcc'),
+                                      os.path.join(srcdir, 'scripts/bin-wrappers/crossroad-pkg-config'),
+                                      os.path.join(srcdir, 'scripts/bin-wrappers/crossroad-cpp'),
+                                      ]),
+        ('share/crossroad/scripts/shells/',
+                                     ['build/share/crossroad/scripts/shells/environment-32.sh',
+                                      'build/share/crossroad/scripts/shells/environment-64.sh',
+                                      os.path.join(srcdir, 'scripts/shells/pre-bash-env.sh'),
+                                      os.path.join(srcdir, 'scripts/shells/pre-zsh-env.sh'),
+                                      os.path.join(srcdir, 'scripts/shells/post-env.sh'),]),
+        ('share/crossroad/scripts/shells/bash/bash_completion.d', [os.path.join(srcdir, 'scripts/shells/bash/bash_completion.d/crossroad')]),
+        ('share/crossroad/scripts/cmake', cmake_toolchains),
         ('share/crossroad/platforms/', platform_list),
         #('crossroad/projects/', ['projects']),
-        ],
+        ] + built_data_files,
     )
 

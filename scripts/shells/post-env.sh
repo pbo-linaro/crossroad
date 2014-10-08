@@ -26,7 +26,7 @@ fi;
 
 # Leave the user override the default crossroads PS1.
 if [ "x${CROSSROADS_PS1}x" = "xx" ]; then
-    export PS1="${RED}${CROSSROAD_PLATFORM}${SYMBOL}${NORMAL} ${PS1}"
+    export PS1="${RED}${CROSSROAD_PLATFORM}${SYMBOL}${CROSSROAD_PROJECT}${NORMAL} ${PS1}"
 else
     export PS1="${CROSSROADS_PS1}"
 fi

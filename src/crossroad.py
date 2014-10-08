@@ -413,10 +413,10 @@ if __name__ == "__main__":
             # I could set an updated environment. But bash would still run .bashrc
             # which may overwrite some variables. So instead I set my own bashrc,
             # where I make sure to first run the user rc files.
-            bashrc_path = os.path.join(install_datadir, 'crossroad/scripts/bash/bashrc.' + available_platforms[args[0]].name)
+            bashrc_path = os.path.join(install_datadir, 'crossroad/scripts/shells/bash/bashrc.' + available_platforms[args[0]].name)
             command = [shell, '--rcfile', bashrc_path]
         elif shell[-3:] == 'zsh':
-            zdotdir = os.path.join(install_datadir, 'crossroad/scripts/zsh.' + available_platforms[args[0]].name)
+            zdotdir = os.path.join(install_datadir, 'crossroad/scripts/shells/zsh.' + available_platforms[args[0]].name)
             # SETUP the $ZDOTDIR env.
             # If already set, save the old value and set it back at the end.
             # I could not find a way in zsh to run another zshrc and still end up in an interactive shell.
