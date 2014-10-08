@@ -31,7 +31,7 @@ else
     export PS1="${CROSSROADS_PS1}"
 fi
 
-echo "Your environment has been set to cross-compile for the '$CROSSROAD_PLATFORM_NICENAME' ($CROSSROAD_PLATFORM) environment."
+echo "Your environment has been set to cross-compile the project '$CROSSROAD_PROJECT' on $CROSSROAD_PLATFORM_NICENAME ($CROSSROAD_PLATFORM)."
 echo 'Use `crossroad help` to list available commands and `man crossroad` to get a full documentation of crossroad capabilities.'
 echo "To exit this cross-compilation environment, simply \`exit\` the current shell session."
 
