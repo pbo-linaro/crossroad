@@ -133,8 +133,7 @@ class my_build(distutils.command.build.build):
             sys.exit(os.EX_CANTCREAT)
         shutil.copyfile(os.path.join(srcdir, 'src/crossroad.py'), 'build/bin/crossroad')
         shutil.copyfile(os.path.join(srcdir, 'src/in-crossroad.py'), 'build/share/crossroad/scripts/in-crossroad.py')
-        shutil.copyfile(os.path.join(srcdir, 'scripts/shells/environment-32.sh'), 'build/share/crossroad/scripts/shells/environment-32.sh')
-        shutil.copyfile(os.path.join(srcdir, 'scripts/shells/environment-64.sh'), 'build/share/crossroad/scripts/shells/environment-64.sh')
+        shutil.copy(os.path.join(srcdir, 'scripts/shells/environment.sh'), 'build/share/crossroad/scripts/shells/')
         for f in os.listdir(os.path.join(srcdir, 'platforms/env/')):
             if f[-5:] == '.conf':
                 config = configparser.ConfigParser()
@@ -389,8 +388,7 @@ setup(
                                       os.path.join(srcdir, 'scripts/bin-wrappers/crossroad-cpp'),
                                       ]),
         ('share/crossroad/scripts/shells/',
-                                     ['build/share/crossroad/scripts/shells/environment-32.sh',
-                                      'build/share/crossroad/scripts/shells/environment-64.sh',
+                                     ['build/share/crossroad/scripts/shells/environment.sh',
                                       os.path.join(srcdir, 'scripts/shells/pre-bash-env.sh'),
                                       os.path.join(srcdir, 'scripts/shells/pre-zsh-env.sh'),
                                       os.path.join(srcdir, 'scripts/shells/post-env.sh'),]),

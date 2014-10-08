@@ -27,5 +27,5 @@ fi
 @ENV_VARIABLES@
 
 source @DATADIR@/share/crossroad/scripts/shells/pre-bash-env.sh
-source @DATADIR@/share/crossroad/scripts/shells/environment-${CROSSROAD_WORD_SIZE}.sh
+source @DATADIR@/share/crossroad/scripts/shells/environment.sh
 source @DATADIR@/share/crossroad/scripts/shells/post-env.sh

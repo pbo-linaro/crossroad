@@ -44,17 +44,20 @@ unset host_ld_dir
 unset host_ld
 
 export LD_LIBRARY_PATH=$CROSSROAD_PREFIX/lib
-if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX" ]; then
+if [ x"CROSSROAD_PLATFORM" == x"w32" ] && [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX" ]; then
+    export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib32/:$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib/"
+fi
+if [ x"CROSSROAD_PLATFORM" == x"w64" ] && [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX" ]; then
     export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib64/:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib/"
 fi
 if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX" ]; then
-    export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$CROSSROAD_GUESSED_MINGW_PREFIX/lib64/:$CROSSROAD_GUESSED_MINGW_PREFIX/lib/"
+    export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$CROSSROAD_GUESSED_MINGW_PREFIX/lib32/:$CROSSROAD_GUESSED_MINGW_PREFIX/lib/"
 fi
 # Adding some typical distribution paths.
 # Note: I could also try to guess the user path from `which ${CROSSROAD_HOST}-gcc`.
 # But it may not always work. For instance if the user uses ccache.
-export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/$CROSSROAD_HOST/lib64/:/usr/local/$CROSSROAD_HOST/lib/"
-export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/$CROSSROAD_HOST/lib64/:/usr/$CROSSROAD_HOST/lib/"
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/$CROSSROAD_HOST/lib${CROSSROAD_WORD_SIZE}/:/usr/local/$CROSSROAD_HOST/lib"
+export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/$CROSSROAD_HOST/lib${CROSSROAD_WORD_SIZE}/:/usr/$CROSSROAD_HOST/lib/"
 
 mkdir -p $CROSSROAD_PREFIX/bin
 export PATH="@DATADIR@/share/crossroad/bin:$CROSSROAD_PREFIX/bin:$PATH"
