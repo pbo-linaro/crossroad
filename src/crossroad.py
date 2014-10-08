@@ -145,9 +145,9 @@ def get_projects(target):
 version = '@VERSION@'
 maintainer = '<jehan at girinstud.io>'
 
-usage  = 'Usage: crossroad [--help] [--version] [<TARGET> [<PROJECT>] [--copy=<PROJECT>] [--run=<script> [--no-exit-after-run]]\n'
-usage += '                 [--reset <TARGET 1>[:<PROJECT>] [<TARGET 2>...]] [--list-targets] [--list-projects <TARGET>]\n'
-usage += '                 [--symlink <TARGET>[:<PROJECT> [<link-name>]] [--compress=<archive.zip> <TARGET 1>[:<PROJECT>] [<TARGET 2>...]]\n'
+usage  = 'Usage: crossroad [--help] [--version] [<TARGET> <PROJECT> [--copy=<PROJECT>] [--run=<script> [--no-exit-after-run]]\n'
+usage += '                 [--reset <TARGET> <PROJECT>] [...]] [--list-targets] [--list-projects <TARGET>]\n'
+usage += '                 [--symlink <TARGET> <PROJECT> [<link-name>]] [--compress=<archive.zip> <TARGET> <PROJECT> [...]]\n'
 
 platform_list = "Available targets:\n"
 for name in available_platforms:
@@ -264,31 +264,46 @@ if __name__ == "__main__":
         #sys.exit(os.EX_OK)
 
     if options.reset:
-        if len(args) == 0:
-            sys.stderr.write('You must specify at least one platform name for --reset.\n')
+        if len(args) == 0 or len(args) % 2 != 0:
+            sys.stderr.write('You must specify a list of "platform project" for --reset.\n')
             sys.exit(os.EX_USAGE)
 
+        platform = None
+        project = None
         for platform_project in args:
-            platform = platform_project
-            project  = 'default'
-            # Split project and platform names.
-            if ':' in platform_project:
-                [platform, project] = platform_project.split(':', 1)
-            if platform not in available_platforms:
+            if platform is None:
+                platform = platform_project
+                continue
+            project  = platform_project
+
+            project_path = os.path.join(xdg_data_home, 'crossroad/roads/', platform, project)
+            if platform not in available_platforms or not os.access(project_path, os.R_OK):
+                sys.stderr.write('Project {} for {} is not built, or unreadable.\n'.format(project, platform))
+                sys.exit(os.EX_NOPERM)
                 sys.stderr.write('Not a valid platform: {}\n'.format(platform))
+                platform = None
+                project = None
                 continue
             platform_path = os.path.join(xdg_data_home, 'crossroad/roads', platform, project)
             # XXX Or a --force option?
-            sys.stdout.write('Project "{}" for target {} ({}) is going to be deleted in'.format(project, platform, platform_path))
-            for i in range(5, 0, -1):
-                sys.stdout.write(' {}'.format(i))
-                sys.stdout.flush()
-                time.sleep(1)
+            try:
+                sys.stdout.write('Project "{}" for target {} ({}) is going to be deleted in'.format(project, platform, platform_path))
+                for i in range(5, 0, -1):
+                    sys.stdout.write(' {}'.format(i))
+                    sys.stdout.flush()
+                    time.sleep(1)
+            except KeyboardInterrupt:
+                sys.stdout.write('\nAborting project deletion.\n')
+                platform = None
+                project = None
+                continue
             sys.stdout.write('...\nDeleting {}...\n'.format(platform_path))
             try:
                 shutil.rmtree(platform_path)
             except:
                 sys.stderr.write('Warning: deletion of {} failed with {}\n'.format(platform_path, sys.exc_info()[0]))
+            platform = None
+            project = None
         sys.exit(os.EX_OK)
 
     if options.archive is not None:
@@ -298,31 +313,38 @@ if __name__ == "__main__":
             # I support only this for now.
             sys.stderr.write('Error: sorry, only zip format archives are supported for the time being.\n')
             sys.exit(os.EX_UNAVAILABLE)
-        if len(args) == 0:
-            sys.stderr.write('You must name at least one platform to include in your archive.\n')
+        if len(args) == 0 or len(args) % 2 != 0:
+            sys.stderr.write('You must specify a list of "platform project" to include in your archive.\n')
             sys.exit(os.EX_USAGE)
+
+        # XXX the last slash / is important because we will want to remove it from file archive name.
+        archive_root = os.path.join(xdg_data_home, 'crossroad/roads/')
+        project_paths = []
+
+        platform = None
+        project = None
         for platform_project in args:
-            platform = platform_project
-            project  = 'default'
-            # Split project and platform names.
-            if ':' in platform_project:
-                [platform, project] = platform_project.split(':', 1)
+            if platform is None:
+                platform = platform_project
+                continue
+            project  = platform_project
+
             # Test existence and readability of the platform.
-            platform_path = os.path.join(xdg_data_home, 'crossroad/roads', platform, project)
-            if platform not in available_platforms or not os.access(platform_path, os.R_OK):
-                sys.stderr.write('Platform {} is not built, or unreadable.\n'.format(platform))
+            project_path = os.path.join(archive_root, platform, project)
+            if platform not in available_platforms or not os.access(project_path, os.R_OK):
+                sys.stderr.write('Project {} for {} is not built, or unreadable.\n'.format(project, platform))
                 sys.exit(os.EX_NOPERM)
+            project_paths += [project_path]
+            platform = None
+            project = None
         # All looks good. Create the zip!
         sys.stdout.write('Generating an archive file...\n')
         archive_file = zipfile.ZipFile(options.archive, 'w',
-                                     compression = zipfile.ZIP_DEFLATED,
-                                     allowZip64 = True)
-        # XXX the last slash / is important because we will want to remove it from file archive name.
-        archive_root = os.path.join(xdg_data_home, 'crossroad/roads/')
-        for platform in platforms:
-            platform_path = os.path.join(archive_root, platform)
+                                       compression = zipfile.ZIP_DEFLATED,
+                                       allowZip64 = True)
+        for project_path in project_paths:
             # XXX should we followlinks=True to walk into directory links?
-            for dirpath, dirnames, filenames in os.walk(platform_path):
+            for dirpath, dirnames, filenames in os.walk(project_path):
               for filename in filenames:
                 file_path = os.path.join(dirpath, filename)
                 archive_file.write(file_path,
@@ -332,13 +354,14 @@ if __name__ == "__main__":
         sys.exit(os.EX_OK)
 
     if options.symlink:
-        if len(args) != 1 and len(args) != 2:
-            sys.stderr.write('You must specify the platform to symlink, optionally followed by the link name.\n')
+        if len(args) != 2 and len(args) != 3:
+            sys.stderr.write('You must specify the target and project to symlink, optionally followed by the link name.\n')
             sys.exit(os.EX_USAGE)
         platform = args[0]
-        link_name = platform
-        if len(args) == 2:
-            link_name = args[1]
+        project = args[1]
+        link_name = 'crossroad-{}-{}'.format(platform, project)
+        if len(args) == 3:
+            link_name = args[2]
             # When specifying a link name, it may be somewhere else than current directory.
             link_dir = os.path.dirname(os.path.abspath(link_name))
             if not os.path.exists(link_dir):
@@ -352,16 +375,35 @@ if __name__ == "__main__":
             sys.stderr.write('The file "{}" already exists.\n'.format(link_name))
             sys.exit(os.EX_IOERR)
         # Test existence and readability of the platform.
-        platform_path = os.path.join(xdg_data_home, 'crossroad/roads', platform)
-        print(platform_path)
-        if platform not in available_platforms or not os.access(platform_path, os.R_OK):
-            sys.stderr.write('Platform {} is not built, or unreadable.\n'.format(platform))
+        project_path = os.path.join(xdg_data_home, 'crossroad/roads', platform, project)
+        if platform not in available_platforms or not os.access(project_path, os.R_OK):
+            sys.stderr.write('Project {} for {} is not built, or unreadable.\n'.format(project, platform))
             sys.exit(os.EX_NOPERM)
-        os.symlink(platform_path, link_name, target_is_directory=True)
+        os.symlink(project_path, link_name, target_is_directory=True)
         sys.exit(os.EX_OK)
 
+    if len(args) > 0:
+        if args[0] in other_platforms:
+            sys.stderr.write('The platform "{}" is not available. Some requirements are missing:\n{}'.format(args[0], other_platforms[args[0]].requires()))
+            sys.exit(os.EX_UNAVAILABLE)
+        elif args[0] not in available_platforms:
+            sys.stderr.write('"{}" is not a platform known by `crossroad`. Do not hesitate to contribute: {}\n'.format(args[0], maintainer))
+            sys.exit(os.EX_UNAVAILABLE)
+
+    if len(args) == 1:
+        projects = get_projects(args[0])
+        if len(projects) == 0:
+            sys.stderr.write("Please create a new project for {}.\n".format(args[0]))
+        else:
+            sys.stderr.write('Please create a new project or choose an existing one for {}:\n'.format(args[0]))
+            for project in projects:
+                sys.stderr.write('\t- {}\n'.format(project))
+        sys.stderr.write('\n')
+        cmdline.print_usage()
+        sys.exit(os.EX_USAGE)
+
     # If we are here, it means we want to enter a crossroad environment.
-    if len(args) != 1 and len(args) != 2:
+    if len(args) != 2:
         cmdline.print_version()
         cmdline.print_usage()
         if len(available_platforms) == 0:
@@ -372,92 +414,83 @@ if __name__ == "__main__":
                 sys.stdout.write('\nSome targets are not installed.\nSee the whole list with `crossroad --list-all`.\n')
         sys.exit(os.EX_USAGE)
 
-    if args[0] in available_platforms:
-        project = 'default'
-        if len(args) == 2:
-            project = args[1]
+    project = args[1]
+    shell = None
+    environ = os.environ
+    try:
+        # NOTE: $SHELL is usually the default shell of the user,
+        # not necessarilly the current shell. $0 would return the
+        # current shell. But is it really what we want?
+        shell = os.environ['SHELL']
+    except KeyError:
         shell = None
-        environ = os.environ
-        try:
-            # NOTE: $SHELL is usually the default shell of the user,
-            # not necessarilly the current shell. $0 would return the
-            # current shell. But is it really what we want?
-            shell = os.environ['SHELL']
-        except KeyError:
-            shell = None
 
-        environ['CROSSROAD_PROJECT'] = project
-        # Do we have a script to run?
-        if options.script is not None:
-            if not os.path.isfile(options.script):
-                sys.stderr.write('The script "{}" does not exist.\n'.format(options.script))
-                sys.exit(os.EX_NOINPUT)
-            environ['CROSSROAD_SCRIPT'] = os.path.abspath(options.script)
-            if not options.no_exit:
-                environ['CROSSROAD_SCRIPT_EXIT'] = 'yes'
-        elif options.no_exit:
-            sys.stderr.write('The --no-exit-after-run option is meaningless without --script being set. Exiting.\n')
+    environ['CROSSROAD_PROJECT'] = project
+    # Do we have a script to run?
+    if options.script is not None:
+        if not os.path.isfile(options.script):
+            sys.stderr.write('The script "{}" does not exist.\n'.format(options.script))
             sys.exit(os.EX_NOINPUT)
-        if shell is None or (shell[-4:] != 'bash' and shell[-3:] != 'zsh'):
-            sys.stderr.write("Warning: sorry, only bash and zsh are supported right now (detected by $SHELL environment variable).\n")
-            shell = shutil.which('bash')
-            if shell is None:
-                shell = shutil.which('zsh')
-            if shell is None:
-                sys.stderr.write(" Neither bash nor zsh were found in your path.\n")
-                sys.exit(os.EX_UNAVAILABLE)
-            sys.stderr.write(" Defaulting to {}.\n".format(shell))
-            sys.stderr.flush()
+        environ['CROSSROAD_SCRIPT'] = os.path.abspath(options.script)
+        if not options.no_exit:
+            environ['CROSSROAD_SCRIPT_EXIT'] = 'yes'
+    elif options.no_exit:
+        sys.stderr.write('The --no-exit-after-run option is meaningless without --script being set. Exiting.\n')
+        sys.exit(os.EX_NOINPUT)
+    if shell is None or (shell[-4:] != 'bash' and shell[-3:] != 'zsh'):
+        sys.stderr.write("Warning: sorry, only bash and zsh are supported right now (detected by $SHELL environment variable).\n")
+        shell = shutil.which('bash')
+        if shell is None:
+            shell = shutil.which('zsh')
+        if shell is None:
+            sys.stderr.write(" Neither bash nor zsh were found in your path.\n")
+            sys.exit(os.EX_UNAVAILABLE)
+        sys.stderr.write(" Defaulting to {}.\n".format(shell))
+        sys.stderr.flush()
 
-        if shell[-4:] == 'bash':
-            # I could set an updated environment. But bash would still run .bashrc
-            # which may overwrite some variables. So instead I set my own bashrc,
-            # where I make sure to first run the user rc files.
-            bashrc_path = os.path.join(install_datadir, 'crossroad/scripts/shells/bash/bashrc.' + available_platforms[args[0]].name)
-            command = [shell, '--rcfile', bashrc_path]
-        elif shell[-3:] == 'zsh':
-            zdotdir = os.path.join(install_datadir, 'crossroad/scripts/shells/zsh.' + available_platforms[args[0]].name)
-            # SETUP the $ZDOTDIR env.
-            # If already set, save the old value and set it back at the end.
-            # I could not find a way in zsh to run another zshrc and still end up in an interactive shell.
-            # The option -i + a file lets think it will do so, but the shell still ends up immediately
-            # after the file ran. Modifying the $ZDOTDIR env is the only good way.
-            # I don't forget also to run the original .zshenv and .zshrc.
-            command = [shell]
-            if 'ZDOTDIR' in environ:
-                environ['CROSSROAD_OLD_ZDOTDIR'] = environ['ZDOTDIR']
-            environ['ZDOTDIR'] = zdotdir
-        else:
-            # We ensured that a shell is found, or we already exited. This should never be executed.
-            sys.stderr.write("Unexpected error. Please contact the developer.\n")
-            sys.exit(os.EX_SOFTWARE)
-
-        env_path = os.path.join(xdg_data_home, 'crossroad/roads', available_platforms[args[0]].name, project)
-        if not os.path.exists(env_path):
-            try:
-                sys.stdout.write('Creating project "{}" for target {}...\n'.format(project, available_platforms[args[0]].name))
-                os.makedirs(env_path, exist_ok = True)
-            except PermissionError:
-                sys.stderr.write('"{}" cannot be created. Please verify your permissions. Aborting.\n'.format(env_path))
-                sys.exit(os.EX_CANTCREAT)
-            except NotADirectoryError:
-                sys.stderr.write('"{}" exists but is not a directory. Aborting.\n'.format(env_path))
-                sys.exit(os.EX_CANTCREAT)
-
-            if not available_platforms[args[0]].prepare(env_path):
-                sys.stderr.write('Crossroad failed to prepare the environment for "{}".\n{}'.format(available_platforms[args[0]].name))
-                sys.exit(os.EX_CANTCREAT)
-        environ['CROSSROAD_PREFIX'] = env_path
-
-        print('\033[1;35mYou are now at the crossroads...\033[0m\n')
-        shell_proc = subprocess.Popen(command, shell = False, env = environ)
-        shell_proc.wait()
-        print('\033[1;35mYou can run, you can run.\nTell your friend boy Greg T.\nthat you were standing at the crossroads.')
-        print('I believe you were sinking down.\033[0m\n')
-        sys.exit(os.EX_OK)
-    elif args[0] in other_platforms:
-        sys.stderr.write('The platform "{}" is not available. Some requirements are missing:\n{}'.format(args[0], other_platforms[args[0]].requires()))
-        sys.exit(os.EX_UNAVAILABLE)
+    if shell[-4:] == 'bash':
+        # I could set an updated environment. But bash would still run .bashrc
+        # which may overwrite some variables. So instead I set my own bashrc,
+        # where I make sure to first run the user rc files.
+        bashrc_path = os.path.join(install_datadir, 'crossroad/scripts/shells/bash/bashrc.' + available_platforms[args[0]].name)
+        command = [shell, '--rcfile', bashrc_path]
+    elif shell[-3:] == 'zsh':
+        zdotdir = os.path.join(install_datadir, 'crossroad/scripts/shells/zsh.' + available_platforms[args[0]].name)
+        # SETUP the $ZDOTDIR env.
+        # If already set, save the old value and set it back at the end.
+        # I could not find a way in zsh to run another zshrc and still end up in an interactive shell.
+        # The option -i + a file lets think it will do so, but the shell still ends up immediately
+        # after the file ran. Modifying the $ZDOTDIR env is the only good way.
+        # I don't forget also to run the original .zshenv and .zshrc.
+        command = [shell]
+        if 'ZDOTDIR' in environ:
+            environ['CROSSROAD_OLD_ZDOTDIR'] = environ['ZDOTDIR']
+        environ['ZDOTDIR'] = zdotdir
     else:
-        sys.stderr.write('"{}" is not a platform known by `crossroad`. Do not hesitate to contribute: {}\n'.format(args[0], maintainer))
-        sys.exit(os.EX_UNAVAILABLE)
+        # We ensured that a shell is found, or we already exited. This should never be executed.
+        sys.stderr.write("Unexpected error. Please contact the developer.\n")
+        sys.exit(os.EX_SOFTWARE)
+
+    env_path = os.path.join(xdg_data_home, 'crossroad/roads', available_platforms[args[0]].name, project)
+    if not os.path.exists(env_path):
+        try:
+            sys.stdout.write('Creating project "{}" for target {}...\n'.format(project, available_platforms[args[0]].name))
+            os.makedirs(env_path, exist_ok = True)
+        except PermissionError:
+            sys.stderr.write('"{}" cannot be created. Please verify your permissions. Aborting.\n'.format(env_path))
+            sys.exit(os.EX_CANTCREAT)
+        except NotADirectoryError:
+            sys.stderr.write('"{}" exists but is not a directory. Aborting.\n'.format(env_path))
+            sys.exit(os.EX_CANTCREAT)
+
+        if not available_platforms[args[0]].prepare(env_path):
+            sys.stderr.write('Crossroad failed to prepare the environment for "{}".\n{}'.format(available_platforms[args[0]].name))
+            sys.exit(os.EX_CANTCREAT)
+    environ['CROSSROAD_PREFIX'] = env_path
+
+    print('\033[1;35mYou are now at the crossroads...\033[0m\n')
+    shell_proc = subprocess.Popen(command, shell = False, env = environ)
+    shell_proc.wait()
+    print('\033[1;35mYou can run, you can run.\nTell your friend boy Greg T.\nthat you were standing at the crossroads.')
+    print('I believe you were sinking down.\033[0m\n')
+    sys.exit(os.EX_OK)
