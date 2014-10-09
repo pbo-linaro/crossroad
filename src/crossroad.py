@@ -169,6 +169,9 @@ cmdline.add_option('-r', '--run',
 cmdline.add_option('-n', '--no-exit-after-run',
     help = "Do not exit the cross-build environment after running the script. Otherwise exit immediately and return the script's return value.",
     action = 'store_true', dest = 'no_exit', default = False)
+cmdline.add_option('--copy',
+    help = 'A new project is made as a copy of an existing project for the same target.',
+    action = 'store', dest = 'copy', default = None)
 cmdline.add_option('-l', '--list-targets',
     help = 'list all known targets.',
     action = 'store_true', dest = 'list_targets', default = False)
@@ -398,6 +401,7 @@ if __name__ == "__main__":
                 sys.stdout.write('\nSome targets are not installed.\nSee the whole list with `crossroad --list-all`.\n')
         sys.exit(os.EX_USAGE)
 
+    target = args[0]
     project = args[1]
     shell = None
     environ = os.environ
@@ -421,6 +425,7 @@ if __name__ == "__main__":
     elif options.no_exit:
         sys.stderr.write('The --no-exit-after-run option is meaningless without --script being set. Exiting.\n')
         sys.exit(os.EX_NOINPUT)
+
     if shell is None or (shell[-4:] != 'bash' and shell[-3:] != 'zsh'):
         sys.stderr.write("Warning: sorry, only bash and zsh are supported right now (detected by $SHELL environment variable).\n")
         shell = shutil.which('bash')
@@ -436,10 +441,10 @@ if __name__ == "__main__":
         # I could set an updated environment. But bash would still run .bashrc
         # which may overwrite some variables. So instead I set my own bashrc,
         # where I make sure to first run the user rc files.
-        bashrc_path = os.path.join(install_datadir, 'crossroad/scripts/shells/bash/bashrc.' + available_platforms[args[0]].name)
+        bashrc_path = os.path.join(install_datadir, 'crossroad/scripts/shells/bash/bashrc.' + available_platforms[target].name)
         command = [shell, '--rcfile', bashrc_path]
     elif shell[-3:] == 'zsh':
-        zdotdir = os.path.join(install_datadir, 'crossroad/scripts/shells/zsh.' + available_platforms[args[0]].name)
+        zdotdir = os.path.join(install_datadir, 'crossroad/scripts/shells/zsh.' + available_platforms[target].name)
         # SETUP the $ZDOTDIR env.
         # If already set, save the old value and set it back at the end.
         # I could not find a way in zsh to run another zshrc and still end up in an interactive shell.
@@ -455,21 +460,39 @@ if __name__ == "__main__":
         sys.stderr.write("Unexpected error. Please contact the developer.\n")
         sys.exit(os.EX_SOFTWARE)
 
-    env_path = os.path.join(xdg_data_home, 'crossroad/roads', available_platforms[args[0]].name, project)
+    env_path = os.path.join(xdg_data_home, 'crossroad/roads', available_platforms[target].name, project)
     if not os.path.exists(env_path):
         try:
-            sys.stdout.write('Creating project "{}" for target {}...\n'.format(project, available_platforms[args[0]].name))
-            os.makedirs(env_path, exist_ok = True)
+            sys.stdout.write('Creating project "{}" for target {}...'.format(project, available_platforms[target].name))
+            # Is this new project a copy of an existing project?
+            if options.copy:
+                sys.stdout.write(' as copy of {}.\n'.format(options.copy))
+                copy_path = os.path.join(xdg_data_home, 'crossroad/roads', available_platforms[target].name, options.copy)
+                if not os.path.exists(copy_path) or not os.access(copy_path, os.R_OK):
+                    sys.stderr.write('"{}" does not exist for {}, or it is unreadable.\n'.format(options.copy, available_platforms[target].name))
+                    sys.exit(os.EX_CANTCREAT)
+                shutil.copytree(copy_path, env_path, symlinks=True)
+            else:
+                sys.stdout.write('\n')
+                os.makedirs(env_path, exist_ok = True)
         except PermissionError:
             sys.stderr.write('"{}" cannot be created. Please verify your permissions. Aborting.\n'.format(env_path))
             sys.exit(os.EX_CANTCREAT)
         except NotADirectoryError:
             sys.stderr.write('"{}" exists but is not a directory. Aborting.\n'.format(env_path))
             sys.exit(os.EX_CANTCREAT)
-
-        if not available_platforms[args[0]].prepare(env_path):
-            sys.stderr.write('Crossroad failed to prepare the environment for "{}".\n{}'.format(available_platforms[args[0]].name))
+        except shutil.Error:
+            sys.stderr.write('{} could not be copied to {}. Please verify your permissions. Aborting.\n'.format(copy_path, env_path))
             sys.exit(os.EX_CANTCREAT)
+
+        # Do not run the target's prepare() script after a copy (which we assume already prepared).
+        if not options.copy and not available_platforms[target].prepare(env_path):
+            sys.stderr.write('Crossroad failed to prepare the environment for "{}".\n{}'.format(available_platforms[target].name))
+            sys.exit(os.EX_CANTCREAT)
+    elif options.copy is not None:
+        sys.stderr.write('Option --copy cannot be used for existing projects\n')
+        sys.exit(os.EX_USAGE)
+
     environ['CROSSROAD_PREFIX'] = env_path
 
     print('\033[1;35mYou are now at the crossroads...\033[0m\n')
