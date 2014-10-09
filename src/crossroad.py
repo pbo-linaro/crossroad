@@ -244,7 +244,7 @@ if __name__ == "__main__":
                                                                        len(projects) if len(projects) > 0 else 'no',
                                                                        final_point))
         for project in projects:
-            sys.stdout.write (' - {}\n'.format(project))
+            sys.stdout.write ('- {}\n'.format(project))
         sys.exit(os.EX_OK)
 
     if options.reset:
