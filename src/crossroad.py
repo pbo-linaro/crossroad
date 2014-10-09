@@ -179,7 +179,7 @@ cmdline.add_option('-h', '--help',
     help = 'show this help message and exit. If a TARGET is provided, show information about this platform.',
     action = 'store_true', dest = 'help', default = False)
 cmdline.add_option('-c', '--compress',
-    help = 'compress an archive (zip only), with the given name, of the named platforms.',
+    help = 'compress an archive (zip only) of projects.',
     action = 'store', type="string", dest = 'archive', default = None)
 cmdline.add_option('-s', '--symlink',
     help = 'create a symbolic link of the named platform.',
@@ -246,16 +246,6 @@ if __name__ == "__main__":
         for project in projects:
             sys.stdout.write (' - {}\n'.format(project))
         sys.exit(os.EX_OK)
-
-    #if options.prefix:
-        #platform_name = options.prefix
-        #if platform_name not in available_platforms:
-            #sys.stderr.write('Not a valid platform: {}\n'.format(platform_name))
-            #sys.exit(os.EX_USAGE)
-
-        #prefix = os.path.join(xdg_data_home, 'crossroad/roads', platform_name)
-        #sys.stdout.write(prefix)
-        #sys.exit(os.EX_OK)
 
     if options.reset:
         if len(args) == 0 or len(args) % 2 != 0:
