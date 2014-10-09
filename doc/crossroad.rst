@@ -325,7 +325,7 @@ Alternatively crossroad allows also to use the curses interface of
 The rest will be the same as a normal CMake build, and you can add
 any options to your build the usual way.
 
-INFO: This has been tested with success on allegro 5 and GExiv2,
+INFO: This has been tested with success on allegro 5 and Exiv2,
 cross-compiled for Windows.
 
 Other Build System

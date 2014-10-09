@@ -278,7 +278,7 @@ Alternatively crossroad allows also to use the curses interface of
 The rest should be the same, with `make && make install`, and you can
 add any options to your build the usual way.
 
-This has been tested with success on allegro 5, and gexiv2 libraries,
+This has been tested with success on allegro 5, and Exiv2 libraries,
 cross-compiled for Windows.
 
 Example: other
