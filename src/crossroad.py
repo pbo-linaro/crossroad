@@ -181,12 +181,6 @@ cmdline.add_option('-h', '--help',
 cmdline.add_option('-c', '--compress',
     help = 'compress an archive (zip only), with the given name, of the named platforms.',
     action = 'store', type="string", dest = 'archive', default = None)
-cmdline.add_option('-w', '--read-only',
-    help = 'Render the project read-only.',
-    action = 'store', type="string", dest = 'read_only', default = False)
-cmdline.add_option('+w', '--read-write',
-    help = 'Make the project writable (default).',
-    action = 'store_true', type="string", dest = 'read_write', default = False)
 cmdline.add_option('-s', '--symlink',
     help = 'create a symbolic link of the named platform.',
     action = 'store_true', dest = 'symlink', default = False)
