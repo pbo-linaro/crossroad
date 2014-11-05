@@ -493,7 +493,7 @@ if __name__ == "__main__":
         sys.stderr.write('Option --copy cannot be used for existing projects\n')
         sys.exit(os.EX_USAGE)
 
-    environ['CROSSROAD_PREFIX'] = env_path
+    environ['CROSSROAD_PREFIX'] = os.path.abspath(env_path)
 
     print('\033[1;35mYou are now at the crossroads...\033[0m\n')
     shell_proc = subprocess.Popen(command, shell = False, env = environ)
