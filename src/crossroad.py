@@ -377,20 +377,39 @@ if __name__ == "__main__":
             sys.stderr.write('"{}" is not a platform known by `crossroad`. Do not hesitate to contribute: {}\n'.format(args[0], maintainer))
             sys.exit(os.EX_UNAVAILABLE)
 
+    # If we are here, it means we want to enter a crossroad environment.
     if len(args) == 1:
         projects = get_projects(args[0])
         if len(projects) == 0:
-            sys.stderr.write("Please create a new project for {}.\n".format(args[0]))
+            try:
+                project = input("Please enter a new project name for {}: ".format(args[0]))
+            except KeyboardInterrupt:
+                project = ''
+            if project.strip() == '':
+                sys.stderr.write('Empty project name. Cancelling.\n')
+                sys.exit(os.EX_USAGE)
         else:
-            sys.stderr.write('Please create a new project or choose an existing one for {}:\n'.format(args[0]))
-            for project in projects:
-                sys.stderr.write('\t- {}\n'.format(project))
-        sys.stderr.write('\n')
-        cmdline.print_usage()
-        sys.exit(os.EX_USAGE)
-
-    # If we are here, it means we want to enter a crossroad environment.
-    if len(args) != 2:
+            try:
+                sys.stderr.write('Existing projects for {}:\n'.format(args[0]))
+                for (n, p) in enumerate(projects):
+                    sys.stderr.write('\t- enter "{}" ({})\n'.format(p, n))
+                sys.stderr.write('\n')
+                project = input('Please choose a project id (default: 0), or enter a new project name to create: ')
+                if project.strip() == '':
+                    project = 0
+                try:
+                    project_id = int(project)
+                    if project_id >= 0 and project_id < len(projects):
+                        project = projects[project_id]
+                except ValueError:
+                    # Project is considered as a string and stays as is.
+                    pass
+            except KeyboardInterrupt:
+                sys.stderr.write('\nCancelling. Bye!\n')
+                sys.exit(os.EX_USAGE)
+    elif len(args) == 2:
+        project = args[1]
+    else:
         cmdline.print_version()
         cmdline.print_usage()
         if len(available_platforms) == 0:
@@ -402,7 +421,6 @@ if __name__ == "__main__":
         sys.exit(os.EX_USAGE)
 
     target = args[0]
-    project = args[1]
     shell = None
     environ = os.environ
     try:
@@ -472,6 +490,7 @@ if __name__ == "__main__":
                     sys.stderr.write('"{}" does not exist for {}, or it is unreadable.\n'.format(options.copy, available_platforms[target].name))
                     sys.exit(os.EX_CANTCREAT)
                 shutil.copytree(copy_path, env_path, symlinks=True)
+                # TODO: update prefix paths and symlinks.
             else:
                 sys.stdout.write('\n')
                 os.makedirs(env_path, exist_ok = True)
