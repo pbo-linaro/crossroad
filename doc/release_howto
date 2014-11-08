@@ -39,6 +39,7 @@ I may be lax on this scheme until 1.0.
 * Upload to pypi by running:
 
     $ ./setup.py sdist upload
+
 * Check that the upload worked:
 
     https://pypi.python.org/pypi/crossroad/
