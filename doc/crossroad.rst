@@ -16,7 +16,7 @@ SYNOPSIS
 
 In a normal environment:
 ~~~~~~~~~~~~~~~~~~~~~~~~
-**crossroad** [--help] [--version] [--list-targets] [--compress=<ARCHIVE.zip> <TARGET> <PROJECT> [...]] [--reset <TARGET> <PROJECT> [...]] [--symlink <TARGET> <PROJECT> [<LINK_NAME>]] [<TARGET> <PROJECT>]
+**crossroad** [--help] [--version] [--list-targets] [--compress=<ARCHIVE.zip> <TARGET> <PROJECT> [...]] [--reset <TARGET> <PROJECT> [...]] [--symlink <TARGET> <PROJECT> [<LINK_NAME>]] [[--run=<script> [--no-exit-after-run]] <TARGET> <PROJECT>]
 
 In a crossroad environment:
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -25,7 +25,7 @@ In a crossroad environment:
 DESCRIPTION
 ===========
 
-**Crossroad** is a developer tool to prepare your shell environment for Cross-Compilation.
+**Crossroad** is a developer tool to prepare your shell environment for cross-compilation.
 
 OPTIONS
 =======
@@ -33,10 +33,12 @@ OPTIONS
 --version                               Show program's version number and exit
 -h, --help                              Show the help message and exit. If a *TARGET* is provided, show information about this platform.
 -l, --list-targets                      List all known targets
--L, --list-targets                      List all projects for a given target.
+-L, --list-projects                     List all projects for a given target.
 -c, --compress                          Compress an archive (zip support only), with the given name, of the named platform/projects.
 -s, --symlink                           Create a symbolic link of the named platform.
 --reset                                 Effectively delete TARGET's tree. Don't do this if you have important data saved in there.
+-r, --run                               Run the given shell script inside the cross-build environment.
+-n, --no-exit-after-run                 Do not exit the cross-build environment after running the script. Otherwise exit immediately and return the script's return value.
 
 USAGE AND EXAMPLES
 ==================
@@ -283,7 +285,7 @@ compilation system, for Windows 64-bit.
         $ crossroad ../myproject/configure --without-libjpeg
 
 (3) If your configure fails because you miss any dependency, you can try
-    and install it with the `Pre-Built Dependency Manager`_ (if for Windows)
+    and install it with the `Windows only: Pre-Built Dependency Manager`_
     or by compiling it too.
 
     Do this step as many times as necessary, until the configure step (2)
@@ -381,19 +383,19 @@ So just run::
 
 and so on.
 
-INFO: as you may have guess `$CROSSROAD_PREFIX` encapsulates your new
+INFO: as you may have guessed, `$CROSSROAD_PREFIX` encapsulates your new
 cross-build and all its dependencies.
 Though in most cases, you should not need to manually go there do
 anything, you still can (for instance to change software settings, etc.)
 `cd $CROSSROAD_PREFIX`.
 
-WARNING: as said previously in the `Pre-Built Dependency Manager`_ section, do
+WARNING: as said previously in the `Windows only: Pre-Built Dependency Manager`_ section, do
 not perform there or leave any unique work that has not been saved
 somewhere else as well.
 
 WARNING: these environment variables are set up by `crossroad` and it is
 unadvisable to modify them. You are likely to break your cross-build
-environment if you do so. The only CROSSROAD_\* variable that you can
+environment if you do so. The only CROSSROAD\_\* variable that you can
 safely change are the ones listed in **CONFIGURATION**.
 
 Import your Project to your Target Platform
