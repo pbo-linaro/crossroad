@@ -30,8 +30,13 @@ import shutil
 import configparser
 
 version = '0.5'
-
 srcdir = os.path.dirname(os.path.realpath(sys.argv[0]))
+
+if shutil.which('git') is not None and os.path.isdir(os.path.join(srcdir, '.git')):
+     if subprocess.check_output(["git", "tag", "--contains"]).decode('utf-8') != 'v' + version:
+        commit_hash = subprocess.check_output(['git', 'log', '-1', "--pretty=format:%H"]).decode('utf-8')
+        version = "development (commit: {} - last release: {})".format(str(commit_hash), version)
+
 use_setuptools = False
 
 if 'USE_SETUPTOOLS' in os.environ or 'setuptools' in sys.modules:
