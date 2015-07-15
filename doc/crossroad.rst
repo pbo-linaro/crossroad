@@ -490,6 +490,12 @@ the same prefix as the MinGW-64 executables you run, you can set
 most usual installation of MinGW-w64, `crossroad` should be able to
 find your Windows libraries prefix.
 
+Note that cross-built dependency search through pkg-config won't use
+`$PKG_CONFIG_PATH` (this variable is only used for native builds).
+If it does, there is a problem in your `configure` file.
+If you wish to add a PATH for pkg-config in cross-compilation mode,
+please use `$CROSSROAD_PKG_CONFIG_PATH` instead.
+
 Also if the environment variable `$CROSSROAD_PS1` is set, it will be
 used as your crossroad prompt, instead of constructing a new prompt from
 the currently set one.
