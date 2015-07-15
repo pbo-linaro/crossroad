@@ -386,8 +386,10 @@ if __name__ == "__main__":
         if len(projects) == 0:
             try:
                 project = input("Please enter a new project name for {}: ".format(args[0]))
-            except KeyboardInterrupt:
-                project = ''
+            except (KeyboardInterrupt, EOFError):
+                # Ctrl-c or Ctrl-d cancels.
+                sys.stderr.write('\nCancelling.\n')
+                sys.exit(os.EX_NOINPUT)
             if project.strip() == '':
                 sys.stderr.write('Empty project name. Cancelling.\n')
                 sys.exit(os.EX_USAGE)
