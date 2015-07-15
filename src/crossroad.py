@@ -25,6 +25,8 @@ import subprocess
 import time
 import shutil
 import zipfile
+import mimetypes
+import errno
 
 ### Current Crossroad Environment ###
 
@@ -195,6 +197,70 @@ cmdline.add_option('--reset',
     action = 'store_true', dest = 'reset', default = False)
 
 (options, args) = cmdline.parse_args()
+
+def copy_file(from_file, to_file, from_prefix, to_prefix):
+    if os.path.isdir(from_file) and not os.path.islink(from_file):
+        try:
+            os.makedirs(to_file, exist_ok=True)
+        except FileExistsError:
+            # This exception would not happen if `to_file` exists and is a directory.
+            # But I had the strange case where it existed as a file, and the error still occurred.
+            # Not sure this is the right solution, but I will just output a warning and delete it.
+            logging.warning ("{} exists as a file, but we want a directory. Deleting.")
+            os.unlink (to_file)
+            os.makedirs(to_file, exist_ok=True)
+        for f in os.listdir(from_file):
+            copy_file(os.path.join(from_file, f), os.path.join(to_file, f), from_prefix, to_prefix)
+    elif os.path.islink(from_file):
+        link_path = os.readlink(from_file)
+        if not os.path.isabs(link_path):
+            # Make the path absolute.
+            link_path = os.path.join(os.path.dirname(from_file), link_path)
+        link_path = link_path.replace(from_prefix, to_prefix)
+        # Make the path relative in the end.
+        link_path = os.path.relpath(link_path, start=os.path.dirname(to_file))
+        os.symlink(link_path, to_file)
+    else:
+        # You can't plan all cases, but I try to plan common ones which I may need during
+        # compilation.
+        if to_file[-3:] == '.pc' or \
+           to_file[-7:] == '-config' or \
+           (mimetypes.guess_type(from_file)[0] is not None and mimetypes.guess_type(from_file)[0][:5] == 'text/') or \
+           # The `mimetype` command is more efficient than the mimetype lib of Python.
+           (shutil.which('mimetype') is not None and
+            subprocess.check_output(['mimetype', '-b', from_file],
+                                    universal_newlines=True)[:5] == 'text/'):
+            try:
+                fd = open(from_file, 'r')
+                contents = fd.read()
+                fd.close()
+
+                contents = contents.replace(from_prefix, to_prefix)
+
+                fd = open(to_file, 'w')
+                fd.write(contents)
+                fd.close()
+            except (IOError, UnicodeDecodeError):
+                # For some reason, some files may show a text mimetype (for instance
+                # because they start with ascii) though they are definitely binary.
+                # In such a case, a UnicodeDecodeError may happen.
+
+                # When something happens in the special replace code, we just
+                # let the basic copy code take the relay
+                pass
+            else:
+                # If the replace code worked, we get out of the function.
+                return
+        try:
+            shutil.copy(from_file, to_file, follow_symlinks=False)
+        except OSError as err:
+            if err.errno == errno.ENXIO:
+                # I had this error with some pipes or similar files.
+                # As a special exception, I pass the copy of such files.
+                pass
+            else:
+                sys.stderr.write('File {} cannot be copied to {}.'.format(from_file, to_file))
+                sys.exit(os.EX_CANTCREAT)
 
 if __name__ == "__main__":
     if options.help:
@@ -494,8 +560,7 @@ if __name__ == "__main__":
                 if not os.path.exists(copy_path) or not os.access(copy_path, os.R_OK):
                     sys.stderr.write('"{}" does not exist for {}, or it is unreadable.\n'.format(options.copy, available_platforms[target].name))
                     sys.exit(os.EX_CANTCREAT)
-                shutil.copytree(copy_path, env_path, symlinks=True)
-                # TODO: update prefix paths and symlinks.
+                copy_file(copy_path, env_path, copy_path, env_path)
             else:
                 sys.stdout.write('\n')
                 os.makedirs(env_path, exist_ok = True)
