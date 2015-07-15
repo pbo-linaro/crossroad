@@ -135,7 +135,10 @@ def get_projects(target):
     All projects are available in $XDG_DATA_HOME/crossroad/roads/{target}/.
     '''
     target_path = os.path.join(xdg_data_home, 'crossroad/roads', target)
-    available_projects = os.listdir(target_path)
+    if os.path.isdir(target_path):
+        available_projects = os.listdir(target_path)
+    else:
+        available_projects = []
     return available_projects
 
 (available_platforms, other_platforms) = load_platforms()
