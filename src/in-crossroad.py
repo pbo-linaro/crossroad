@@ -170,7 +170,7 @@ if __name__ == "__main__":
                 sys.stdout.write(command_usage)
                 sys.exit(os.EX_OK)
             else:
-                sys.stderr.write('Unknown option for the "help" command: {}'.format(arg))
+                sys.stderr.write('Unknown option for the "help" command: {}\n'.format(arg))
                 sys.exit(os.EX_USAGE)
         elif arg == '-v' or arg == '--version' or arg == 'version':
             sys.stdout.write('{} version {} <{}>\n'.format(program, version, maintainer))
