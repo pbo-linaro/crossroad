@@ -226,8 +226,8 @@ def copy_file(from_file, to_file, from_prefix, to_prefix):
         if to_file[-3:] == '.pc' or \
            to_file[-7:] == '-config' or \
            (mimetypes.guess_type(from_file)[0] is not None and mimetypes.guess_type(from_file)[0][:5] == 'text/') or \
+           (shutil.which('mimetype') is not None and \
            # The `mimetype` command is more efficient than the mimetype lib of Python.
-           (shutil.which('mimetype') is not None and
             subprocess.check_output(['mimetype', '-b', from_file],
                                     universal_newlines=True)[:5] == 'text/'):
             try:
