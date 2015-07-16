@@ -365,6 +365,7 @@ def move_files(from_file, to_file):
             os.makedirs(to_file, exist_ok=True)
         for f in os.listdir(from_file):
             move_files(os.path.join(from_file, f), os.path.join(to_file, f))
+        shutil.rmtree(from_file)
     else:
         if to_file[-3:] == '.pc':
             try:
@@ -383,6 +384,8 @@ def move_files(from_file, to_file):
             except IOError:
                 sys.stderr.write('File {} cannot be written.'.format(to_file))
                 sys.exit(os.EX_CANTCREAT)
+            # Since it's a move, unlink the original.
+            os.unlink (from_file)
         elif (mimetypes.guess_type(from_file)[0] is not None and mimetypes.guess_type(from_file)[0][:5] == 'text/') or \
              subprocess.check_output(['mimetype', '-b', from_file], universal_newlines=True)[:5] == 'text/':
             # I had the case with "bin/gdbus-codegen" which has the prefix inside the script.
@@ -410,6 +413,9 @@ def move_files(from_file, to_file):
                 #sys.stderr.write('File {} cannot be written.'.format(to_file))
                 #sys.exit(os.EX_CANTCREAT)
                 shutil.move(from_file, to_file)
+                return
+            # Since it's a move, unlink the original.
+            os.unlink (from_file)
         elif to_file[-7:] == '-config':
             try:
                 fd = open(from_file, 'r')
@@ -430,6 +436,9 @@ def move_files(from_file, to_file):
                 #sys.stderr.write('File {} cannot be written.'.format(to_file))
                 #sys.exit(os.EX_CANTCREAT)
                 shutil.move(from_file, to_file)
+                return
+            # Since it's a move, unlink the original.
+            os.unlink (from_file)
         else:
             shutil.move(from_file, to_file)
 
