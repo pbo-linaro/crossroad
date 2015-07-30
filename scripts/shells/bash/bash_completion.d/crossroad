@@ -1,4 +1,4 @@
-have crossroad &&
+_have crossroad &&
 __crossroad ()
 {
     local cur
