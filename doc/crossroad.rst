@@ -502,7 +502,7 @@ the currently set one.
 
 Finally a bash-completion script is available in::
 
-    @DATADIR@/share/crossroad/scripts/bash_completion.d/crossroad
+    @DATADIR@/share/crossroad/scripts/shells/bash/bash_completion.d/crossroad
 
 If you wish bash completion on the `crossroad` command, which can be very
 useful, you should copy or link this file in `/etc/bash_completion.d/`, or
