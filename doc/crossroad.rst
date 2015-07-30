@@ -505,12 +505,17 @@ Finally a bash-completion script is available in::
     @DATADIR@/share/crossroad/scripts/shells/bash/bash_completion.d/crossroad
 
 If you wish bash completion on the `crossroad` command, which can be very
-useful, you should copy or link this file in `/etc/bash_completion.d/`, or
-wherever else your distribution stores its bash completion scripts. Finally
-refresh your shell by re-running /etc/bash_completion::
+useful, you should copy or link this file either in the system or your user
+`completions` directory.
+The system directory can be found with the command "`pkg-config
+--variable=completionsdir bash-completion`" (often `/usr/share/bash-completion/completions`).
+The user directory is `${XDG_DATA_HOME}/bash-completion/completions`.
+Finally refresh your shell by running the `bash_completion` script (often in
+`/etc/` or in `/usr/share/bash-completion/`)::
 
-    $ cd /etc/bash_completion.d
-    $ ln -s @DATADIR@/share/crossroad/scripts/bash_completion.d/crossroad
+    $ mkdir -p ${BASH_COMPLETION_USER_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/bash-completion}/completions
+    $ cd !$
+    $ ln -s @DATADIR@/share/crossroad/scripts/shells/bash/bash_completion.d/crossroad
     $ . /etc/bash_completion
 
 Contributing
