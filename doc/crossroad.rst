@@ -240,7 +240,7 @@ any time. In particular keep your code and any working material at your
 usual development location.
 
 Currently `crossroad` uses pre-compiled package repositories from the
-`Fedora MinGW project`_.
+`openSUSE cross-platform builds`_.
 I would welcome any patch to use any other pre-compiled repositories
 alongside, provided they are safe.
 
@@ -548,4 +548,6 @@ See Also
 
 * Fedora MinGW project: https://fedoraproject.org/wiki/MinGW
 
-.. _Fedora MinGW project: https://fedoraproject.org/wiki/MinGW
+* openSUSE cross-platform builds: https://en.opensuse.org/openSUSE:Build_Service_Concept_Windows_Support
+
+.. _openSUSE cross-platform builds: https://en.opensuse.org/openSUSE:Build_Service_Concept_Windows_Support

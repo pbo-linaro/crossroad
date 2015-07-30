@@ -192,7 +192,7 @@ compilation system, for Windows 64-bit.
 
 (4) Here the configure may fail if you miss any **dependency**. You may
     install many dependencies easily through crossroad. Crossroad relies
-    on the `Fedora MinGW project`_ for this feature and provides
+    on the `openSUSE cross-platform builds`_ for this feature and provides
     basically a package manager for Windows cross-compiled packages (see
     the manual for more details on its features).
     Let's say for instance that your project depends on glib. You could
@@ -408,4 +408,4 @@ adapted to my life) in concerts.
 .. _AGPL version 3: http://www.gnu.org/licenses/agpl.html
 .. _author: http://girinstud.io/
 .. _support: http://girinstud.io/support-us/
-.. _Fedora MinGW project: http://fedoraproject.org/wiki/MinGW
+.. _openSUSE cross-platform builds: https://en.opensuse.org/openSUSE:Build_Service_Concept_Windows_Support
