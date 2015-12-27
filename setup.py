@@ -89,7 +89,7 @@ class build_man(distutils.core.Command):
         Create a build tree.
         '''
         try:
-            os.makedirs('build/man/man1', exist_ok=True)
+            os.makedirs('build/share/man/man1', exist_ok=True)
             os.makedirs('build/doc', exist_ok=True)
         except os.error:
             sys.stderr.write('Build error: failure to create the build/ tree. Please check your permissions.\n')
@@ -102,7 +102,8 @@ class build_man(distutils.core.Command):
         try:
             shutil.copyfile(os.path.join(srcdir, 'doc/crossroad.rst'), 'build/doc/crossroad.rst')
             update_scripts('build/doc')
-            subprocess.check_call(["rst2man", "build/doc/crossroad.rst", "build/man/man1/crossroad.1"])
+            subprocess.check_call(["rst2man", "build/doc/crossroad.rst",
+                                   "build/share/man/man1/crossroad.1"])
         except subprocess.CalledProcessError:
             sys.stderr.write('Build error: `rst2man` failed to build the man page.')
             sys.exit(os.EX_CANTCREAT)
@@ -111,12 +112,12 @@ class build_man(distutils.core.Command):
         '''
         Compress the man.
         '''
-        with open('build/man/man1/crossroad.1', 'rb') as manual:
-            with gzip.open('build/man/man1/crossroad.1.gz', 'wb') as compressed:
+        with open('build/share/man/man1/crossroad.1', 'rb') as manual:
+            with gzip.open('build/share/man/man1/crossroad.1.gz', 'wb') as compressed:
                 compressed.writelines(manual)
 
     def clean(self):
-        os.unlink('build/man/man1/crossroad.1')
+        os.unlink('build/share/man/man1/crossroad.1')
 
 class my_build(distutils.command.build.build):
     '''
@@ -382,7 +383,7 @@ setup(
     ],
     requires = [],
     scripts = ['build/bin/crossroad'],
-    data_files = [('man/man1/', ['build/man/man1/crossroad.1.gz']),
+    data_files = [('share/man/man1/', ['build/share/man/man1/crossroad.1.gz']),
         ('share/crossroad/scripts/', [os.path.join(srcdir, 'scripts/crossroad-mingw-install.py'),
                                       os.path.join(srcdir, 'scripts/config.guess'),
                                       'build/share/crossroad/scripts/in-crossroad.py',
