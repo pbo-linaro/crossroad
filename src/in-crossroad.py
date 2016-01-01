@@ -200,10 +200,9 @@ if __name__ == "__main__":
 
                 arg_pos = sys.argv.index(arg)
                 # NOTE: some projects would configure their autogen.sh to actually run ./configure
-                # To be on the safe side, I would add the prefix/host/build info there.
                 # Though I'd prefer not to run ./configure if possible, because that would make it twice.
                 # Some projects (in GNOME projects at least) use $NOCONFIGURE env variable. So I set it.
-                command = './autogen.sh --prefix=$CROSSROAD_PREFIX --host=$CROSSROAD_HOST --build=$CROSSROAD_BUILD ' + ' '.join(sys.argv[arg_pos + 1:])
+                command = './autogen.sh'
                 environ = os.environ
                 environ['NOCONFIGURE'] = '1'
                 sys.stdout.write('crossroad info: running "{}"\n'.format(command))
