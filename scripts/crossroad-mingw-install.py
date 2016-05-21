@@ -368,6 +368,12 @@ def move_files(from_file, to_file):
         for f in os.listdir(from_file):
             move_files(os.path.join(from_file, f), os.path.join(to_file, f))
         shutil.rmtree(from_file)
+    elif os.path.islink(from_file):
+        # Don't try to read a symlink since its source may already be
+        # gone if it has been moved before.
+        # No need to try and fix the link either. fix_package_symlinks()
+        # will take care of it later.
+        shutil.move(from_file, to_file)
     else:
         if to_file[-3:] == '.pc':
             try:
