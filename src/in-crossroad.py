@@ -228,6 +228,43 @@ if __name__ == "__main__":
             command = '{} --prefix=$CROSSROAD_PREFIX --host=$CROSSROAD_HOST --build=$CROSSROAD_BUILD '.format(configure) + ' '.join(sys.argv[arg_pos + 1:])
             sys.stdout.write('crossroad info: running "{}"\n'.format(command))
             sys.exit(subprocess.call(command, shell=True))
+        elif arg == 'scons':
+            environ = os.environ
+            set_CROSSROAD_PREFIX = False
+            arg_pos = sys.argv.index(arg)
+            for param in sys.argv[arg_pos + 1:]:
+                # Checking if the user seems to have set the prefix.
+                # Since there is no standard way to do so with scons,
+                # we unfortunately can't force our prefix ourselves.
+                if '$CROSSROAD_PREFIX' in param or \
+                   environ['CROSSROAD_PREFIX'] in param:
+                    set_CROSSROAD_PREFIX = True
+                    break
+            if not set_CROSSROAD_PREFIX:
+                sys.stdout.write("WARNING: you don't seem to set a prefix in the command line.\n")
+                sys.stdout.write('Check the options provided by the upstream developers with `scons --help` ')
+                sys.stdout.write('(usually `--prefix=` or `prefix=`). ')
+                sys.stdout.write('It is important to run scons with the appropriate $CROSSROAD_PREFIX prefix.\n')
+                sys.stdout.write('Example: scons install --prefix=$CROSSROAD_PREFIX\n')
+                run_scons = input('Run the command anyway? [y/N]: ')
+                if run_scons.strip().lower() != 'y':
+                    sys.stderr.write('Exiting\n')
+                    sys.exit(os.EX_DATAERR)
+
+            command = '{} '.format(arg) + ' '.join(sys.argv[arg_pos + 1:])
+
+            # It seems there is no cross-compilation rules for scons. But there
+            # are some hacks commonly used across various projects using
+            # environment values. So the following is very very hackish. It
+            # works with libmypaint at least. Not sure how many other projects it
+            # would fail with.
+            environ['CC']    = environ['CROSSROAD_HOST'] + '-gcc'
+            environ['CXX']   = environ['CROSSROAD_HOST'] + '-g++'
+            environ['LD']    = environ['CROSSROAD_HOST'] + '-ld'
+            environ['AR']    = environ['CROSSROAD_HOST'] + '-ar'
+            environ['STRIP'] = environ['CROSSROAD_HOST'] + '-strip'
+            sys.stdout.write('crossroad info: running "{}"\n'.format(command))
+            sys.exit(subprocess.call(command, shell=True, env=environ))
         elif arg == 'cmake' or arg == 'ccmake':
             # The position should normally be 2 since any other command or option before
             # would be an error. But just in case the logics evolve.
