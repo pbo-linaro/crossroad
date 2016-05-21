@@ -30,6 +30,7 @@ import shutil
 import configparser
 
 version = '0.5'
+deactivated_platforms = ['android-arm']
 srcdir = os.path.dirname(os.path.realpath(sys.argv[0]))
 
 if shutil.which('git') is not None and os.path.isdir(os.path.join(srcdir, '.git')):
@@ -141,7 +142,7 @@ class my_build(distutils.command.build.build):
         shutil.copyfile(os.path.join(srcdir, 'src/in-crossroad.py'), 'build/share/crossroad/scripts/in-crossroad.py')
         shutil.copy(os.path.join(srcdir, 'scripts/shells/environment.sh'), 'build/share/crossroad/scripts/shells/')
         for f in os.listdir(os.path.join(srcdir, 'platforms/env/')):
-            if f[-5:] == '.conf':
+            if f[-5:] == '.conf' and f[:-5] not in deactivated_platforms:
                 config = configparser.ConfigParser()
                 config.optionxform = str
                 config.read([os.path.join(srcdir, 'platforms/env', f)])
@@ -297,7 +298,7 @@ class my_install_data(distutils.command.install_data.install_data):
         os.makedirs(os.path.join(datadir, 'share/crossroad/bin/'), exist_ok=True)
         # Automatically generate binaries for each platform.
         for f in os.listdir(os.path.join(srcdir, 'platforms/env/')):
-            if f[-5:] == '.conf':
+            if f[-5:] == '.conf' and f[:-5] not in deactivated_platforms:
                 config = configparser.ConfigParser()
                 config.read([os.path.join(srcdir, 'platforms/env', f)])
                 host = config.get('Platform', 'host')
@@ -337,15 +338,19 @@ class my_install_scripts(distutils.command.install_scripts.install_scripts):
 
 
 platform_list = os.listdir(os.path.join(srcdir, 'platforms/modules'))
-platform_list = [os.path.join('build/platforms/', f) for f in platform_list if f[-3:] == '.py']
+platform_list = [os.path.join('build/platforms/', f) \
+                 for f in platform_list \
+                 if f[-3:] == '.py' and f[:-3] not in deactivated_platforms]
 
-cmake_toolchains = [os.path.join('build/share/crossroad/scripts/cmake/', f) for f in os.listdir(os.path.join(srcdir, 'platforms/cmake/')) if f[-6:] == '.cmake']
+cmake_toolchains = [os.path.join('build/share/crossroad/scripts/cmake/', f) \
+                    for f in os.listdir(os.path.join(srcdir, 'platforms/cmake/')) \
+                    if f[-6:] == '.cmake' and f[10:-6] not in deactivated_platforms]
 
 def get_built_data_files():
     bashrc_files = []
     zsh_files = []
     for f in os.listdir(os.path.join(srcdir, 'platforms/env/')):
-        if f[-5:] == '.conf':
+        if f[-5:] == '.conf' and f[:-5] not in deactivated_platforms:
             config = configparser.ConfigParser()
             config.read([os.path.join(srcdir, 'platforms/env', f)])
             shortname = config.get('Platform', 'shortname')
