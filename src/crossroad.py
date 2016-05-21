@@ -292,7 +292,7 @@ if __name__ == "__main__":
                 if projects != []:
                     print("Current projects on this target:\n- {}".format("\n- ".join(projects)))
         sys.exit(os.EX_OK)
-            
+
     if options.list_targets:
         cmdline.print_version()
         sys.stdout.write(platform_list)
