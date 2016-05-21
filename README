@@ -281,6 +281,23 @@ add any options to your build the usual way.
 This has been tested with success on allegro 5, and Exiv2 libraries,
 cross-compiled for Windows.
 
+Example: SCons
+~~~~~~~~~~~~~~~
+
+A very basic support of scons build system has been added to crossroad,
+though there seems to be no actual standard there for cross-compilation.
+As a consequence, the support in crossroad is only following some common
+usage I saw in a few projects, but it may not work in your case.
+
+Another issue is that scons does not even have standard for basic
+features either like prefix path. So you have to use the environment
+variable `$CROSSROAD_PREFIX` and use it were appropriate yourself.
+
+For instance, assumins your scons scripts use `--prefix` option, running
+scons through crossroad could be done this way:
+
+    $ crossroad scons install --prefix=$CROSSROAD_PREFIX
+
 Example: other
 ~~~~~~~~~~~~~~
 
