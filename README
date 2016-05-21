@@ -13,11 +13,10 @@ distributions), and wishing to cross-compile projects from the same
 platform. It is not for end-users, and is useless in *running*
 software, only **building** them.
 
-Only 3 target environments are supported currently:
+Only 2 target environments are supported currently:
 
 - Windows (x86) 32-bit;
 - Windows (x86) 64-bit.
-- Android on ARM
 
 *Note: no differences are made between Windows platforms other than
 32/64-bit (in particular no software API versioning).
