@@ -353,7 +353,9 @@ def packagesExtract(packageFilenames, srcpkg=False):
   return True
 
 def move_files(from_file, to_file):
-    if os.path.isdir(from_file):
+    if os.path.isdir(from_file) and not os.path.islink(from_file):
+        # A normal directory.
+        # Directory symlinks will be later fixed by fix_package_symlinks().
         try:
             os.makedirs(to_file, exist_ok=True)
         except FileExistsError:
