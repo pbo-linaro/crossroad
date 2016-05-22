@@ -123,7 +123,7 @@ def crossroad_install(*packages:list, src:bool = False):
         sys.exit(os.EX_USAGE)
 
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
-               '-r', 'openSUSE_13.2', '-p', name, '--deps']
+               '-r', 'openSUSE_42.1', '-p', name, '--deps']
     if src:
         command += ['--src']
     command += list(packages)
@@ -138,7 +138,7 @@ def crossroad_list_files(*packages, src:bool = False):
         sys.exit(os.EX_USAGE)
 
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
-               '-r', 'openSUSE_13.2', '-p', name, '--list-files']
+               '-r', 'openSUSE_42.1', '-p', name, '--list-files']
     if src:
         command += ['--src']
     command += packages
@@ -153,7 +153,7 @@ def crossroad_info(*packages, src:bool = False):
         sys.exit(os.EX_USAGE)
 
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
-               '-r', 'openSUSE_13.2', '-p', name, '--info']
+               '-r', 'openSUSE_42.1', '-p', name, '--info']
     if src:
         command += ['--src']
     command += list(packages)
@@ -168,7 +168,7 @@ def crossroad_uninstall(*packages, src:bool = False):
         sys.exit(os.EX_USAGE)
 
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
-               '-r', 'openSUSE_13.2', '-p', name, '--uninstall']
+               '-r', 'openSUSE_42.1', '-p', name, '--uninstall']
     if src:
         command += ['--src']
     command += list(packages)
@@ -184,7 +184,7 @@ def crossroad_search(*keywords, src:bool = False, search_files:bool = False):
         sys.exit(os.EX_USAGE)
 
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
-               '-r', 'openSUSE_13.2', '-p', name, '--search']
+               '-r', 'openSUSE_42.1', '-p', name, '--search']
     if src:
         command += ['--src']
     if search_files:
