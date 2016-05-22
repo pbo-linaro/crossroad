@@ -1,8 +1,17 @@
-include src/*.py platforms/*.py
-include scripts/environment*sh scripts/bash/bashrc.* scripts/zsh/zsh*
-include scripts/*.py scripts/*.sh
-include scripts/config.guess scripts/crossroad-gcc scripts/crossroad-pkg-config scripts/crossroad-cpp
-include scripts/bash/bashrc.*
-include scripts/zsh/zsh*
-include scripts/cmake/*.cmake
+include src/*.py
+
+include platforms/modules/*.py
+include platforms/env/*.conf
+include platforms/cmake/*.cmake
+
+include scripts/config.guess
+include scripts/crossroad-mingw-install.py
+include scripts/shells/bash/bashrc.template
+include scripts/shells/bash/bash_completion.d/crossroad
+include scripts/shells/zsh/zsh*
+include scripts/shells/*.sh
+include scripts/bin-wrappers/crossroad-gcc
+include scripts/bin-wrappers/crossroad-pkg-config
+include scripts/bin-wrappers/crossroad-cpp
+
 include README README.rst COPYING doc/*.rst
