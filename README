@@ -7,8 +7,8 @@ environment for cross-compilation, on a GNU/Linux
 distribution.
 
 Be aware that this is essentially a developer tool. Its target audience
-are developers working on UNIX systems (tested only under GNU/Linux
-systems: Linux Mint, and Mageia, but expected to work on other
+are developers working on UNIX systems (tested on GNU/Linux
+systems: Fedora, Linux Mint, and Mageia, and expected to work on other
 distributions), and wishing to cross-compile projects from the same
 platform. It is not for end-users, and is useless in *running*
 software, only **building** them.
