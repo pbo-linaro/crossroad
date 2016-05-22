@@ -38,7 +38,9 @@ I may be lax on this scheme until 1.0.
 
 * Upload to pypi by running:
 
-    $ ./setup.py sdist upload
+    $ rm -fr dist/
+    $ ./setup.py sdist
+    $ twine upload dist/*
 
 * Check that the upload worked:
 
