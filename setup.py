@@ -33,11 +33,6 @@ version = '0.5'
 deactivated_platforms = ['android-arm']
 srcdir = os.path.dirname(os.path.realpath(sys.argv[0]))
 
-if shutil.which('git') is not None and os.path.isdir(os.path.join(srcdir, '.git')):
-     if subprocess.check_output(["git", "tag", "--contains"]).decode('utf-8') != 'v' + version:
-        commit_hash = subprocess.check_output(['git', 'log', '-1', "--pretty=format:%H"]).decode('utf-8')
-        version = "development (commit: {} - last release: {})".format(str(commit_hash), version)
-
 use_setuptools = False
 
 if 'USE_SETUPTOOLS' in os.environ or 'setuptools' in sys.modules:
@@ -230,7 +225,16 @@ def update_scripts(build_dir):
     Convenience function to update any file in `build_dir`:
     - replace @DATADIR@ by `datadir` as set on the setup.py call.
     '''
+    global version
     datadir = '/usr/local'
+    # I keep the real version for distribution and release.
+    # But if we are in a git repository, the tool will output a git commit too.
+    git_version = version
+    if shutil.which('git') is not None and os.path.isdir(os.path.join(srcdir, '.git')):
+         if subprocess.check_output(["git", "tag", "--contains"]).decode('utf-8') != 'v' + version:
+            commit_hash = subprocess.check_output(['git', 'log', '-1', "--pretty=format:%H"]).decode('utf-8')
+            git_version = "development (commit: {} - last release: {})".format(str(commit_hash), version)
+
     try:
         data_dir_file = open('build/data_dir', 'r')
         datadir = data_dir_file.readline().rstrip(' \n\r\t')
@@ -245,7 +249,7 @@ def update_scripts(build_dir):
                 contents = script.read()
                 # Make the necessary replacements.
                 contents = contents.replace('@DATADIR@', datadir)
-                contents = contents.replace('@VERSION@', version)
+                contents = contents.replace('@VERSION@', git_version)
                 script.truncate(0)
                 script.seek(0)
                 script.write(contents)
