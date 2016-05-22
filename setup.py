@@ -29,7 +29,7 @@ import subprocess
 import shutil
 import configparser
 
-version = '0.5'
+version = '0.6'
 deactivated_platforms = ['android-arm']
 srcdir = os.path.dirname(os.path.realpath(sys.argv[0]))
 
