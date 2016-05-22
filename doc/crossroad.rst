@@ -518,6 +518,10 @@ Finally refresh your shell by running the `bash_completion` script (often in
     $ ln -s @DATADIR@/share/crossroad/scripts/shells/bash/bash_completion.d/crossroad
     $ . /etc/bash_completion
 
+The last command may not be necessary nor available on some platforms (for
+instance Fedora). Starting a new shell would be enough to apply the new bash
+completion rules.
+
 Contributing
 ============
 
