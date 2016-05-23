@@ -219,6 +219,10 @@ compilation system, for Windows 64-bit.
     certaincy, since this is not exactly the same as running on the native
     win32 platform. For the records, I have been able to run successful
     `make check` on projects as complicated as **GIMP**.
+    Of course, a failed `make check` of Windows binaries in a GNU/Linux
+    environment does not mean necessarily your build is a failure, because
+    running win32 bin through `wine` will never be as ideal as running through
+    an actual Windows OS (as you surely know).
 
 (7) All done! Just exit your cross-compilation environment with
     *ctrl-d* or `exit`.
