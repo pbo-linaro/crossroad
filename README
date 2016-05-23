@@ -301,6 +301,11 @@ scons through crossroad could be done this way:
 
     $ crossroad scons install --prefix=$CROSSROAD_PREFIX
 
+In any cases, scons is really not a recommended build system if you wish to have
+an easy cross-buildable project. If you don't manage to cross-compile your
+project, rather than tweaking your SConscript files indefinitely, consider
+taking the time to port your project to autotools or cmake.
+
 Example: other
 ~~~~~~~~~~~~~~
 
