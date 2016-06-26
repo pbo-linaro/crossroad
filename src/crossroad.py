@@ -225,11 +225,15 @@ def copy_file(from_file, to_file, from_prefix, to_prefix):
         # compilation.
         if to_file[-3:] == '.pc' or \
            to_file[-7:] == '-config' or \
-           (mimetypes.guess_type(from_file)[0] is not None and mimetypes.guess_type(from_file)[0][:5] == 'text/') or \
+           (mimetypes.guess_type(from_file)[0] is not None and
+            (mimetypes.guess_type(from_file)[0][:5] == 'text/' or
+            (mimetypes.guess_type(from_file)[0] == 'application/x-shared-library-la'))) or \
            (shutil.which('mimetype') is not None and \
            # The `mimetype` command is more efficient than the mimetype lib of Python.
-            subprocess.check_output(['mimetype', '-b', from_file],
-                                    universal_newlines=True)[:5] == 'text/'):
+            (subprocess.check_output(['mimetype', '-b', from_file],
+                                     universal_newlines=True)[:5] == 'text/' or
+             subprocess.check_output(['mimetype', '-b', from_file],
+                                     universal_newlines=True) == 'application/x-shared-library-la')):
             try:
                 fd = open(from_file, 'r')
                 contents = fd.read()
