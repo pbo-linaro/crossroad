@@ -17,6 +17,9 @@ SET(WANT_ANDROID TRUE)
 SET(CMAKE_C_COMPILER arm-linux-androideabi-gcc)
 SET(CMAKE_CXX_COMPILER arm-linux-androideabi-g++)
 
+# pkg-config for searching packages for the target.
+SET(PKG_CONFIG_EXECUTABLE arm-linux-androideabi-pkg-config)
+
 # here is the target environment located
 SET(CMAKE_FIND_ROOT_PATH $ENV{CROSSROAD_PREFIX} /usr/local/arm-linux-androideabi/ /usr/arm-linux-androideabi/)
 
