@@ -70,7 +70,7 @@ mkdir -p $CROSSROAD_PREFIX/include
 mkdir -p $CROSSROAD_PREFIX/lib
 
 # So that the system-wide python can still find any locale lib.
-for dir in $(find $CROSSROAD_PREFIX/lib/ -name 'python*');
+for dir in $(find $CROSSROAD_PREFIX/lib/ -maxdepth 1 -name 'python3.*');
 do
     export PYTHONPATH=:${dir}:$PYTHONPATH
 done;
