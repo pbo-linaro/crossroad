@@ -395,7 +395,7 @@ def move_files(from_file, to_file):
             # Since it's a move, unlink the original.
             os.unlink (from_file)
         elif (mimetypes.guess_type(from_file)[0] is not None and mimetypes.guess_type(from_file)[0][:5] == 'text/') or \
-             subprocess.check_output(['mimetype', '-b', from_file], universal_newlines=True)[:5] == 'text/':
+             subprocess.check_output(['mimetype', '-b', from_file], universal_newlines=True)[:5] == 'text/' or \
              subprocess.check_output(['mimetype', '-b', from_file], universal_newlines=True) == 'application/x-shared-library-la':
             # I had the case with "bin/gdbus-codegen" which has the prefix inside the script.
             # mimetypes python module would not work because it only relies on extension.
