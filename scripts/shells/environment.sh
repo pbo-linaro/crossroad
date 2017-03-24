@@ -74,3 +74,5 @@ for dir in $(find $CROSSROAD_PREFIX/lib/ -maxdepth 1 -name 'python3.*');
 do
     export PYTHONPATH=:${dir}:$PYTHONPATH
 done;
+# For gdbus-codegen.
+export PYTHONPATH=$CROSSROAD_PREFIX/share/glib-2.0/:$PYTHONPATH
