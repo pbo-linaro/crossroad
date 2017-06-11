@@ -36,18 +36,18 @@ short_description = 'Windows 32-bit'
 
 if os.path.isfile('/etc/redhat-release'):
     mandatory_binaries = {
-        'x86_64-w64-mingw32-gcc': 'mingw32-gcc',
-        'x86_64-w64-mingw32-ld': 'mingw32-binutils'
+        'i686-w64-mingw32-gcc': 'mingw32-gcc',
+        'i686-w64-mingw32-ld': 'mingw32-binutils'
         }
 
     languages = {
-        'C' : {'x86_64-w64-mingw32-gcc': 'mingw32-gcc'},
-        'C++': {'x86_64-w64-mingw32-c++': 'mingw32-gcc-c++'},
-        'Ada': {'x86_64-w64-mingw32-gnat': 'mingw32-gcc-gnat?'},
+        'C' : {'i686-w64-mingw32-gcc': 'mingw32-gcc'},
+        'C++': {'i686-w64-mingw32-c++': 'mingw32-gcc-c++'},
+        'Ada': {'i686-w64-mingw32-gnat': 'mingw32-gcc-gnat?'},
         'OCaml': {'i686-w64-mingw32-ocamlc': 'mingw32-gcc-ocaml?'},
-        'fortran': {'x86_64-w64-mingw32-gfortran': 'mingw32-gcc-gfortran'},
-        'Objective C' : {'x86_64-w64-mingw32-gobjc': 'mingw32-gcc-objc'},
-        'Objective C' : {'x86_64-w64-mingw32-gobjc++': 'mingw32-gcc-objc++'}
+        'fortran': {'i686-w64-mingw32-gfortran': 'mingw32-gcc-gfortran'},
+        'Objective C' : {'i686-w64-mingw32-gobjc': 'mingw32-gcc-objc'},
+        'Objective C' : {'i686-w64-mingw32-gobjc++': 'mingw32-gcc-objc++'}
         }
 else:
     mandatory_binaries = {
