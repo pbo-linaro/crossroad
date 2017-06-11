@@ -34,20 +34,36 @@ name = 'w64'
 
 short_description = 'Windows 64-bit'
 
-mandatory_binaries = {
-    'x86_64-w64-mingw32-gcc': 'gcc-mingw-w64-x86-64',
-    'x86_64-w64-mingw32-ld': 'binutils-mingw-w64-x86-64'
-    }
+if os.path.isfile('/etc/redhat-release'):
+    mandatory_binaries = {
+        'x86_64-w64-mingw32-gcc': 'mingw64-gcc',
+        'x86_64-w64-mingw32-ld': 'mingw64-binutils'
+        }
 
-languages = {
-    'C' : {'x86_64-w64-mingw32-gcc': 'gcc-mingw-w64-x86-64'},
-    'C++': {'x86_64-w64-mingw32-c++': 'g++-mingw-w64-x86-64'},
-    'Ada': {'x86_64-w64-mingw32-gnat': 'gnat-mingw-w64-x86-64'},
-    'OCaml': {'i686-w64-mingw32-ocamlc': 'mingw-ocaml'},
-    'fortran': {'x86_64-w64-mingw32-gfortran': 'gfortran-mingw-w64-x86-64'},
-    'Objective C' : {'x86_64-w64-mingw32-gobjc': 'gobjc-mingw-w64-x86-64'},
-    'Objective C' : {'x86_64-w64-mingw32-gobjc++': 'gobjc++-mingw-w64-x86-64'}
-    }
+    languages = {
+        'C' : {'x86_64-w64-mingw32-gcc': 'mingw64-gcc'},
+        'C++': {'x86_64-w64-mingw32-c++': 'mingw64-gcc-c++'},
+        'Ada': {'x86_64-w64-mingw32-gnat': 'mingw64-gcc-gnat?'},
+        'OCaml': {'i686-w64-mingw32-ocamlc': 'mingw64-gcc-ocaml?'},
+        'fortran': {'x86_64-w64-mingw32-gfortran': 'mingw64-gcc-gfortran'},
+        'Objective C' : {'x86_64-w64-mingw32-gobjc': 'mingw64-gcc-objc'},
+        'Objective C' : {'x86_64-w64-mingw32-gobjc++': 'mingw64-gcc-objc++'}
+        }
+else:
+    mandatory_binaries = {
+        'x86_64-w64-mingw32-gcc': 'gcc-mingw-w64-x86-64',
+        'x86_64-w64-mingw32-ld': 'binutils-mingw-w64-x86-64'
+        }
+
+    languages = {
+        'C' : {'x86_64-w64-mingw32-gcc': 'gcc-mingw-w64-x86-64'},
+        'C++': {'x86_64-w64-mingw32-c++': 'g++-mingw-w64-x86-64'},
+        'Ada': {'x86_64-w64-mingw32-gnat': 'gnat-mingw-w64-x86-64'},
+        'OCaml': {'i686-w64-mingw32-ocamlc': 'mingw-ocaml'},
+        'fortran': {'x86_64-w64-mingw32-gfortran': 'gfortran-mingw-w64-x86-64'},
+        'Objective C' : {'x86_64-w64-mingw32-gobjc': 'gobjc-mingw-w64-x86-64'},
+        'Objective C' : {'x86_64-w64-mingw32-gobjc++': 'gobjc++-mingw-w64-x86-64'}
+        }
 
 def is_available():
     '''

@@ -34,20 +34,36 @@ name = 'w32'
 
 short_description = 'Windows 32-bit'
 
-mandatory_binaries = {
-    'i686-w64-mingw32-gcc': 'gcc-mingw-w64-i686',
-    'i686-w64-mingw32-ld': 'binutils-mingw-w64-i686'
-    }
+if os.path.isfile('/etc/redhat-release'):
+    mandatory_binaries = {
+        'x86_64-w64-mingw32-gcc': 'mingw32-gcc',
+        'x86_64-w64-mingw32-ld': 'mingw32-binutils'
+        }
 
-languages = {
-    'C' : {'i686-w64-mingw32-gcc': 'gcc-mingw-w64-i686'},
-    'C++': {'i686-w64-mingw32-c++': 'g++-mingw-w64-i686'},
-    'Ada': {'i686-w64-mingw32-gnat': 'gnat-mingw-w64-i686'},
-    'OCaml': {'i686-w64-mingw32-ocamlc': 'mingw-ocaml'},
-    'fortran': {'i686-w64-mingw32-gfortran': 'gfortran-mingw-w64-i686'},
-    'Objective C' : {'i686-w64-mingw32-gobjc': 'gobjc-mingw-w64-i686'},
-    'Objective C' : {'i686-w64-mingw32-gobjc++': 'gobjc++-mingw-w64-i686'}
-    }
+    languages = {
+        'C' : {'x86_64-w64-mingw32-gcc': 'mingw32-gcc'},
+        'C++': {'x86_64-w64-mingw32-c++': 'mingw32-gcc-c++'},
+        'Ada': {'x86_64-w64-mingw32-gnat': 'mingw32-gcc-gnat?'},
+        'OCaml': {'i686-w64-mingw32-ocamlc': 'mingw32-gcc-ocaml?'},
+        'fortran': {'x86_64-w64-mingw32-gfortran': 'mingw32-gcc-gfortran'},
+        'Objective C' : {'x86_64-w64-mingw32-gobjc': 'mingw32-gcc-objc'},
+        'Objective C' : {'x86_64-w64-mingw32-gobjc++': 'mingw32-gcc-objc++'}
+        }
+else:
+    mandatory_binaries = {
+        'i686-w64-mingw32-gcc': 'gcc-mingw-w64-i686',
+        'i686-w64-mingw32-ld': 'binutils-mingw-w64-i686'
+        }
+
+    languages = {
+        'C' : {'i686-w64-mingw32-gcc': 'gcc-mingw-w64-i686'},
+        'C++': {'i686-w64-mingw32-c++': 'g++-mingw-w64-i686'},
+        'Ada': {'i686-w64-mingw32-gnat': 'gnat-mingw-w64-i686'},
+        'OCaml': {'i686-w64-mingw32-ocamlc': 'mingw-ocaml'},
+        'fortran': {'i686-w64-mingw32-gfortran': 'gfortran-mingw-w64-i686'},
+        'Objective C' : {'i686-w64-mingw32-gobjc': 'gobjc-mingw-w64-i686'},
+        'Objective C' : {'i686-w64-mingw32-gobjc++': 'gobjc++-mingw-w64-i686'}
+        }
 
 def is_available():
     '''
