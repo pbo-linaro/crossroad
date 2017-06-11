@@ -500,27 +500,31 @@ Also if the environment variable `$CROSSROAD_PS1` is set, it will be
 used as your crossroad prompt, instead of constructing a new prompt from
 the currently set one.
 
-Finally a bash-completion script is available in::
+Finally a bash-completion script is installed in::
 
-    @DATADIR@/share/crossroad/scripts/shells/bash/bash_completion.d/crossroad
+    @DATADIR@/share/bash-completion/completions/crossroad
 
-If you wish bash completion on the `crossroad` command, which can be very
-useful, you should copy or link this file either in the system or your user
-`completions` directory.
+Depending on your platform and the installation prefix, this file may be
+sourced by default already. If it is not and you wish bash completion on
+the `crossroad` command, which can be very useful, you should copy or
+link this file either in a system or user `completions` directory.
 The system directory can be found with the command "`pkg-config
 --variable=completionsdir bash-completion`" (often `/usr/share/bash-completion/completions`).
-The user directory is `${XDG_DATA_HOME}/bash-completion/completions`.
-Finally refresh your shell by running the `bash_completion` script (often in
-`/etc/` or in `/usr/share/bash-completion/`)::
+The user directory is usually `${XDG_DATA_HOME}/bash-completion/completions`.
+Finally refresh your shell by running the `bash_completion` script (in `/usr/share/bash-completion/`,
+historically it can also be in `/etc/`)::
 
     $ mkdir -p ${BASH_COMPLETION_USER_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/bash-completion}/completions
     $ cd !$
-    $ ln -s @DATADIR@/share/crossroad/scripts/shells/bash/bash_completion.d/crossroad
-    $ . /etc/bash_completion
+    $ ln -s @DATADIR@/share/bash-completion/completions/crossroad
+    $ . /usr/share/bash-completion/bash_completion
 
-The last command may not be necessary nor available on some platforms (for
-instance Fedora). Starting a new shell would be enough to apply the new bash
-completion rules.
+The last command may not be necessary since starting a new shell would
+be enough to apply the new bash completion rules.
+If this won't work, you can simply source it from your `bashrc` or
+`$HOME/.bash_completion`::
+
+    $ source @DATADIR@/share/bash-completion/completions/crossroad
 
 Contributing
 ============

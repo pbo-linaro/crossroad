@@ -407,7 +407,7 @@ setup(
                                       os.path.join(srcdir, 'scripts/shells/pre-bash-env.sh'),
                                       os.path.join(srcdir, 'scripts/shells/pre-zsh-env.sh'),
                                       os.path.join(srcdir, 'scripts/shells/post-env.sh'),]),
-        ('share/crossroad/scripts/shells/bash/bash_completion.d', [os.path.join(srcdir, 'scripts/shells/bash/bash_completion.d/crossroad')]),
+        ('share/bash-completion/completions', [os.path.join(srcdir, 'scripts/shells/bash/completions/crossroad')]),
         ('share/crossroad/scripts/cmake', cmake_toolchains),
         ('share/crossroad/platforms/', platform_list),
         #('crossroad/projects/', ['projects']),
