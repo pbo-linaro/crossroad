@@ -7,7 +7,7 @@ include platforms/cmake/*.cmake
 include scripts/config.guess
 include scripts/crossroad-mingw-install.py
 include scripts/shells/bash/bashrc.template
-include scripts/shells/bash/bash_completion.d/crossroad
+include scripts/shells/bash/completions/crossroad
 include scripts/shells/zsh/zsh*
 include scripts/shells/*.sh
 include scripts/bin-wrappers/crossroad-gcc
