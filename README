@@ -20,7 +20,8 @@ Only 2 target environments are supported currently:
 
 *Note: no differences are made between Windows platforms other than
 32/64-bit (in particular no software API versioning).
-This is up to you to make your code portable.*
+This is up to you to make your code portable or build with appropriate
+flags.*
 
 This is Free Software, under the license `AGPL version 3`_.
 
@@ -80,9 +81,9 @@ It will return a list of required binaries that crossroad cannot find.
 If you actually have them, the most likely reason is that you should
 update your `$PATH` with the right location. In the above example,
 `crossroad` could find your minGW linker, but not the compiler. It also
-informs you of a possible package name (based on a Linux Mint
-distribution. Your distribution may use a different name, but it would
-still give a useful hint for searching in your package manager).
+informs you of a possible package name (your distribution may use a
+different name, but it would still give a useful hint for searching in
+your package manager).
 
 Install the missing requirements and run crossroad again::
 
