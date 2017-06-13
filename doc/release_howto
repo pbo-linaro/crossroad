@@ -1,6 +1,11 @@
 Release procedure
 =================
 
+* Update `version` variable in setup.py.
+The versionning scheme used would be the typical X.Y.Z (also called
+semantic versionning by some people: http://semver.org/), though
+I may be lax on this scheme until 1.0.
+
 * Create a dist file:
 
     $ ./setup.py sdist
@@ -17,11 +22,6 @@ Release procedure
 the first step.
 In particular, check that all the right scripts are there (else fix the
 setup.py and MANIFEST.in)
-
-* Update `version` variable in setup.py.
-The versionning scheme used would be the typical X.Y.Z (also called
-semantic versionning by some people: http://semver.org/), though
-I may be lax on this scheme until 1.0.
 
 * Commit the version bump:
 
@@ -49,4 +49,3 @@ I may be lax on this scheme until 1.0.
 * Install crossroad from pypi and ensure everything worked out fine:
 
     $ sudo pip3 install --upgrade crossroad
-
