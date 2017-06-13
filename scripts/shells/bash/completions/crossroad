@@ -24,9 +24,8 @@ __crossroad ()
                     "$command" == "uninstall"  ]]; then
                 if [[ x"$CROSSROAD_PLATFORM" == "xw64" ||
                       x"$CROSSROAD_PLATFORM" == "xw32" ]]; then
-                    # TODO: support XDG for cache dir.
                     COMPREPLY=( $( compgen -W '$( crossroad -h $command 2>/dev/null |grep --colour=NEVER -o "\--[-a-zA-Z]\+=\?" | sort -u )
-                                               $(cat $HOME/.cache/crossroad/repository/${CROSSROAD_PLATFORM}/*primary.xml 2>/dev/null |
+                                               $(cat ${XDG_CACHE_HOME:-$HOME/.cache}/crossroad/repository/${CROSSROAD_PLATFORM}/*primary.xml 2>/dev/null |
                                                  grep "<name>mingw[^<]*</name>" | sed "s@^.*<name>ming${CROSSROAD_PLATFORM}-\([^<]\+\)</name>.*\$@\1@")
                                               ' -- $cur ) )
                     # alternative but slower: cat repository/w64/*filelists.xml |grep '<package[^>]*>' |sed 's/^.*name="mingw[36][24]\([^"]*\)".*$/\1/'
