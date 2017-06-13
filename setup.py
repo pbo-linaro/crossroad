@@ -378,7 +378,7 @@ setup(
     description = 'Cross-Compilation Environment Toolkit.',
     long_description = open(os.path.join(srcdir, 'README')).read(),
     author = 'Jehan',
-    author_email = 'jehan at girinstud.io',
+    author_email = 'jehan@girinstud.io',
     url = 'http://girinstud.io',
     license = 'AGPLv3+',
     classifiers = [
