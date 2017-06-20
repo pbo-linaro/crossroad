@@ -36,7 +36,7 @@ TOOL="`echo -n $0 | tail -c 3`"
 # The default -I list of directories.
 export CPATH="$CROSSROAD_PREFIX/include"
 # The default -L list of directories.
-export CROSSROAD_LDFLAGS=" -L$CROSSROAD_PREFIX/lib "
+export CROSSROAD_LDFLAGS=" $CROSSROAD_LDFLAGS -L$CROSSROAD_PREFIX/lib "
 
 if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX" ]; then
     if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/include" ]; then
