@@ -4,7 +4,7 @@
 # The Platform/Android.cmake file appeared in March of 2014 in dev code.
 # http://www.cmake.org/gitweb?p=cmake.git;a=history;f=Modules/Platform/Android.cmake
 # No released version yet. Use the Linux platform.
-SET(CMAKE_SYSTEM_NAME Linux)
+SET(CMAKE_SYSTEM_NAME Generic)
 
 # This is not a usual cmake variable. Simply some projects seem to use this to detect
 # an Android build and special-casing.
