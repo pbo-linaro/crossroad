@@ -31,7 +31,8 @@ import configparser
 
 version = '0.7'
 deactivated_platforms = ['android-arm']
-srcdir = os.path.dirname(os.path.realpath(sys.argv[0]))
+srcdir   = os.path.dirname(os.path.realpath(sys.argv[0]))
+builddir = os.getcwd()
 
 use_setuptools = False
 
@@ -96,7 +97,8 @@ class build_man(distutils.core.Command):
         Create the manual.
         '''
         try:
-            shutil.copyfile(os.path.join(srcdir, 'doc/crossroad.rst'), 'build/doc/crossroad.rst')
+            shutil.copyfile(os.path.join(srcdir, 'doc/crossroad.rst'),
+                            os.path.join(builddir, 'build/doc/crossroad.rst'))
             update_scripts('build/doc')
             subprocess.check_call(["rst2man", "build/doc/crossroad.rst",
                                    "build/share/man/man1/crossroad.1"])
@@ -220,9 +222,9 @@ class my_install(install):
         # Go on with normal install.
         install.run(self)
 
-def update_scripts(build_dir):
+def update_scripts(build_subdir):
     '''
-    Convenience function to update any file in `build_dir`:
+    Convenience function to update any file in `build_subdir`:
     - replace @DATADIR@ by `datadir` as set on the setup.py call.
     '''
     global version
@@ -231,9 +233,11 @@ def update_scripts(build_dir):
     # But if we are in a git repository, the tool will output a git commit too.
     git_version = version
     if shutil.which('git') is not None and os.path.isdir(os.path.join(srcdir, '.git')):
-         if subprocess.check_output(["git", "tag", "--contains"]).decode('utf-8') != 'v' + version:
-            commit_hash = subprocess.check_output(['git', 'log', '-1', "--pretty=format:%H"]).decode('utf-8')
-            git_version = "development (commit: {} - last release: {})".format(str(commit_hash), version)
+        os.chdir(srcdir)
+        if subprocess.check_output(["git", "tag", "--contains"]).decode('utf-8') != 'v' + version:
+           commit_hash = subprocess.check_output(['git', 'log', '-1', "--pretty=format:%H"]).decode('utf-8')
+           git_version = "development (commit: {} - last release: {})".format(str(commit_hash), version)
+        os.chdir(builddir)
 
     try:
         data_dir_file = open('build/data_dir', 'r')
@@ -242,7 +246,7 @@ def update_scripts(build_dir):
     except IOError:
         sys.stderr.write('Warning: no build/data_dir file. You should run the `install` command. Defaulting to {}.\n'.format(datadir))
 
-    for dirpath, dirnames, filenames in os.walk(build_dir):
+    for dirpath, dirnames, filenames in os.walk(build_subdir):
         for f in filenames:
             try:
                 script = open(os.path.join(dirpath, f), 'r+')
