@@ -37,6 +37,7 @@ elif [ "$CROSSROAD_HOST" = "arm-linux-androideabi" ]; then
           export CPATH="$CPATH:$CROSSROAD_ANDROID_PREFIX/include/"
       fi
   fi
+  export CPATH="$CROSSROAD_PREFIX/usr/local/include"
 fi
 
 if [ "$CROSSROAD_HOST" = "x86_64-w64-mingw32" -o \

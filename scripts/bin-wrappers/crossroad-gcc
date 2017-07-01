@@ -80,6 +80,8 @@ elif [ "$CROSSROAD_HOST" = "arm-linux-androideabi" ]; then
           export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L$CROSSROAD_ANDROID_PREFIX/lib "
       fi
   fi
+  export CPATH="$CROSSROAD_PREFIX/usr/local/include"
+  export CROSSROAD_LDFLAGS=" $CROSSROAD_LDFLAGS -L$CROSSROAD_PREFIX/usr/local/lib "
 fi
 
 if [ "$CROSSROAD_HOST" = "x86_64-w64-mingw32" -o \
