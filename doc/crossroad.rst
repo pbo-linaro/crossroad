@@ -53,14 +53,18 @@ a cross-compilation environment until this is installed.
 List available and unavailable targets with::
 
     $ crossroad --list-targets
-    crossroad, version 0.4.4
+    crossroad, version 0.8
     Available targets:
-    w64                  Windows 64-bit
+    - w64                  Windows 64-bit
+    - android-arm          Generic Android/Bionic on ARM
 
     Uninstalled targets:
     w32                  Windows 32-bit
+    arm                  Generic Embedded ABI on ARM
 
-In the above example, I can compile for Windows 64-bit, not 32-bit.
+    See details about any target with `crossroad --help <TARGET>`.
+
+In the above example, I can compile for Windows 64-bit and Android.
 
 To get details about a target's missing dependencies, for instance
 Windows 32-bit::
@@ -85,8 +89,14 @@ Install the missing requirements and run crossroad again::
     $ crossroad --list-targets
     crossroad, version 0.4.4
     Available targets:
-    w32                  Windows 32-bit
-    w64                  Windows 64-bit
+    - w32                  Windows 32-bit
+    - w64                  Windows 64-bit
+    - android-arm          Generic Android/Bionic on ARM
+
+    Uninstalled targets:
+    arm                  Generic Embedded ABI on ARM
+
+    See details about any target with `crossroad --help <TARGET>`.
     $ crossroad -h w32
     w32: Setups a cross-compilation environment for Microsoft Windows operating systems (32-bit).
 
@@ -330,6 +340,24 @@ any options to your build the usual way.
 INFO: This has been tested with success on allegro 5 and Exiv2,
 cross-compiled for Windows.
 
+Meson Project
+*************
+
+Meson uses toolchain files as well. Here again, Crossroad prepared them
+for you.
+Simply replace the step (2) of the `GNU-style project (autotools)`_
+example with this command::
+
+    $ crossroad meson /path/to/source/ /path/to/build/
+
+Now you can simply build and install::
+
+    $ ninja
+    $ ninja install
+
+INFO: This has been tested with success on json-glib, cross-compiled for
+Android.
+
 Other Build System
 ******************
 
@@ -397,6 +425,23 @@ WARNING: these environment variables are set up by `crossroad` and it is
 unadvisable to modify them. You are likely to break your cross-build
 environment if you do so. The only CROSSROAD\_\* variable that you can
 safely change are the ones listed in **CONFIGURATION**.
+
+Android only: clean up after each build
+.......................................
+
+Whereas some systems, like Windows, don't care about the finale
+installation paths, typically Unix and Linux systems do. Therefore the
+prefix is set to the installation path whereas a `make install` or
+`ninja install` would actually install in an intermediary directory
+(`DESTDIR`). This is a problem if you are building dependencies that you
+want visible to your project (typically through `pkg-config`).
+
+You MUST therefore run::
+
+    $ crossroad finalize
+
+… after installing a dependency. It will clean the paths which need to
+be showing the intermediary directory, not the finale one.
 
 Import your Project to your Target Platform
 ............................................
