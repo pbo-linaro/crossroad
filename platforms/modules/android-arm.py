@@ -26,6 +26,7 @@ import shutil
 import subprocess
 import glob
 import os.path
+import platform
 import re
 import sys
 
@@ -39,7 +40,6 @@ short_description = 'Generic Android/Bionic on ARM'
 # android-src-vendor ?
 # android-headers ?
 mandatory_binaries = {
-    'arm-linux-androideabi-ld': 'gcc-arm-linux-androideabi',
     }
 
 languages = {
@@ -51,10 +51,7 @@ def is_available():
     '''
     Is it possible on this computer?
     '''
-    for bin in mandatory_binaries:
-        if shutil.which(bin) is None:
-            return False
-    return True
+    return platform.processor() == 'x86_64'
 
 def requires():
     '''
@@ -62,12 +59,8 @@ def requires():
     the current installation.
     '''
     requirements = ''
-    for bin in mandatory_binaries:
-        requirements += '- {} [package "{}"]'.format(bin, mandatory_binaries[bin])
-        if shutil.which(bin) is None:
-            requirements += " (missing)\n"
-        else:
-            requirements += " (ok)\n"
+    if platform.processor() != 'x86_64':
+        requirements = 'Android NDK is only available for Linux 64-bit\n'
     return requirements
 
 def language_list():
@@ -76,25 +69,15 @@ def language_list():
     '''
     uninstalled_languages = {}
     installed_languages = []
-    for name in languages:
-        for bin in languages[name]:
-            if shutil.which(bin) is None:
-                # List of packages to install.
-                uninstalled_languages[name] = [languages[name][f] for f in languages[name]]
-                # Removing duplicate packages.
-                uninstalled_languages[name] = list(set(uninstalled_languages[name]))
-                break
-        else:
-            installed_languages.append(name)
+    if is_available():
+        installed_languages = ['C', 'C++']
+    else:
+        uninstalled_languages = languages
     return (installed_languages, uninstalled_languages)
 
 def prepare(prefix):
     '''
     Prepare the environment.
-    Note that copying these libs is unnecessary for building, since the
-    system can find these at build time. But when moving the prefix to a
-    Windows machine, if ever we linked against these dll and they are
-    absent, the executable won't run.
     '''
     try:
         env_bin = os.path.join(prefix, 'bin')
@@ -102,14 +85,6 @@ def prepare(prefix):
     except PermissionError:
         sys.stderr.write('"{}" cannot be created. Please verify your permissions. Aborting.\n'.format(env_path))
         return False
-    gcc_libs = subprocess.check_output(['arm-linux-androideabi-gcc', '-print-file-name='], universal_newlines=True)
-    # XXX: do we have to do something similar to Win crossbuild by symlinking some libraries?
-    #for dll in glob.glob(gcc_libs.strip() + '/*.dll'):
-        #try:
-            #os.symlink(dll, os.path.join(os.path.join(env_bin, os.path.basename(dll))))
-        #except OSError:
-            # A failed symlink is not necessarily a no-go. Let's just output a warning.
-            #sys.stderr.write('Warning: crossroad failed to symlink {} in {}.\n'.format(dll, env_bin))
     return True
 
 def crossroad_finalize():
