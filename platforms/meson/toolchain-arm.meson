@@ -1,0 +1,12 @@
+[binaries]
+c = 'arm-none-eabi-gcc'
+cpp = 'arm-none-eabi-g++'
+ar = 'arm-none-eabi-ar'
+strip = 'arm-none-eabi-strip'
+pkgconfig = 'arm-none-eabi-pkg-config'
+
+[host_machine]
+system = 'generic'
+cpu_family = 'arm'
+cpu = 'arm'
+endian = 'little'
