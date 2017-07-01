@@ -26,6 +26,7 @@ import shutil
 import subprocess
 import glob
 import os.path
+import re
 import sys
 
 name = 'android-arm'
@@ -110,3 +111,32 @@ def prepare(prefix):
             # A failed symlink is not necessarily a no-go. Let's just output a warning.
             #sys.stderr.write('Warning: crossroad failed to symlink {} in {}.\n'.format(dll, env_bin))
     return True
+
+def crossroad_finalize():
+    '''
+    Clean-out installed pkg-config files so that they output appropriate
+    build paths, and not the finale installation paths.
+    '''
+    prefix = os.path.abspath(os.environ['CROSSROAD_PREFIX'])
+    for root, dirs, files in os.walk(prefix):
+        if os.path.basename(root) == 'pkgconfig':
+            for file in {f for f in files if f.endswith('.pc')}:
+                file = os.path.join(root, file)
+                try:
+                    fd = open(file, 'r')
+                    contents = fd.read()
+                    fd.close()
+                    if re.match(r'^prefix={}'.format(prefix), contents):
+                        continue
+                    contents = re.sub(r'^prefix=', 'prefix={}'.format(prefix),
+                                      contents, count=0, flags=re.MULTILINE)
+                except IOError:
+                    sys.stderr.write('File "{}" could not be read.\n'.format(from_file))
+                    sys.exit(os.EX_CANTCREAT)
+                try:
+                    fd = open(file, 'w')
+                    fd.write(contents)
+                    fd.close()
+                except IOError:
+                    sys.stderr.write('File {} cannot be written.'.format(to_file))
+                    sys.exit(os.EX_CANTCREAT)
