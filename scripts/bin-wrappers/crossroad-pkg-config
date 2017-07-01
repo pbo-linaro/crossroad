@@ -39,6 +39,8 @@ elif [ "$CROSSROAD_HOST" = "arm-linux-androideabi" ]; then
     if [ -d "$CROSSROAD_ANDROID_PREFIX" ]; then
       export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$CROSSROAD_ANDROID_PREFIX/lib/pkgconfig"
     fi
+    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$CROSSROAD_PREFIX/usr/local/lib/pkgconfig"
+    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$CROSSROAD_PREFIX/usr/local/share/pkgconfig"
 fi
 
 # Some common system paths.
