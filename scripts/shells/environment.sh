@@ -19,6 +19,7 @@
 # Some value for user usage.
 export CROSSROAD_BUILD=`@DATADIR@/share/crossroad/scripts/config.guess`
 export CROSSROAD_CMAKE_TOOLCHAIN_FILE="@DATADIR@/share/crossroad/scripts/cmake/toolchain-${CROSSROAD_PLATFORM}.cmake"
+export CROSSROAD_MESON_TOOLCHAIN_FILE="@DATADIR@/share/crossroad/scripts/meson/toolchain-${CROSSROAD_PLATFORM}.meson"
 
 # ld is a mandatory file to enter this environment.
 # Also it is normally not touched by ccache, which makes it a better

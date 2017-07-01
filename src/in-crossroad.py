@@ -278,6 +278,14 @@ if __name__ == "__main__":
             command += ' '.join(sys.argv[arg_pos + 1:])
             sys.stdout.write('crossroad info: running "{}"\n'.format(command))
             sys.exit(subprocess.call(command, shell=True))
+        elif arg == 'meson':
+            # The position should normally be 2 since any other command or option before
+            # would be an error. But just in case the logics evolve.
+            arg_pos = sys.argv.index(arg)
+            command = 'meson -Dprefix={} --cross-file=$CROSSROAD_MESON_TOOLCHAIN_FILE '.format(install_prefix)
+            command += ' '.join(sys.argv[arg_pos + 1:])
+            sys.stdout.write('crossroad info: running "{}"\n'.format(command))
+            sys.exit(subprocess.call(command, shell=True))
         elif arg[:1] == '-':
             sys.stderr.write('Unknown option: {}\n{}\n'.format(arg, usage))
             sys.exit(os.EX_USAGE)
