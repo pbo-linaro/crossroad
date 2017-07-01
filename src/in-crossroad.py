@@ -124,6 +124,10 @@ if __name__ == "__main__":
     command_kwargs = {}
     usage_error = False
     show_help = False
+    if os.environ['CROSSROAD_HOST'].endswith('-w64-mingw32'):
+        install_prefix='$CROSSROAD_PREFIX'
+    else:
+        install_prefix='/usr/local/'
     for arg in sys.argv[1:]:
         if command is not None:
             if arg[:2] == '--':
@@ -225,7 +229,8 @@ if __name__ == "__main__":
                 configure = './configure'
             arg_pos = sys.argv.index(arg)
             # NOTE: with shell=True, subprocess does not deal well with list as a command.
-            command = '{} --prefix=$CROSSROAD_PREFIX --host=$CROSSROAD_HOST --build=$CROSSROAD_BUILD '.format(configure) + ' '.join(sys.argv[arg_pos + 1:])
+            command = '{} --prefix={} --host=$CROSSROAD_HOST --build=$CROSSROAD_BUILD '.format(configure, install_prefix) + \
+                      ' '.join(sys.argv[arg_pos + 1:])
             sys.stdout.write('crossroad info: running "{}"\n'.format(command))
             sys.exit(subprocess.call(command, shell=True))
         elif arg == 'scons':
@@ -269,7 +274,7 @@ if __name__ == "__main__":
             # The position should normally be 2 since any other command or option before
             # would be an error. But just in case the logics evolve.
             arg_pos = sys.argv.index(arg)
-            command = '{} -DCMAKE_INSTALL_PREFIX:PATH=$CROSSROAD_PREFIX -DCMAKE_TOOLCHAIN_FILE=$CROSSROAD_CMAKE_TOOLCHAIN_FILE '.format(arg)
+            command = '{} -DCMAKE_INSTALL_PREFIX:PATH={} -DCMAKE_TOOLCHAIN_FILE=$CROSSROAD_CMAKE_TOOLCHAIN_FILE '.format(arg, install_prefix)
             command += ' '.join(sys.argv[arg_pos + 1:])
             sys.stdout.write('crossroad info: running "{}"\n'.format(command))
             sys.exit(subprocess.call(command, shell=True))
