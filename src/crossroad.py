@@ -291,7 +291,10 @@ if __name__ == "__main__":
                 if uninstalled != []:
                     uninstalled = [ "{:<20}Common package name providing the feature: {}".format(name, ", ".join(uninstalled[name])) for name in uninstalled]
                     uninstalled.sort()
-                    print("Uninstalled language list:\n- {}".format("\n- ".join(uninstalled)))
+                    lang_string = "\n- ".join(uninstalled)
+                    if lang_string != '':
+                        lang_string = '\n- ' + lang_string
+                        print("Uninstalled language list: {}".format(lang_string))
                 projects = get_projects(platform.name)
                 if projects != []:
                     print("Current projects on this target:\n- {}".format("\n- ".join(projects)))
