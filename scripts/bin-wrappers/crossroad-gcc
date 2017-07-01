@@ -38,32 +38,65 @@ export CPATH="$CROSSROAD_PREFIX/include"
 # The default -L list of directories.
 export CROSSROAD_LDFLAGS=" $CROSSROAD_LDFLAGS -L$CROSSROAD_PREFIX/lib "
 
-if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX" ]; then
-    if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/include" ]; then
-        export CPATH="$CPATH:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/include/"
-    fi
-    if [ -n "$CROSSROAD_WORD_SIZE" ]; then
-        if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib$CROSSROAD_WORD_SIZE" ]; then
-            export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib$CROSSROAD_WORD_SIZE "
-        fi
-    fi
-    if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib" ]; then
-        export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib "
-    fi
+if [ "$CROSSROAD_HOST" = "x86_64-w64-mingw32" ]; then
+  if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX" ]; then
+      if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/include" ]; then
+          export CPATH="$CPATH:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/include/"
+      fi
+      if [ -n "$CROSSROAD_WORD_SIZE" ]; then
+          if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib$CROSSROAD_WORD_SIZE" ]; then
+              export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib$CROSSROAD_WORD_SIZE "
+          fi
+      fi
+      if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib" ]; then
+          export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib "
+      fi
+  fi
+elif [ "$CROSSROAD_HOST" = "i686-w64-mingw32" ]; then
+  if [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX" ]; then
+      if [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/include" ]; then
+          export CPATH="$CPATH:$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/include/"
+      fi
+      if [ -n "$CROSSROAD_WORD_SIZE" ]; then
+          if [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib$CROSSROAD_WORD_SIZE" ]; then
+              export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib$CROSSROAD_WORD_SIZE "
+          fi
+      fi
+      if [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib" ]; then
+          export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib "
+      fi
+  fi
+elif [ "$CROSSROAD_HOST" = "arm-linux-androideabi" ]; then
+  if [ -d "$CROSSROAD_ANDROID_PREFIX" ]; then
+      if [ -d "$CROSSROAD_ANDROID_PREFIX/include" ]; then
+          export CPATH="$CPATH:$CROSSROAD_ANDROID_PREFIX/include/"
+      fi
+      if [ -n "$CROSSROAD_WORD_SIZE" ]; then
+          if [ -d "$CROSSROAD_ANDROID_PREFIX/lib$CROSSROAD_WORD_SIZE" ]; then
+              export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L$CROSSROAD_ANDROID_PREFIX/lib$CROSSROAD_WORD_SIZE "
+          fi
+      fi
+      if [ -d "$CROSSROAD_ANDROID_PREFIX/lib" ]; then
+          export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L$CROSSROAD_ANDROID_PREFIX/lib "
+      fi
+  fi
 fi
 
-if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX" ]; then
-    if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX/include" ]; then
-        export CPATH="$CPATH:$CROSSROAD_GUESSED_MINGW_PREFIX/include/"
-    fi
-    if [ -n "$CROSSROAD_WORD_SIZE" ]; then
-        if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX/lib$CROSSROAD_WORD_SIZE" ]; then
-            export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L$CROSSROAD_GUESSED_MINGW_PREFIX/lib$CROSSROAD_WORD_SIZE "
-        fi
-    fi
-    if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX/lib" ]; then
-        export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L'$CROSSROAD_GUESSED_MINGW_PREFIX/lib' "
-    fi
+if [ "$CROSSROAD_HOST" = "x86_64-w64-mingw32" -o \
+     "$CROSSROAD_HOST" = "i686-w64-mingw32" ]; then
+  if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX" ]; then
+      if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX/include" ]; then
+          export CPATH="$CPATH:$CROSSROAD_GUESSED_MINGW_PREFIX/include/"
+      fi
+      if [ -n "$CROSSROAD_WORD_SIZE" ]; then
+          if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX/lib$CROSSROAD_WORD_SIZE" ]; then
+              export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L$CROSSROAD_GUESSED_MINGW_PREFIX/lib$CROSSROAD_WORD_SIZE "
+          fi
+      fi
+      if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX/lib" ]; then
+          export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L'$CROSSROAD_GUESSED_MINGW_PREFIX/lib' "
+      fi
+  fi
 fi
 
 # Adding some user-installed or common distribution prefixes.

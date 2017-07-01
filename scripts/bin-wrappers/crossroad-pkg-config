@@ -35,6 +35,10 @@ elif [ "$CROSSROAD_HOST" = "i686-w64-mingw32" ]; then
     if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX" ]; then
         export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$CROSSROAD_GUESSED_MINGW_PREFIX/lib32/pkconfig:$CROSSROAD_GUESSED_MINGW_PREFIX/lib/pkconfig"
     fi
+elif [ "$CROSSROAD_HOST" = "arm-linux-androideabi" ]; then
+    if [ -d "$CROSSROAD_ANDROID_PREFIX" ]; then
+      export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$CROSSROAD_ANDROID_PREFIX/lib/pkgconfig"
+    fi
 fi
 
 # Some common system paths.

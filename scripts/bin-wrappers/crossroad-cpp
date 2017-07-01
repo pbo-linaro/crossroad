@@ -18,16 +18,34 @@
 
 # The default -I list of directories.
 export CPATH="$CROSSROAD_PREFIX/include"
-if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX" ]; then
-    if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/include" ]; then
-        export CPATH="$CPATH:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/include/"
-    fi
+
+if [ "$CROSSROAD_HOST" = "x86_64-w64-mingw32" ]; then
+  if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX" ]; then
+      if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/include" ]; then
+          export CPATH="$CPATH:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/include/"
+      fi
+  fi
+elif [ "$CROSSROAD_HOST" = "i686-w64-mingw32" ]; then
+  if [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX" ]; then
+      if [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/include" ]; then
+          export CPATH="$CPATH:$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/include/"
+      fi
+  fi
+elif [ "$CROSSROAD_HOST" = "arm-linux-androideabi" ]; then
+  if [ -d "$CROSSROAD_ANDROID_PREFIX" ]; then
+      if [ -d "$CROSSROAD_ANDROID_PREFIX/include" ]; then
+          export CPATH="$CPATH:$CROSSROAD_ANDROID_PREFIX/include/"
+      fi
+  fi
 fi
 
-if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX" ]; then
-    if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX/include" ]; then
-        export CPATH="$CPATH:$CROSSROAD_GUESSED_MINGW_PREFIX/include/"
-    fi
+if [ "$CROSSROAD_HOST" = "x86_64-w64-mingw32" -o \
+     "$CROSSROAD_HOST" = "i686-w64-mingw32" ]; then
+  if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX" ]; then
+      if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX/include" ]; then
+          export CPATH="$CPATH:$CROSSROAD_GUESSED_MINGW_PREFIX/include/"
+      fi
+  fi
 fi
 
 # Adding some user-installed or common distribution prefixes.
