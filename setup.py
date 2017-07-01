@@ -132,6 +132,7 @@ class my_build(distutils.command.build.build):
             os.makedirs('build/platforms', exist_ok = True)
             os.makedirs('build/share/crossroad/scripts/shells/bash', exist_ok = True)
             os.makedirs('build/share/crossroad/scripts/cmake', exist_ok = True)
+            os.makedirs('build/share/crossroad/scripts/meson', exist_ok = True)
         except os.error:
             sys.stderr.write('Build error: failure to create the build/ tree. Please check your permissions.\n')
             sys.exit(os.EX_CANTCREAT)
@@ -166,6 +167,8 @@ class my_build(distutils.command.build.build):
                 shutil.copy(os.path.join(srcdir, 'platforms/modules/', shortname + '.py'), 'build/platforms')
                 # Cmake file.
                 shutil.copy(os.path.join(srcdir, 'platforms/cmake/', 'toolchain-' + shortname + '.cmake'), 'build/share/crossroad/scripts/cmake/')
+                # Meson cross build definition files.
+                shutil.copy(os.path.join(srcdir, 'platforms/meson/', 'toolchain-' + shortname + '.meson'), 'build/share/crossroad/scripts/meson/')
                 # Bash startup file.
                 built_bashrc = os.path.join('build/share/crossroad/scripts/shells/bash/', 'bashrc.' + shortname)
                 shutil.copyfile(os.path.join(srcdir, 'scripts/shells/bash/bashrc.template'), built_bashrc)
@@ -353,6 +356,9 @@ platform_list = [os.path.join('build/platforms/', f) \
 cmake_toolchains = [os.path.join('build/share/crossroad/scripts/cmake/', f) \
                     for f in os.listdir(os.path.join(srcdir, 'platforms/cmake/')) \
                     if f[-6:] == '.cmake' and f[10:-6] not in deactivated_platforms]
+meson_toolchains = [os.path.join('build/share/crossroad/scripts/meson/', f) \
+                    for f in os.listdir(os.path.join(srcdir, 'platforms/meson/')) \
+                    if f[-6:] == '.meson' and f[10:-6] not in deactivated_platforms]
 
 def get_built_data_files():
     bashrc_files = []
@@ -413,6 +419,7 @@ setup(
                                       os.path.join(srcdir, 'scripts/shells/post-env.sh'),]),
         ('share/bash-completion/completions', [os.path.join(srcdir, 'scripts/shells/bash/completions/crossroad')]),
         ('share/crossroad/scripts/cmake', cmake_toolchains),
+        ('share/crossroad/scripts/meson', meson_toolchains),
         ('share/crossroad/platforms/', platform_list),
         #('crossroad/projects/', ['projects']),
         ] + built_data_files,
