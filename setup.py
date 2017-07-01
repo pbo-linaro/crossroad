@@ -30,7 +30,7 @@ import shutil
 import configparser
 
 version = '0.7'
-deactivated_platforms = ['android-arm']
+deactivated_platforms = []
 srcdir   = os.path.dirname(os.path.realpath(sys.argv[0]))
 builddir = os.getcwd()
 
