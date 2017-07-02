@@ -53,7 +53,10 @@ toolchains = {
 # see gcc-i686-linux-android for Android on x86
 # Also android-google-arm and android-google-x86 for using Google binaries.
 
-short_description = 'Generic Android/Bionic on ARM'
+if name[8:11] == 'x86':
+    short_description = 'Generic Android/Bionic on ' + name[8:]
+else:
+    short_description = 'Generic Android/Bionic on ' + name[8:].upper()
 
 # android-src-vendor ?
 # android-headers ?
