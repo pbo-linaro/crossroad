@@ -28,17 +28,17 @@ import glob
 import os.path
 import sys
 
-name = 'arm'
+name = 'arm-gnu'
 
 # see gcc-i686-linux-android for Android on x86
 # Also android-google-arm and android-google-x86 for using Google binaries.
 
-short_description = 'Generic Embedded ABI on ARM (bare metal)'
+short_description = 'GNU Embedded ABI on ARM Linux (untested)'
 
 # android-src-vendor ?
 # android-headers ?
 mandatory_binaries = {
-    'arm-none-eabi-ld': 'gcc-arm-none-eabi',
+    'arm-linux-gnu-ld': 'binutils-arm-linux-gnu',
     }
 # arm-none-eabi-newlib must be installed for crt0.o.
 # for other: glibc-arm-linux-gnu(-devel).
@@ -49,8 +49,8 @@ mandatory_binaries = {
 # TODO: add --specs=nosys.specs  to gcc.
 
 languages = {
-    'C' : {'arm-none-eabi-gcc': 'gcc-arm-none-eabi'},
-    'C++' : {'arm-none-eabi-g++': 'gcc-arm-none-eabi'}
+    'C' : {'arm-linux-gnu-gcc': 'gcc-arm-linux-gnu'},
+    'C++' : {'arm-linux-gnu-g++': 'gcc-arm-linux-gnu'}
     }
 
 def is_available():
@@ -97,23 +97,5 @@ def language_list():
 def prepare(prefix):
     '''
     Prepare the environment.
-    Note that copying these libs is unnecessary for building, since the
-    system can find these at build time. But when moving the prefix to a
-    Windows machine, if ever we linked against these dll and they are
-    absent, the executable won't run.
     '''
-    try:
-        env_bin = os.path.join(prefix, 'bin')
-        os.makedirs(env_bin, exist_ok = True)
-    except PermissionError:
-        sys.stderr.write('"{}" cannot be created. Please verify your permissions. Aborting.\n'.format(env_path))
-        return False
-    gcc_libs = subprocess.check_output(['arm-none-eabi-gcc', '-print-file-name='], universal_newlines=True)
-    # XXX: do we have to do something similar to Win crossbuild by symlinking some libraries?
-    #for dll in glob.glob(gcc_libs.strip() + '/*.dll'):
-        #try:
-            #os.symlink(dll, os.path.join(os.path.join(env_bin, os.path.basename(dll))))
-        #except OSError:
-            # A failed symlink is not necessarily a no-go. Let's just output a warning.
-            #sys.stderr.write('Warning: crossroad failed to symlink {} in {}.\n'.format(dll, env_bin))
     return True

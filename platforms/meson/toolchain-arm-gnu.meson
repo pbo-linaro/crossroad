@@ -1,0 +1,12 @@
+[binaries]
+c = 'arm-linux-gnu-gcc'
+cpp = 'arm-linux-gnu-g++'
+ar = 'arm-linux-gnu-ar'
+strip = 'arm-linux-gnu-strip'
+pkgconfig = 'arm-linux-gnu-pkg-config'
+
+[host_machine]
+system = 'generic'
+cpu_family = 'arm'
+cpu = 'arm'
+endian = 'little'
