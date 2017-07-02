@@ -131,9 +131,9 @@ def init(environ):
         if install:
             break
     if install:
-        yn = input('Crossroad will now install Android toolchain [yN] ')
+        yn = input('Crossroad will now install Android toolchain [Yn] ')
         yn = yn.strip().lower()
-        if yn != 'y':
+        if yn != 'y' and yn != '':
             sys.stderr.write('Android environment initialization aborted.\n')
             sys.exit(os.EX_CANTCREAT)
         # Download the NDK.
