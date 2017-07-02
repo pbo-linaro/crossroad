@@ -37,6 +37,8 @@ import urllib.request
 import zipfile
 
 name = os.path.basename(os.path.realpath(__file__))[:-3]
+# Check here to update the NDK version:
+# https://developer.android.com/ndk/downloads/index.html
 ndk  = 'android-ndk-r15b'
 
 toolchains = {
