@@ -40,6 +40,10 @@ name = os.path.basename(os.path.realpath(__file__))[:-3]
 # Check here to update the NDK version:
 # https://developer.android.com/ndk/downloads/index.html
 ndk  = 'android-ndk-r15b'
+# The list of valid targets are found under platforms/ in the NDK.
+valid_apis = ['9', '12', '13', '14', '15',
+              '16', '17', '18', '19', '21',
+              '22', '23', '24', '26']
 
 toolchains = {
     'android-arm'    : 'arm-linux-androideabi',
@@ -96,7 +100,7 @@ def prepare(prefix):
     '''
     Prepare the environment.
     '''
-    pass
+    return True
 
 def download_progress(chunk, max, total):
     # TODO: I will want to have this work by deleting first previous
@@ -107,7 +111,7 @@ def download_progress(chunk, max, total):
         sys.stdout.write(".")
         sys.stdout.flush()
 
-def init(environ):
+def init(environ, api:int = None):
     # The toolchain is installed in the cache directory.
     xdg_cache_home = None
     try:
@@ -119,10 +123,18 @@ def init(environ):
         else:
             sys.stderr.write('$XDG_CACHE_HOME not set, and this user has no $HOME either.\n')
             sys.exit(os.EX_UNAVAILABLE)
+    # Set the platform/API level.
+    if api is None:
+        api = input('Specify target Android API: ')
+    api = api.strip()
+    if api not in valid_apis:
+        sys.stderr.write('API "{}" is not available. Valid Android APIs: '.format(api))
+        sys.stderr.write(', '.join(valid_apis) + '\n')
+        sys.exit(os.EX_UNAVAILABLE)
     # Create the directory.
     android_dir = os.path.join(xdg_cache_home, 'crossroad', 'android')
     toolchain_dir = os.path.join(android_dir, 'toolchain')
-    gen_ndk = os.path.join(toolchain_dir, 'android-24-arm')
+    gen_ndk = os.path.join(toolchain_dir, 'android-' + api + name[7:])
     bin_dir = os.path.join(gen_ndk, 'bin')
     ndk_tmp = tempfile.mkdtemp(prefix='crossroad-')
     try:
@@ -192,7 +204,7 @@ def init(environ):
                  stat.S_IXUSR|stat.S_IRUSR|stat.S_IWUSR)
         subprocess.call(['build/tools/make-standalone-toolchain.sh',
                          '--toolchain=' + toolchains[name],
-                         '--platform=android-24',
+                         '--platform=android-' + api,
                          '--install-dir="{}"'.format(gen_ndk)],
                          cwd=os.path.join(ndk_tmp, ndk),
                          shell=False)
