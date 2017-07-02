@@ -502,6 +502,11 @@ if __name__ == "__main__":
     target = args[0]
     shell = None
     environ = os.environ
+    # Initialize the environment if needed.
+    if hasattr(available_platforms[target], 'init') and \
+       not available_platforms[target].init(environ):
+        sys.stderr.write('Failed to initialize {} environment.\n'.format(target))
+        sys.exit(os.EX_CANTCREAT)
     try:
         # NOTE: $SHELL is usually the default shell of the user,
         # not necessarilly the current shell. $0 would return the
