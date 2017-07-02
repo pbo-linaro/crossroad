@@ -1,0 +1,12 @@
+[binaries]
+c = 'x86_64-gcc'
+cpp = 'x86_64-g++'
+ar = 'x86_64-ar'
+strip = 'x86_64-strip'
+pkgconfig = 'x86_64-pkg-config'
+
+[host_machine]
+system = 'android'
+cpu_family = 'x86_64'
+cpu = 'x86_64'
+endian = 'little'

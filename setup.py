@@ -348,17 +348,17 @@ class my_install_scripts(distutils.command.install_scripts.install_scripts):
         distutils.command.install_scripts.install_scripts.run(self)
 
 
-platform_list = os.listdir(os.path.join(srcdir, 'platforms/modules'))
-platform_list = [os.path.join('build/platforms/', f) \
-                 for f in platform_list \
-                 if f[-3:] == '.py' and f[:-3] not in deactivated_platforms]
+platform_list = os.listdir(os.path.join(srcdir, 'platforms/env'))
+platform_list = [f[:-5] for f in platform_list \
+                 if f[-5:] == '.conf' and f[:-5] not in deactivated_platforms]
+platform_file_list = [os.path.join('build/platforms/', f + '.py') for f in platform_list]
 
-cmake_toolchains = [os.path.join('build/share/crossroad/scripts/cmake/', f) \
-                    for f in os.listdir(os.path.join(srcdir, 'platforms/cmake/')) \
-                    if f[-6:] == '.cmake' and f[10:-6] not in deactivated_platforms]
-meson_toolchains = [os.path.join('build/share/crossroad/scripts/meson/', f) \
-                    for f in os.listdir(os.path.join(srcdir, 'platforms/meson/')) \
-                    if f[-6:] == '.meson' and f[10:-6] not in deactivated_platforms]
+cmake_toolchains = [os.path.join('build/share/crossroad/scripts/cmake/',
+                                 'toolchain-' + f + '.cmake') \
+                    for f in platform_list]
+meson_toolchains = [os.path.join('build/share/crossroad/scripts/meson/',
+                                 'toolchain-' + f + '.meson') \
+                    for f in platform_list]
 
 def get_built_data_files():
     bashrc_files = []
@@ -420,7 +420,7 @@ setup(
         ('share/bash-completion/completions', [os.path.join(srcdir, 'scripts/shells/bash/completions/crossroad')]),
         ('share/crossroad/scripts/cmake', cmake_toolchains),
         ('share/crossroad/scripts/meson', meson_toolchains),
-        ('share/crossroad/platforms/', platform_list),
+        ('share/crossroad/platforms/', platform_file_list),
         #('crossroad/projects/', ['projects']),
         ] + built_data_files,
     )

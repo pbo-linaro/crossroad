@@ -1,0 +1,12 @@
+[binaries]
+c = 'mips64el-linux-android-gcc'
+cpp = 'mips64el-linux-android-g++'
+ar = 'mips64el-linux-android-ar'
+strip = 'mips64el-linux-android-strip'
+pkgconfig = 'mips64el-linux-android-pkg-config'
+
+[host_machine]
+system = 'android'
+cpu_family = 'mips64'
+cpu = 'mips64'
+endian = 'little'

@@ -1,0 +1,12 @@
+[binaries]
+c = 'aarch64-linux-android-gcc'
+cpp = 'aarch64-linux-android-g++'
+ar = 'aarch64-linux-android-ar'
+strip = 'aarch64-linux-android-strip'
+pkgconfig = 'aarch64-linux-android-pkg-config'
+
+[host_machine]
+system = 'android'
+cpu_family = 'arm'
+cpu = 'arm'
+endian = 'little'

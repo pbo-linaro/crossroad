@@ -1,0 +1,12 @@
+[binaries]
+c = 'mipsel-linux-android-gcc'
+cpp = 'mipsel-linux-android-g++'
+ar = 'mipsel-linux-android-ar'
+strip = 'mipsel-linux-android-strip'
+pkgconfig = 'mipsel-linux-android-pkg-config'
+
+[host_machine]
+system = 'android'
+cpu_family = 'mips'
+cpu = 'mips'
+endian = 'little'
