@@ -87,7 +87,7 @@ def load_platforms():
     '''
     available_platforms = {}
     other_platforms = {}
-    datadirs = get_datadirs() + ['../..'] # TODO: remove! For dev only.
+    datadirs = get_datadirs()
     platform_files = []
     for dir in datadirs:
         dir = os.path.abspath(os.path.join (dir, 'crossroad/platforms'))
