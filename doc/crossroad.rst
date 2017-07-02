@@ -480,7 +480,7 @@ Bonus: testing your win32 binaries on the build platform with Wine
 A `crossroad` environment is actually set-up with a few environment
 variables so that `Wine` can find the DLLs and win32 tools that you
 installed through a `make install`.
-Of course you will also need to ensure that Wine is registred in
+Of course you will also need to ensure that Wine is registered in
 `binfmt_misc` to execute win32 binaries automatically, otherwise it
 won't work.
 
