@@ -589,7 +589,7 @@ if __name__ == "__main__":
 
         # Do not run the target's prepare() script after a copy (which we assume already prepared).
         if not options.copy and not available_platforms[target].prepare(env_path):
-            sys.stderr.write('Crossroad failed to prepare the environment for "{}".\n{}'.format(available_platforms[target].name))
+            sys.stderr.write('Crossroad failed to prepare the environment for "{}".\n'.format(available_platforms[target].name))
             sys.exit(os.EX_CANTCREAT)
     elif options.copy is not None:
         sys.stderr.write('Option --copy cannot be used for existing projects\n')
