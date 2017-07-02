@@ -190,6 +190,12 @@ def init(environ):
                          '--install-dir="{}"'.format(gen_ndk)],
                          cwd=os.path.join(ndk_tmp, ndk),
                          shell=False)
+        sys.stdout.write("Fixing file permissions…\n".format(ndk_tmp))
+        for root, dirs, files in os.walk(bin_dir):
+            # Again, since permissions were lost. Fix where needed.
+            for f in files:
+                os.chmod(os.path.join(root, f),
+                         stat.S_IXUSR|stat.S_IRUSR|stat.S_IWUSR)
         sys.stdout.write("Deleting {}\n".format(ndk_tmp))
         shutil.rmtree(ndk_tmp)
     # Check again if it all worked well.
