@@ -217,11 +217,25 @@ def init(environ, api:int = None):
                          cwd=os.path.join(ndk_tmp, ndk),
                          shell=False)
         sys.stdout.write("Fixing file permissions…\n".format(ndk_tmp))
-        for root, dirs, files in os.walk(bin_dir):
-            # Again, since permissions were lost. Fix where needed.
-            for f in files:
-                os.chmod(os.path.join(root, f),
-                         stat.S_IXUSR|stat.S_IRUSR|stat.S_IWUSR)
+        for root, dirs, files in os.walk(gen_ndk):
+            parents = root.split('/')
+            if 'bin' in parents  or \
+               'sbin' in parents or \
+               'libexec' in parents:
+                # Again, since permissions were lost. Fix where needed.
+                # These are the directories where we expect executables.
+                for f in files:
+                    os.chmod(os.path.join(root, f),
+                             stat.S_IXUSR|stat.S_IRUSR|stat.S_IWUSR)
+            else:
+                # As a special exception, make python files executables.
+                # Not sure if that's needed, in the archive, some py
+                # files are executables whereas others are not. Let's
+                # just not be subtle and make them all so.
+                for f in files:
+                    if f.endswith('.py'):
+                        os.chmod(os.path.join(root, f),
+                                 stat.S_IXUSR|stat.S_IRUSR|stat.S_IWUSR)
         sys.stdout.write("Deleting {}\n".format(ndk_tmp))
         shutil.rmtree(ndk_tmp)
     # Check again if it all worked well.
