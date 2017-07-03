@@ -149,7 +149,7 @@ def init(environ, api:int = None):
        shutil.which(bin_test) is None:
         install = True
     if install:
-        yn = input('Crossroad will now install Android toolchain [Yn] ')
+        yn = input('Crossroad will now install Android toolchain (nearly 1GB download) [Yn] ')
         yn = yn.strip().lower()
         if yn != 'y' and yn != '':
             sys.stderr.write('Android environment initialization aborted.\n')
