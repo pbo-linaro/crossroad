@@ -53,6 +53,14 @@ toolchains = {
     'android-x86'    : 'x86-',
     'android-x86-64' : 'x86_64-'
     }
+hosts = {
+    'android-arm'    : 'arm-linux-androideabi',
+    'android-arm64'  : 'aarch64-linux-android',
+    'android-mips'   : 'mipsel-linux-android',
+    'android-mips64' : 'mips64el-linux-android',
+    'android-x86'    : 'i686-linux-android',
+    'android-x86-64' : 'x86_64-linux-android'
+    }
 
 # see gcc-i686-linux-android for Android on x86
 # Also android-google-arm and android-google-x86 for using Google binaries.
@@ -91,8 +99,8 @@ def language_list():
         installed_languages = ['C', 'C++']
     else:
         uninstalled_languages = {
-            'C' : {toolchains[name] + '-gcc': 'gcc-' + toolchains[name]},
-            'C++' : {toolchains[name] + '-g++': 'gcc-' + toolchains[name]}
+            'C' : {hosts[name] + '-gcc': 'gcc-' + toolchains[name]},
+            'C++' : {hosts[name] + '-g++': 'gcc-' + toolchains[name]}
         }
     return (installed_languages, uninstalled_languages)
 
@@ -143,7 +151,7 @@ def init(environ, api:int = None):
         pass
     # Check if we need to install.
     install = False
-    bin_test = toolchains[name] + '-gcc'
+    bin_test = hosts[name] + '-gcc'
     bin_path = os.path.join(bin_dir, bin_test)
     if not os.path.exists(bin_path) and \
        shutil.which(bin_test) is None:
