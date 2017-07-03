@@ -19,26 +19,30 @@
 # The default -I list of directories.
 export CPATH="$CROSSROAD_PREFIX/include"
 
-if [ "$CROSSROAD_HOST" = "x86_64-w64-mingw32" ]; then
+case "$CROSSROAD_HOST" in
+  "x86_64-w64-mingw32")
   if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX" ]; then
       if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/include" ]; then
           export CPATH="$CPATH:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/include/"
       fi
   fi
-elif [ "$CROSSROAD_HOST" = "i686-w64-mingw32" ]; then
+  ;;
+  "i686-w64-mingw32")
   if [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX" ]; then
       if [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/include" ]; then
           export CPATH="$CPATH:$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/include/"
       fi
   fi
-elif [ "$CROSSROAD_HOST" = "arm-linux-androideabi" ]; then
+  ;;
+  *"linux-android"*)
   if [ -d "$CROSSROAD_ANDROID_PREFIX" ]; then
       if [ -d "$CROSSROAD_ANDROID_PREFIX/include" ]; then
           export CPATH="$CPATH:$CROSSROAD_ANDROID_PREFIX/include/"
       fi
   fi
   export CPATH="$CROSSROAD_PREFIX/usr/local/include"
-fi
+  ;;
+esac
 
 if [ "$CROSSROAD_HOST" = "x86_64-w64-mingw32" -o \
      "$CROSSROAD_HOST" = "i686-w64-mingw32" ]; then

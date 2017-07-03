@@ -38,7 +38,8 @@ export CPATH="$CROSSROAD_PREFIX/include"
 # The default -L list of directories.
 export CROSSROAD_LDFLAGS=" $CROSSROAD_LDFLAGS -L$CROSSROAD_PREFIX/lib "
 
-if [ "$CROSSROAD_HOST" = "x86_64-w64-mingw32" ]; then
+case "$CROSSROAD_HOST" in
+  "x86_64-w64-mingw32")
   if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX" ]; then
       if [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/include" ]; then
           export CPATH="$CPATH:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/include/"
@@ -52,7 +53,8 @@ if [ "$CROSSROAD_HOST" = "x86_64-w64-mingw32" ]; then
           export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib "
       fi
   fi
-elif [ "$CROSSROAD_HOST" = "i686-w64-mingw32" ]; then
+  ;;
+  "i686-w64-mingw32")
   if [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX" ]; then
       if [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/include" ]; then
           export CPATH="$CPATH:$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/include/"
@@ -66,7 +68,8 @@ elif [ "$CROSSROAD_HOST" = "i686-w64-mingw32" ]; then
           export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib "
       fi
   fi
-elif [ "$CROSSROAD_HOST" = "arm-linux-androideabi" ]; then
+  ;;
+  *"linux-android"*)
   if [ -d "$CROSSROAD_ANDROID_PREFIX" ]; then
       if [ -d "$CROSSROAD_ANDROID_PREFIX/include" ]; then
           export CPATH="$CPATH:$CROSSROAD_ANDROID_PREFIX/include/"
@@ -82,7 +85,8 @@ elif [ "$CROSSROAD_HOST" = "arm-linux-androideabi" ]; then
   fi
   export CPATH="$CROSSROAD_PREFIX/usr/local/include"
   export CROSSROAD_LDFLAGS=" $CROSSROAD_LDFLAGS -L$CROSSROAD_PREFIX/usr/local/lib "
-fi
+  ;;
+esac
 
 if [ "$CROSSROAD_HOST" = "x86_64-w64-mingw32" -o \
      "$CROSSROAD_HOST" = "i686-w64-mingw32" ]; then
