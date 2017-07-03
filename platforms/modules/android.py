@@ -50,8 +50,8 @@ toolchains = {
     'android-arm64'  : 'aarch64-linux-android',
     'android-mips'   : 'mipsel-linux-android',
     'android-mips64' : 'mips64el-linux-android',
-    'android-x86'    : 'x86',
-    'android-x86-64' : 'x86_64'
+    'android-x86'    : 'x86-',
+    'android-x86-64' : 'x86_64-'
     }
 
 # see gcc-i686-linux-android for Android on x86
