@@ -233,24 +233,27 @@ def crossroad_finalize():
     '''
     prefix = os.path.abspath(os.environ['CROSSROAD_PREFIX'])
     for root, dirs, files in os.walk(prefix):
-        if os.path.basename(root) == 'pkgconfig':
-            for file in {f for f in files if f.endswith('.pc')}:
-                file = os.path.join(root, file)
-                try:
-                    fd = open(file, 'r')
-                    contents = fd.read()
-                    fd.close()
+        for file in {f for f in files if f.endswith('.pc') or f.endswith('.la')}:
+            file = os.path.join(root, file)
+            try:
+                fd = open(file, 'r')
+                contents = fd.read()
+                fd.close()
+                if file.endswith('.pc'):
                     if re.match(r'^prefix={}'.format(prefix), contents):
                         continue
                     contents = re.sub(r'^prefix=', 'prefix={}'.format(prefix),
                                       contents, count=0, flags=re.MULTILINE)
-                except IOError:
-                    sys.stderr.write('File "{}" could not be read.\n'.format(from_file))
-                    sys.exit(os.EX_CANTCREAT)
-                try:
-                    fd = open(file, 'w')
-                    fd.write(contents)
-                    fd.close()
-                except IOError:
-                    sys.stderr.write('File {} cannot be written.'.format(to_file))
-                    sys.exit(os.EX_CANTCREAT)
+                elif file.endswith('.la'):
+                    contents = re.sub(r"([' ])/usr/local", "\\1{}/usr/local".format(prefix),
+                                      contents, count=0, flags=re.MULTILINE)
+            except IOError:
+                sys.stderr.write('File "{}" could not be read.\n'.format(from_file))
+                sys.exit(os.EX_CANTCREAT)
+            try:
+                fd = open(file, 'w')
+                fd.write(contents)
+                fd.close()
+            except IOError:
+                sys.stderr.write('File {} cannot be written.'.format(to_file))
+                sys.exit(os.EX_CANTCREAT)
