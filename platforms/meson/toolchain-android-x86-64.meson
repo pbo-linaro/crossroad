@@ -1,9 +1,9 @@
 [binaries]
-c = 'x86_64-gcc'
-cpp = 'x86_64-g++'
-ar = 'x86_64-ar'
-strip = 'x86_64-strip'
-pkgconfig = 'x86_64-pkg-config'
+c = 'x86_64-linux-android-gcc'
+cpp = 'x86_64-linux-android-g++'
+ar = 'x86_64-linux-android-ar'
+strip = 'x86_64-linux-android-strip'
+pkgconfig = 'x86_64-linux-android-pkg-config'
 
 [host_machine]
 system = 'android'
