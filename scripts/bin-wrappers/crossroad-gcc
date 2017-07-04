@@ -85,6 +85,7 @@ case "$CROSSROAD_HOST" in
   fi
   export CPATH="$CROSSROAD_PREFIX/usr/local/include"
   export CROSSROAD_LDFLAGS=" $CROSSROAD_LDFLAGS -L$CROSSROAD_PREFIX/usr/local/lib "
+  export CROSSROAD_CPPFLAGS="-D__ANDROID_API__=$CROSSROAD_ANDROID_API"
   ;;
 esac
 
@@ -128,4 +129,4 @@ if [ -d "/usr/$CROSSROAD_HOST/lib" ]; then
     export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L/usr/$CROSSROAD_HOST/lib "
 fi
 
-`which -a ${CROSSROAD_HOST}-${TOOL} | grep -v $0 |head -n 1` "$@" $CROSSROAD_LDFLAGS
+`which -a ${CROSSROAD_HOST}-${TOOL} | grep -v $0 |head -n 1` "$@" $CROSSROAD_LDFLAGS $CROSSROAD_CPPFLAGS

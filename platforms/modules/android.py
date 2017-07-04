@@ -247,6 +247,7 @@ def init(environ, api:int = None):
         sys.stderr.write('Android installation failed.\n')
     else:
         environ['PATH'] = bin_dir + ':' + environ['PATH']
+        environ['CROSSROAD_ANDROID_API'] = api
     return not install
 
 def crossroad_finalize():
