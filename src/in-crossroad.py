@@ -193,6 +193,9 @@ if __name__ == "__main__":
             if not os.path.exists(conf_dir):
                 sys.stderr.write('Error: directory "{}" does not exist.\n'.format(conf_dir))
                 sys.exit(os.EX_NOINPUT)
+            if hasattr(platform, 'preconfigure'):
+                sys.stdout.write('Running pre-configure script.\n')
+                platform.preconfigure()
             if not os.path.exists(arg) and os.path.exists(os.path.join(conf_dir, 'autogen.sh')):
                 if arg == 'configure' or arg == './configure':
                     sys.stderr.write('Warning: there is no ./configure script in the current directory, but there is an autogen.sh. Running it first.\n')

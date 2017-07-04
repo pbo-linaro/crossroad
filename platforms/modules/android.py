@@ -280,3 +280,6 @@ def crossroad_finalize():
             except IOError:
                 sys.stderr.write('File {} cannot be written.'.format(to_file))
                 sys.exit(os.EX_CANTCREAT)
+
+def preconfigure():
+    crossroad_finalize()
