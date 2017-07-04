@@ -237,6 +237,9 @@ if __name__ == "__main__":
             sys.stdout.write('crossroad info: running "{}"\n'.format(command))
             sys.exit(subprocess.call(command, shell=True))
         elif arg == 'scons':
+            if hasattr(platform, 'preconfigure'):
+                sys.stdout.write('Running pre-configure script.\n')
+                platform.preconfigure()
             environ = os.environ
             set_CROSSROAD_PREFIX = False
             arg_pos = sys.argv.index(arg)
@@ -274,6 +277,9 @@ if __name__ == "__main__":
             sys.stdout.write('crossroad info: running "{}"\n'.format(command))
             sys.exit(subprocess.call(command, shell=True, env=environ))
         elif arg == 'cmake' or arg == 'ccmake':
+            if hasattr(platform, 'preconfigure'):
+                sys.stdout.write('Running pre-configure script.\n')
+                platform.preconfigure()
             # The position should normally be 2 since any other command or option before
             # would be an error. But just in case the logics evolve.
             arg_pos = sys.argv.index(arg)
@@ -282,6 +288,9 @@ if __name__ == "__main__":
             sys.stdout.write('crossroad info: running "{}"\n'.format(command))
             sys.exit(subprocess.call(command, shell=True))
         elif arg == 'meson':
+            if hasattr(platform, 'preconfigure'):
+                sys.stdout.write('Running pre-configure script.\n')
+                platform.preconfigure()
             # The position should normally be 2 since any other command or option before
             # would be an error. But just in case the logics evolve.
             arg_pos = sys.argv.index(arg)
