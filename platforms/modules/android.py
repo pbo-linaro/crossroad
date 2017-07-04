@@ -170,6 +170,7 @@ def init(environ, api:int = None):
         if os.path.exists(ndk_path):
             # Check if the file is safe or corrupted.
             sys.stdout.write('Cached Android NDK found, testing… ')
+            sys.stdout.flush()
             test = hashlib.sha1()
             with open(ndk_path, 'rb') as f:
                 data = f.read(65536)
