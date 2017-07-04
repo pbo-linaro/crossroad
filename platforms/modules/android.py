@@ -251,8 +251,8 @@ def init(environ, api:int = None):
 
 def crossroad_finalize():
     '''
-    Clean-out installed pkg-config files so that they output appropriate
-    build paths, and not the finale installation paths.
+    Clean-out installed pkg-config and libtool files so that they output
+    appropriate build paths, and not the finale installation paths.
     '''
     prefix = os.path.abspath(os.environ['CROSSROAD_PREFIX'])
     for root, dirs, files in os.walk(prefix):
