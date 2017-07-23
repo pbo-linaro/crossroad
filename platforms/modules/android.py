@@ -269,7 +269,7 @@ def crossroad_finalize():
                     contents = re.sub(r'^prefix=', 'prefix={}'.format(prefix),
                                       contents, count=0, flags=re.MULTILINE)
                 elif file.endswith('.la'):
-                    contents = re.sub(r"([' ])/usr/local", "\\1{}/usr/local".format(prefix),
+                    contents = re.sub(r"([' ])/usr", "\\1{}/usr".format(prefix),
                                       contents, count=0, flags=re.MULTILINE)
             except IOError:
                 sys.stderr.write('File "{}" could not be read.\n'.format(from_file))

@@ -44,10 +44,10 @@ case "$CROSSROAD_HOST" in
           export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$CROSSROAD_ANDROID_PREFIX/lib${CROSSROAD_WORD_SIZE}/pkgconfig"
       fi
     fi
-    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$CROSSROAD_PREFIX/usr/local/lib/pkgconfig"
-    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$CROSSROAD_PREFIX/usr/local/share/pkgconfig"
+    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$CROSSROAD_PREFIX/usr/lib/pkgconfig"
+    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$CROSSROAD_PREFIX/usr/share/pkgconfig"
     if [ -n "$CROSSROAD_WORD_SIZE" ]; then
-        export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$CROSSROAD_PREFIX/usr/local/lib${CROSSROAD_WORD_SIZE}/pkgconfig"
+        export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$CROSSROAD_PREFIX/usr/lib${CROSSROAD_WORD_SIZE}/pkgconfig"
     fi
   ;;
 esac

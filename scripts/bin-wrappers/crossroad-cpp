@@ -40,7 +40,7 @@ case "$CROSSROAD_HOST" in
           export CPATH="$CPATH:$CROSSROAD_ANDROID_PREFIX/include/"
       fi
   fi
-  export CPATH="$CROSSROAD_PREFIX/usr/local/include"
+  export CPATH="$CROSSROAD_PREFIX/usr/include"
   ;;
 esac
 
