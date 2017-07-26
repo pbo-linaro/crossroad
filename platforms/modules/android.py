@@ -41,9 +41,11 @@ name = os.path.basename(os.path.realpath(__file__))[:-3]
 # https://developer.android.com/ndk/downloads/index.html
 ndk  = 'android-ndk-r15b'
 # The list of valid targets are found under platforms/ in the NDK.
-valid_apis32 = ['9', '12', '13', '14', '15',
-                '16', '17', '18', '19', '21',
-                '22', '23', '24', '26']
+# Even though they go down to API 9 there (so should be installable),
+# the `make_standalone_toolchain.py` script sets a min_api variable of
+# 14 for 32-bit and 21 for 64-bit platforms.
+valid_apis32 = ['14', '15', '16', '17', '18',
+                '19', '21', '22', '23', '24', '26']
 valid_apis64 = ['21', '22', '23', '24', '26']
 if name in ['android-arm', 'android-mips', 'android-x86']:
     valid_apis = valid_apis32
