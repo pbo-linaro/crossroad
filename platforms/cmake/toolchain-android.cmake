@@ -21,7 +21,7 @@ SET(CMAKE_CXX_COMPILER $ENV{CROSSROAD_HOST}-g++)
 SET(PKG_CONFIG_EXECUTABLE $ENV{CROSSROAD_HOST}-pkg-config)
 
 # here is the target environment located
-SET(CMAKE_FIND_ROOT_PATH $ENV{CROSSROAD_PREFIX} /usr/local/$ENV{CROSSROAD_HOST}/ /usr/$ENV{CROSSROAD_HOST}/)
+SET(CMAKE_FIND_ROOT_PATH $ENV{CROSSROAD_PREFIX}/usr /usr/local/$ENV{CROSSROAD_HOST}/ /usr/$ENV{CROSSROAD_HOST}/)
 
 # adjust the default behaviour of the FIND_XXX() commands:
 # search headers and libraries in the target environment, search
