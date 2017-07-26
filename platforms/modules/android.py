@@ -41,9 +41,14 @@ name = os.path.basename(os.path.realpath(__file__))[:-3]
 # https://developer.android.com/ndk/downloads/index.html
 ndk  = 'android-ndk-r15b'
 # The list of valid targets are found under platforms/ in the NDK.
-valid_apis = ['9', '12', '13', '14', '15',
-              '16', '17', '18', '19', '21',
-              '22', '23', '24', '26']
+valid_apis32 = ['9', '12', '13', '14', '15',
+                '16', '17', '18', '19', '21',
+                '22', '23', '24', '26']
+valid_apis64 = ['21', '22', '23', '24', '26']
+if name in ['android-arm', 'android-mips', 'android-x86']:
+    valid_apis = valid_apis32
+else:
+    valid_apis = valid_apis64
 
 toolchains = {
     'android-arm'    : 'arm-linux-androideabi',
