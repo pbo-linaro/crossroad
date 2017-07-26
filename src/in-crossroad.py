@@ -127,7 +127,7 @@ if __name__ == "__main__":
     if os.environ['CROSSROAD_HOST'].endswith('-w64-mingw32'):
         install_prefix='$CROSSROAD_PREFIX'
     else:
-        install_prefix='/usr/local/'
+        install_prefix='/usr/'
     for arg in sys.argv[1:]:
         if command is not None:
             if arg[:2] == '--':
