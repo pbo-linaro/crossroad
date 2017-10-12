@@ -78,7 +78,7 @@ class build_man(distutils.core.Command):
         Check build dependencies.
         '''
         if shutil.which('rst2man') is None:
-            sys.stderr.write('`rst2man` is a mandatory building dependency. You will probably find it in a `python3-docutils` package.')
+            sys.stderr.write('`rst2man` is a mandatory building dependency. You will probably find it in a `python3-docutils` package.\n')
             sys.exit(os.EX_CANTCREAT)
 
     def create_build_tree(self):
@@ -103,7 +103,7 @@ class build_man(distutils.core.Command):
             subprocess.check_call(["rst2man", "build/doc/crossroad.rst",
                                    "build/share/man/man1/crossroad.1"])
         except subprocess.CalledProcessError:
-            sys.stderr.write('Build error: `rst2man` failed to build the man page.')
+            sys.stderr.write('Build error: `rst2man` failed to build the man page.\n')
             sys.exit(os.EX_CANTCREAT)
 
     def compress_man(self):
@@ -182,7 +182,7 @@ class my_build(distutils.command.build.build):
                     fd.flush()
                     fd.close()
                 except IOError:
-                    sys.stderr.write('"{}" failed to update. Check your permissions.'.format(built_bashrc))
+                    sys.stderr.write('"{}" failed to update. Check your permissions.\n'.format(built_bashrc))
                     sys.exit(os.EX_CANTCREAT)
                 # Zsh startup files.
                 zsh_startup_dir = 'build/share/crossroad/scripts/shells/zsh.' + shortname
@@ -201,7 +201,7 @@ class my_build(distutils.command.build.build):
                     fd.flush()
                     fd.close()
                 except IOError:
-                    sys.stderr.write('"{}" failed to update. Check your permissions.'.format(built_zshrc))
+                    sys.stderr.write('"{}" failed to update. Check your permissions.\n'.format(built_zshrc))
                     sys.exit(os.EX_CANTCREAT)
         distutils.command.build.build.run(self)
 
@@ -263,7 +263,7 @@ def update_scripts(build_subdir):
                 script.flush()
                 script.close()
             except IOError:
-                sys.stderr.write('The script {} failed to update. Check your permissions.'.format(f))
+                sys.stderr.write('The script {} failed to update. Check your permissions.\n'.format(f))
                 sys.exit(os.EX_CANTCREAT)
 
 class my_install_data(distutils.command.install_data.install_data):
