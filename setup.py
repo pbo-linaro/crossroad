@@ -78,7 +78,9 @@ class build_man(distutils.core.Command):
         Check build dependencies.
         '''
         if shutil.which('rst2man') is None:
-            sys.stderr.write('`rst2man` is a mandatory building dependency. You will probably find it in a `python3-docutils` package.\n')
+            sys.stderr.write('`rst2man` is a mandatory building dependency. '
+                             'You will probably find it either in a '
+                             '`python2-docutils` or `python3-docutils` package.\n')
             sys.exit(os.EX_CANTCREAT)
 
     def create_build_tree(self):
