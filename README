@@ -287,6 +287,20 @@ add any options to your build the usual way.
 This has been tested with success on allegro 5, and Exiv2 libraries,
 cross-compiled for Windows.
 
+Example: Meson
+~~~~~~~~~~~~~~
+
+Meson uses toolchain files as well. Here again, Crossroad prepared them
+for you.
+Simply replace the step (3) of the autotools example with this command::
+
+    $ crossroad meson /path/to/source/ /path/to/build/
+
+Now you can simply build and install::
+
+    $ ninja
+    $ ninja install
+
 Example: SCons
 ~~~~~~~~~~~~~~~
 
@@ -318,10 +332,10 @@ But since a `crossroad` environment prepares a bunch of environment
 variables for you, and helps you download dependencies, no doubt it will
 already make your life easier.
 
-The `configure`, `cmake` and `ccmake` command are simple wrappers around
-any `./configure` script, and the `cmake`/`ccmake` commands, adding
-some default options (which crossroad prepared) for successful
-cross-compilation.
+The `configure`, `cmake`, `ccmake` and `meson` subcommands are simple
+wrappers around respectively any `./configure` script, and `cmake`,
+`ccmake` and `meson` commands, adding some default options (which
+crossroad prepared) for successful cross-compilation.
 
 For instance `crossroad configure` is the equivalent of running::
 
