@@ -21,39 +21,44 @@ export CROSSROAD_BUILD=`@DATADIR@/share/crossroad/scripts/config.guess`
 export CROSSROAD_CMAKE_TOOLCHAIN_FILE="@DATADIR@/share/crossroad/scripts/cmake/toolchain-${CROSSROAD_PLATFORM}.cmake"
 export CROSSROAD_MESON_TOOLCHAIN_FILE="@DATADIR@/share/crossroad/scripts/meson/toolchain-${CROSSROAD_PLATFORM}.meson"
 
-# ld is a mandatory file to enter this environment.
-# Also it is normally not touched by ccache, which makes it a better
-# prefix-searching tool than gcc.
-host_ld="`which $CROSSROAD_HOST-ld`"
-host_ld_dir="`dirname $host_ld`"
-host_ld_bin="`basename $host_ld_dir`"
-
-if [ $host_ld_bin = "bin" ]; then
-    host_ld_prefix="`dirname $host_ld_dir`"
-    # No need to add the guessed prefix if it is a common one that we add anyway.
-    if [ "$host_ld_prefix" != "/usr" ]; then
-        if [ "$host_ld_prefix" != "/usr/local" ]; then
-            if [ -d "$host_ld_prefix/$CROSSROAD_HOST" ]; then
-                export CROSSROAD_GUESSED_MINGW_PREFIX="$host_ld_prefix/$CROSSROAD_HOST"
-            fi
-        fi
-    fi
-    unset host_ld_prefix
-fi
-unset host_ld_bin
-unset host_ld_dir
-unset host_ld
-
 export LD_LIBRARY_PATH=$CROSSROAD_PREFIX/lib
-if [ x"CROSSROAD_PLATFORM" == x"w32" ] && [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX" ]; then
-    export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib32/:$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib/"
+
+if [ x"$CROSSROAD_PLATFORM" == x"w32" ] || \
+   [ x"$CROSSROAD_PLATFORM" == x"w64" ]; then
+  # ld is a mandatory file to enter this environment.
+  # Also it is normally not touched by ccache, which makes it a better
+  # prefix-searching tool than gcc.
+  host_ld="`which $CROSSROAD_HOST-ld`"
+  host_ld_dir="`dirname $host_ld`"
+  host_ld_bin="`basename $host_ld_dir`"
+
+  if [ $host_ld_bin = "bin" ]; then
+      host_ld_prefix="`dirname $host_ld_dir`"
+      # No need to add the guessed prefix if it is a common one that we add anyway.
+      if [ "$host_ld_prefix" != "/usr" ]; then
+          if [ "$host_ld_prefix" != "/usr/local" ]; then
+              if [ -d "$host_ld_prefix/$CROSSROAD_HOST" ]; then
+                  export CROSSROAD_GUESSED_MINGW_PREFIX="$host_ld_prefix/$CROSSROAD_HOST"
+              fi
+          fi
+      fi
+      unset host_ld_prefix
+  fi
+  unset host_ld_bin
+  unset host_ld_dir
+  unset host_ld
+
+  if [ x"$CROSSROAD_PLATFORM" == x"w32" ] && [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX" ]; then
+      export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib32/:$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib/"
+  fi
+  if [ x"$CROSSROAD_PLATFORM" == x"w64" ] && [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX" ]; then
+      export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib64/:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib/"
+  fi
+  if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX" ]; then
+      export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$CROSSROAD_GUESSED_MINGW_PREFIX/lib32/:$CROSSROAD_GUESSED_MINGW_PREFIX/lib/"
+  fi
 fi
-if [ x"CROSSROAD_PLATFORM" == x"w64" ] && [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX" ]; then
-    export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib64/:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib/"
-fi
-if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX" ]; then
-    export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$CROSSROAD_GUESSED_MINGW_PREFIX/lib32/:$CROSSROAD_GUESSED_MINGW_PREFIX/lib/"
-fi
+
 # Adding some typical distribution paths.
 # Note: I could also try to guess the user path from `which ${CROSSROAD_HOST}-gcc`.
 # But it may not always work. For instance if the user uses ccache.
