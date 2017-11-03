@@ -21,6 +21,7 @@ export CROSSROAD_BUILD=`@DATADIR@/share/crossroad/scripts/config.guess`
 export CROSSROAD_CMAKE_TOOLCHAIN_FILE="@DATADIR@/share/crossroad/scripts/cmake/toolchain-${CROSSROAD_PLATFORM}.cmake"
 export CROSSROAD_MESON_TOOLCHAIN_FILE="@DATADIR@/share/crossroad/scripts/meson/toolchain-${CROSSROAD_PLATFORM}.meson"
 
+export PATH="$CROSSROAD_PREFIX/bin:$PATH"
 export LD_LIBRARY_PATH=$CROSSROAD_PREFIX/lib
 
 if [ x"$CROSSROAD_PLATFORM" == x"w32" ] || \
@@ -59,15 +60,22 @@ if [ x"$CROSSROAD_PLATFORM" == x"w32" ] || \
   fi
 fi
 
-# Adding some typical distribution paths.
-# Note: I could also try to guess the user path from `which ${CROSSROAD_HOST}-gcc`.
-# But it may not always work. For instance if the user uses ccache.
-export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/$CROSSROAD_HOST/lib${CROSSROAD_WORD_SIZE}/:/usr/local/$CROSSROAD_HOST/lib"
-export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/$CROSSROAD_HOST/lib${CROSSROAD_WORD_SIZE}/:/usr/$CROSSROAD_HOST/lib/"
+if [ x"$CROSSROAD_PLATFORM" == x"native" ]; then
+  # Native environment does not need much tweaking nor any additional
+  # tools. We only need to add pkg-config path.
+  export PKG_CONFIG_PATH=$CROSSROAD_PREFIX/share/pkgconfig:$CROSSROAD_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
+  export CROSSROAD_HOST="$CROSSROAD_BUILD"
+else
+  # Adding some typical distribution paths.
+  # Note: I could also try to guess the user path from `which ${CROSSROAD_HOST}-gcc`.
+  # But it may not always work. For instance if the user uses ccache.
+  export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/local/$CROSSROAD_HOST/lib${CROSSROAD_WORD_SIZE}/:/usr/local/$CROSSROAD_HOST/lib"
+  export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:/usr/$CROSSROAD_HOST/lib${CROSSROAD_WORD_SIZE}/:/usr/$CROSSROAD_HOST/lib/"
+
+  export PATH="@DATADIR@/share/crossroad/bin:$PATH"
+fi
 
 mkdir -p $CROSSROAD_PREFIX/bin
-export PATH="@DATADIR@/share/crossroad/bin:$CROSSROAD_PREFIX/bin:$PATH"
-
 # no such file or directory error on non-existing aclocal.
 mkdir -p $CROSSROAD_PREFIX/share/aclocal
 export ACLOCAL_FLAGS="-I $CROSSROAD_PREFIX/share/aclocal"

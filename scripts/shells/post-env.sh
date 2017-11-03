@@ -31,9 +31,14 @@ else
     export PS1="${CROSSROADS_PS1}"
 fi
 
-echo "Your environment has been set to cross-compile the project '$CROSSROAD_PROJECT' on $CROSSROAD_PLATFORM_NICENAME ($CROSSROAD_PLATFORM)."
-echo 'Use `crossroad help` to list available commands and `man crossroad` to get a full documentation of crossroad capabilities.'
-echo "To exit this cross-compilation environment, simply \`exit\` the current shell session."
+if [ "x$CROSSROAD_PLATFORM" = "xnative" ]; then
+  echo "Your environment has been set to compile natively the project '$CROSSROAD_PROJECT'."
+  echo "To exit this compilation environment, simply \`exit\` the current shell session."
+else
+  echo "Your environment has been set to cross-compile the project '$CROSSROAD_PROJECT' on $CROSSROAD_PLATFORM_NICENAME ($CROSSROAD_PLATFORM)."
+  echo 'Use `crossroad help` to list available commands and `man crossroad` to get a full documentation of crossroad capabilities.'
+  echo "To exit this cross-compilation environment, simply \`exit\` the current shell session."
+fi
 
 if [ X"`id -u`" = "X0" ]; then
     printf "\033[0;31mWARNING: you are running crossroad as root. This is a very bad idea.\n"

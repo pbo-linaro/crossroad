@@ -147,8 +147,7 @@ class my_build(distutils.command.build.build):
                 config.optionxform = str
                 config.read([os.path.join(srcdir, 'platforms/env', f)])
                 if not config.has_section('Platform') or not config.has_option('Platform', 'shortname') or \
-                   not config.has_option('Platform', 'nicename') or not config.has_option('Platform', 'host') or \
-                   not config.has_option('Platform', 'word-size'):
+                   not config.has_option('Platform', 'nicename') or not config.has_option('Platform', 'host'):
                     sys.stderr.write('Build error: file {} miss required options.\n'. f)
                     sys.exit(os.EX_CANTCREAT)
                 shortname = config.get('Platform', 'shortname')
@@ -158,8 +157,9 @@ class my_build(distutils.command.build.build):
                 env_variables = '\nexport CROSSROAD_PLATFORM="{}"\n'.format(config.get('Platform', 'shortname'))
                 env_variables += 'export CROSSROAD_PLATFORM_NICENAME="{}"\n'.format(config.get('Platform', 'nicename'))
                 env_variables += 'export CROSSROAD_HOST="{}"\n'.format(config.get('Platform', 'host'))
-                env_variables += 'export CROSSROAD_WORD_SIZE="{}"\n'.format(config.getint('Platform', 'word-size'))
 
+                if config.has_option('Platform', 'word-size'):
+                    env_variables += 'export CROSSROAD_WORD_SIZE="{}"\n'.format(config.getint('Platform', 'word-size'))
                 if config.has_section('Environment'):
                     custom_env_vars = config.items('Environment')
                     for (env_var, env_val) in custom_env_vars:
@@ -167,10 +167,11 @@ class my_build(distutils.command.build.build):
 
                 # Platform file.
                 shutil.copy(os.path.join(srcdir, 'platforms/modules/', shortname + '.py'), 'build/platforms')
-                # Cmake file.
-                shutil.copy(os.path.join(srcdir, 'platforms/cmake/', 'toolchain-' + shortname + '.cmake'), 'build/share/crossroad/scripts/cmake/')
-                # Meson cross build definition files.
-                shutil.copy(os.path.join(srcdir, 'platforms/meson/', 'toolchain-' + shortname + '.meson'), 'build/share/crossroad/scripts/meson/')
+                if shortname != 'native':
+                    # Cmake file.
+                    shutil.copy(os.path.join(srcdir, 'platforms/cmake/', 'toolchain-' + shortname + '.cmake'), 'build/share/crossroad/scripts/cmake/')
+                    # Meson cross build definition files.
+                    shutil.copy(os.path.join(srcdir, 'platforms/meson/', 'toolchain-' + shortname + '.meson'), 'build/share/crossroad/scripts/meson/')
                 # Bash startup file.
                 built_bashrc = os.path.join('build/share/crossroad/scripts/shells/bash/', 'bashrc.' + shortname)
                 shutil.copyfile(os.path.join(srcdir, 'scripts/shells/bash/bashrc.template'), built_bashrc)
@@ -315,30 +316,31 @@ class my_install_data(distutils.command.install_data.install_data):
                 config = configparser.ConfigParser()
                 config.read([os.path.join(srcdir, 'platforms/env', f)])
                 host = config.get('Platform', 'host')
-                try:
-                    os.unlink(os.path.join(datadir, 'share/crossroad/bin/' + host + '-pkg-config'))
-                except OSError:
-                    pass
-                try:
-                    os.unlink(os.path.join(datadir, 'share/crossroad/bin/' + host + '-gcc'))
-                except OSError:
-                    pass
-                try:
-                    os.unlink(os.path.join(datadir, 'share/crossroad/bin/' + host + '-g++'))
-                except OSError:
-                    pass
-                try:
-                    os.unlink(os.path.join(datadir, 'share/crossroad/bin/' + host + '-cpp'))
-                except OSError:
-                    pass
-                os.symlink(os.path.join(datadir, 'share/crossroad/scripts/bin-wrappers/crossroad-pkg-config'),
-                           os.path.join(datadir, 'share/crossroad/bin/' + host + '-pkg-config'))
-                os.symlink(os.path.join(datadir, 'share/crossroad/scripts/bin-wrappers/crossroad-gcc'),
-                           os.path.join(datadir, 'share/crossroad/bin/' + host + '-gcc'))
-                os.symlink(os.path.join(datadir, 'share/crossroad/scripts/bin-wrappers/crossroad-gcc'),
-                           os.path.join(datadir, 'share/crossroad/bin/' + host + '-g++'))
-                os.symlink(os.path.join(datadir, 'share/crossroad/scripts/bin-wrappers/crossroad-cpp'),
-                           os.path.join(datadir, 'share/crossroad/bin/' + host + '-cpp'))
+                if len(host) > 0:
+                    try:
+                        os.unlink(os.path.join(datadir, 'share/crossroad/bin/' + host + '-pkg-config'))
+                    except OSError:
+                        pass
+                    try:
+                        os.unlink(os.path.join(datadir, 'share/crossroad/bin/' + host + '-gcc'))
+                    except OSError:
+                        pass
+                    try:
+                        os.unlink(os.path.join(datadir, 'share/crossroad/bin/' + host + '-g++'))
+                    except OSError:
+                        pass
+                    try:
+                        os.unlink(os.path.join(datadir, 'share/crossroad/bin/' + host + '-cpp'))
+                    except OSError:
+                        pass
+                    os.symlink(os.path.join(datadir, 'share/crossroad/scripts/bin-wrappers/crossroad-pkg-config'),
+                               os.path.join(datadir, 'share/crossroad/bin/' + host + '-pkg-config'))
+                    os.symlink(os.path.join(datadir, 'share/crossroad/scripts/bin-wrappers/crossroad-gcc'),
+                               os.path.join(datadir, 'share/crossroad/bin/' + host + '-gcc'))
+                    os.symlink(os.path.join(datadir, 'share/crossroad/scripts/bin-wrappers/crossroad-gcc'),
+                               os.path.join(datadir, 'share/crossroad/bin/' + host + '-g++'))
+                    os.symlink(os.path.join(datadir, 'share/crossroad/scripts/bin-wrappers/crossroad-cpp'),
+                               os.path.join(datadir, 'share/crossroad/bin/' + host + '-cpp'))
 
 class my_install_scripts(distutils.command.install_scripts.install_scripts):
     '''
@@ -357,10 +359,10 @@ platform_file_list = [os.path.join('build/platforms/', f + '.py') for f in platf
 
 cmake_toolchains = [os.path.join('build/share/crossroad/scripts/cmake/',
                                  'toolchain-' + f + '.cmake') \
-                    for f in platform_list]
+                    for f in platform_list if f != 'native']
 meson_toolchains = [os.path.join('build/share/crossroad/scripts/meson/',
                                  'toolchain-' + f + '.meson') \
-                    for f in platform_list]
+                    for f in platform_list if f != 'native']
 
 def get_built_data_files():
     bashrc_files = []

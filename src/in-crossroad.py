@@ -124,7 +124,8 @@ if __name__ == "__main__":
     command_kwargs = {}
     usage_error = False
     show_help = False
-    if os.environ['CROSSROAD_HOST'].endswith('-w64-mingw32'):
+    if os.environ['CROSSROAD_HOST'].endswith('-w64-mingw32') or \
+       crossroad_platform == 'native':
         install_prefix='$CROSSROAD_PREFIX'
     else:
         install_prefix='/usr/'
@@ -232,8 +233,12 @@ if __name__ == "__main__":
                 configure = './configure'
             arg_pos = sys.argv.index(arg)
             # NOTE: with shell=True, subprocess does not deal well with list as a command.
-            command = '{} --prefix={} --host=$CROSSROAD_HOST --build=$CROSSROAD_BUILD '.format(configure, install_prefix) + \
-                      ' '.join(sys.argv[arg_pos + 1:])
+            if crossroad_platform == 'native':
+                command = '{} --prefix={} '.format(configure, install_prefix) + \
+                          ' '.join(sys.argv[arg_pos + 1:])
+            else:
+                command = '{} --prefix={} --host=$CROSSROAD_HOST --build=$CROSSROAD_BUILD '.format(configure, install_prefix) + \
+                          ' '.join(sys.argv[arg_pos + 1:])
             sys.stdout.write('crossroad info: running "{}"\n'.format(command))
             sys.exit(subprocess.call(command, shell=True))
         elif arg == 'scons':
@@ -264,16 +269,17 @@ if __name__ == "__main__":
 
             command = '{} '.format(arg) + ' '.join(sys.argv[arg_pos + 1:])
 
-            # It seems there is no cross-compilation rules for scons. But there
-            # are some hacks commonly used across various projects using
-            # environment values. So the following is very very hackish. It
-            # works with libmypaint at least. Not sure how many other projects it
-            # would fail with.
-            environ['CC']    = environ['CROSSROAD_HOST'] + '-gcc'
-            environ['CXX']   = environ['CROSSROAD_HOST'] + '-g++'
-            environ['LD']    = environ['CROSSROAD_HOST'] + '-ld'
-            environ['AR']    = environ['CROSSROAD_HOST'] + '-ar'
-            environ['STRIP'] = environ['CROSSROAD_HOST'] + '-strip'
+            if crossroad_platform != 'native':
+                # It seems there is no cross-compilation rules for scons. But there
+                # are some hacks commonly used across various projects using
+                # environment values. So the following is very very hackish. It
+                # works with libmypaint at least. Not sure how many other projects it
+                # would fail with.
+                environ['CC']    = environ['CROSSROAD_HOST'] + '-gcc'
+                environ['CXX']   = environ['CROSSROAD_HOST'] + '-g++'
+                environ['LD']    = environ['CROSSROAD_HOST'] + '-ld'
+                environ['AR']    = environ['CROSSROAD_HOST'] + '-ar'
+                environ['STRIP'] = environ['CROSSROAD_HOST'] + '-strip'
             sys.stdout.write('crossroad info: running "{}"\n'.format(command))
             sys.exit(subprocess.call(command, shell=True, env=environ))
         elif arg == 'cmake' or arg == 'ccmake':
@@ -283,7 +289,10 @@ if __name__ == "__main__":
             # The position should normally be 2 since any other command or option before
             # would be an error. But just in case the logics evolve.
             arg_pos = sys.argv.index(arg)
-            command = '{} -DCMAKE_INSTALL_PREFIX:PATH={} -DCMAKE_TOOLCHAIN_FILE=$CROSSROAD_CMAKE_TOOLCHAIN_FILE '.format(arg, install_prefix)
+            if crossroad_platform == 'native':
+                command = '{} -DCMAKE_INSTALL_PREFIX:PATH={} '.format(arg, install_prefix)
+            else:
+                command = '{} -DCMAKE_INSTALL_PREFIX:PATH={} -DCMAKE_TOOLCHAIN_FILE=$CROSSROAD_CMAKE_TOOLCHAIN_FILE '.format(arg, install_prefix)
             command += ' '.join(sys.argv[arg_pos + 1:])
             sys.stdout.write('crossroad info: running "{}"\n'.format(command))
             sys.exit(subprocess.call(command, shell=True))
@@ -294,7 +303,10 @@ if __name__ == "__main__":
             # The position should normally be 2 since any other command or option before
             # would be an error. But just in case the logics evolve.
             arg_pos = sys.argv.index(arg)
-            command = 'meson --prefix {} --cross-file=$CROSSROAD_MESON_TOOLCHAIN_FILE '.format(install_prefix)
+            if crossroad_platform == 'native':
+                command = 'meson --prefix {} '.format(install_prefix)
+            else:
+                command = 'meson --prefix {} --cross-file=$CROSSROAD_MESON_TOOLCHAIN_FILE '.format(install_prefix)
             command += ' '.join(sys.argv[arg_pos + 1:])
             sys.stdout.write('crossroad info: running "{}"\n'.format(command))
             sys.exit(subprocess.call(command, shell=True))

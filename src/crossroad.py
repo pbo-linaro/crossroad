@@ -283,7 +283,7 @@ if __name__ == "__main__":
                 print("{}: {}\n".format(platform.name, platform.__doc__.strip()))
             if not platform.is_available():
                 sys.stderr.write('Not available. Some requirements are missing:\n{0}'.format(platform.requires()))
-            else:
+            elif platform.name != 'native':
                 (installed, uninstalled) = platform.language_list()
                 if installed != []:
                     installed.sort()
