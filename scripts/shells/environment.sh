@@ -22,7 +22,11 @@ export CROSSROAD_CMAKE_TOOLCHAIN_FILE="@DATADIR@/share/crossroad/scripts/cmake/t
 export CROSSROAD_MESON_TOOLCHAIN_FILE="@DATADIR@/share/crossroad/scripts/meson/toolchain-${CROSSROAD_PLATFORM}.meson"
 
 export PATH="$CROSSROAD_PREFIX/bin:$PATH"
-export LD_LIBRARY_PATH=$CROSSROAD_PREFIX/lib
+if [ x"$CROSSROAD_PLATFORM" == x"native" ]; then
+  export LD_LIBRARY_PATH=$CROSSROAD_PREFIX/lib:$LD_LIBRARY_PATH
+else
+  export LD_LIBRARY_PATH=$CROSSROAD_PREFIX/lib
+fi
 
 if [ x"$CROSSROAD_PLATFORM" == x"w32" ] || \
    [ x"$CROSSROAD_PLATFORM" == x"w64" ]; then
