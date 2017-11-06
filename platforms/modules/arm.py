@@ -37,9 +37,24 @@ short_description = 'Generic Embedded ABI on ARM (bare metal)'
 
 # android-src-vendor ?
 # android-headers ?
-mandatory_binaries = {
-    'arm-none-eabi-ld': 'gcc-arm-none-eabi',
-    }
+if os.path.isfile('/etc/redhat-release'):
+    mandatory_binaries = {
+        'arm-none-eabi-ld': 'arm-none-eabi-binutils-cs',
+        'arm-none-eabi-gcc': 'arm-none-eabi-gcc-cs',
+        }
+    languages = {
+        'C' : {'arm-none-eabi-gcc': 'arm-none-eabi-gcc-cs'},
+        'C++' : {'arm-none-eabi-g++': 'arm-none-eabi-gcc-cs-c++'}
+        }
+else:
+    mandatory_binaries = {
+        'arm-none-eabi-ld': 'gcc-arm-none-eabi',
+        }
+    languages = {
+        'C' : {'arm-none-eabi-gcc': 'gcc-arm-none-eabi'},
+        'C++' : {'arm-none-eabi-g++': 'gcc-arm-none-eabi'}
+        }
+
 # arm-none-eabi-newlib must be installed for crt0.o.
 # for other: glibc-arm-linux-gnu(-devel).
 
@@ -47,11 +62,8 @@ mandatory_binaries = {
 # https://launchpadlibrarian.net/170926122/readme.txt
 # http://stackoverflow.com/questions/19419782/exit-c-text0x18-undefined-reference-to-exit-when-using-arm-none-eabi-gcc
 # TODO: add --specs=nosys.specs  to gcc.
+# Had to install: arm-none-eabi-newlib how to check existence?!
 
-languages = {
-    'C' : {'arm-none-eabi-gcc': 'gcc-arm-none-eabi'},
-    'C++' : {'arm-none-eabi-g++': 'gcc-arm-none-eabi'}
-    }
 
 def is_available():
     '''
