@@ -21,11 +21,23 @@ export CROSSROAD_BUILD=`@DATADIR@/share/crossroad/scripts/config.guess`
 export CROSSROAD_CMAKE_TOOLCHAIN_FILE="@DATADIR@/share/crossroad/scripts/cmake/toolchain-${CROSSROAD_PLATFORM}.cmake"
 export CROSSROAD_MESON_TOOLCHAIN_FILE="@DATADIR@/share/crossroad/scripts/meson/toolchain-${CROSSROAD_PLATFORM}.meson"
 
+# Compute the platform word-size for the "native" platform.
+if [ x"$CROSSROAD_PLATFORM" == x"native" ]; then
+  LONG_BIT=`getconf LONG_BIT`
+  if [ x"$CROSSROAD_WORD_SIZE" == x"32" ] || \
+     [ x"$CROSSROAD_WORD_SIZE" == x"w64" ]; then
+    export CROSSROAD_WORD_SIZE=$LONG_BIT
+  fi
+fi
+
 export PATH="$CROSSROAD_PREFIX/bin:$PATH"
 if [ x"$CROSSROAD_PLATFORM" == x"native" ]; then
   export LD_LIBRARY_PATH=$CROSSROAD_PREFIX/lib:$LD_LIBRARY_PATH
 else
   export LD_LIBRARY_PATH=$CROSSROAD_PREFIX/lib
+fi
+if [ "x$CROSSROAD_WORD_SIZE" != "x" ]; then
+  export LD_LIBRARY_PATH=$CROSSROAD_PREFIX/lib${CROSSROAD_WORD_SIZE}:$LD_LIBRARY_PATH
 fi
 
 if [ x"$CROSSROAD_PLATFORM" == x"w32" ] || \
@@ -67,7 +79,10 @@ fi
 if [ x"$CROSSROAD_PLATFORM" == x"native" ]; then
   # Native environment does not need much tweaking nor any additional
   # tools. We only need to add pkg-config path.
-  export PKG_CONFIG_PATH=$CROSSROAD_PREFIX/share/pkgconfig:$CROSSROAD_PREFIX/lib/pkgconfig:$PKG_CONFIG_PATH
+  export PKG_CONFIG_PATH=$CROSSROAD_PREFIX/lib/pkgconfig:$CROSSROAD_PREFIX/share/pkgconfig:$PKG_CONFIG_PATH
+  if [ "x$CROSSROAD_WORD_SIZE" != "x" ]; then
+    export PKG_CONFIG_PATH=$CROSSROAD_PREFIX/lib${CROSSROAD_WORD_SIZE}/pkgconfig:$PKG_CONFIG_PATH
+  fi
   export CROSSROAD_HOST="$CROSSROAD_BUILD"
 else
   # Adding some typical distribution paths.
