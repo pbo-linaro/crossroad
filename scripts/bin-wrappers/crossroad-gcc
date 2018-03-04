@@ -28,7 +28,7 @@ fi
 # so it should not be much a problem (and the chosen delimiter "%" as well is unlikely
 # present in a path). But there is still potential for failure.
 # If there was a small script doing basic search and replace, it would be much better.
-export CCACHE_PATH=`echo $CCACHE_PATH | sed -e "s%${SCRIPT_DIR}/\?:\?%%"`
+export CCACHE_PATH="$(echo $CCACHE_PATH | sed -e "s%${SCRIPT_DIR}/\?:\?%%")"
 
 # This way we can support several tools (gcc and g++ for now).
 TOOL="`echo -n $0 | tail -c 3`"
