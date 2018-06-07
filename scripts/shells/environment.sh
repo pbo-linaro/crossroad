@@ -24,8 +24,8 @@ export CROSSROAD_MESON_TOOLCHAIN_FILE="@DATADIR@/share/crossroad/scripts/meson/t
 # Compute the platform word-size for the "native" platform.
 if [ x"$CROSSROAD_PLATFORM" == x"native" ]; then
   LONG_BIT=`getconf LONG_BIT`
-  if [ x"$CROSSROAD_WORD_SIZE" == x"32" ] || \
-     [ x"$CROSSROAD_WORD_SIZE" == x"w64" ]; then
+  if [ x"$LONG_BIT" == x"32" ] || \
+     [ x"$LONG_BIT" == x"64" ]; then
     export CROSSROAD_WORD_SIZE=$LONG_BIT
   fi
 fi
@@ -33,6 +33,9 @@ fi
 export PATH="$CROSSROAD_PREFIX/bin:$PATH"
 if [ x"$CROSSROAD_PLATFORM" == x"native" ]; then
   export LD_LIBRARY_PATH=$CROSSROAD_PREFIX/lib:$LD_LIBRARY_PATH
+  if [ "x$CROSSROAD_WORD_SIZE" != "x" ]; then
+    export LD_LIBRARY_PATH=$CROSSROAD_PREFIX/lib$CROSSROAD_WORD_SIZE:$LD_LIBRARY_PATH
+  fi
 else
   export LD_LIBRARY_PATH=$CROSSROAD_PREFIX/lib
 fi
