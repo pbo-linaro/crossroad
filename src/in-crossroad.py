@@ -124,11 +124,11 @@ if __name__ == "__main__":
     command_kwargs = {}
     usage_error = False
     show_help = False
-    if os.environ['CROSSROAD_HOST'].endswith('-w64-mingw32') or \
-       crossroad_platform == 'native':
-        install_prefix='$CROSSROAD_PREFIX'
-    else:
+    if crossroad_platform == 'arm' or \
+       crossroad_platform == 'arm-gnu':
         install_prefix='/usr/'
+    else:
+        install_prefix='$CROSSROAD_PREFIX'
     for arg in sys.argv[1:]:
         if command is not None:
             if arg[:2] == '--':
