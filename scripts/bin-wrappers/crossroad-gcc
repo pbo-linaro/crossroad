@@ -36,6 +36,11 @@ TOOL="`echo -n $0 | tail -c 3`"
 # The default -I list of directories.
 export CPATH="$CROSSROAD_PREFIX/include"
 # The default -L list of directories.
+if [ -n "$CROSSROAD_WORD_SIZE" ]; then
+    if [ -d "$CROSSROAD_PREFIX/lib$CROSSROAD_WORD_SIZE" ]; then
+        export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L$CROSSROAD_PREFIX/lib$CROSSROAD_WORD_SIZE "
+    fi
+fi
 export CROSSROAD_LDFLAGS=" $CROSSROAD_LDFLAGS -L$CROSSROAD_PREFIX/lib "
 
 case "$CROSSROAD_HOST" in
