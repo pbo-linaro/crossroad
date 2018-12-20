@@ -17,8 +17,11 @@
 # along with crossroad.  If not, see <http://www.gnu.org/licenses/>.
 
 # Reset pkg-config to search *ONLY* libraries compiled for the cross-compiled platform target.
-export PKG_CONFIG_LIBDIR=
-export PKG_CONFIG_PATH=$CROSSROAD_PREFIX/share/pkgconfig:$CROSSROAD_PREFIX/lib/pkgconfig
+export PKG_CONFIG_LIBDIR=$CROSSROAD_PREFIX/share/pkgconfig:$CROSSROAD_PREFIX/lib/pkgconfig
+# Using the same base for PKG_CONFIG_LIBDIR and PKG_CONFIG_PATH as new
+# pkgconf does not like empty PKG_CONFIG_LIBDIR (and consider it as
+# unset, which will search for system libs!).
+export PKG_CONFIG_PATH=$PKG_CONFIG_LIBDIR
 
 case "$CROSSROAD_HOST" in
   "x86_64-w64-mingw32")
