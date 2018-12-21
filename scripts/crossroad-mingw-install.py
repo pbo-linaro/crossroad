@@ -19,6 +19,9 @@ import mimetypes
 import subprocess
 import glob
 
+fedora_repo = "https://download.fedoraproject.org/pub/fedora/linux/releases/29/Everything/x86_64/os/"
+suse_repo = "http://download.opensuse.org/repositories/windows:/mingw:/ARCH/openSUSE_Leap_42.3/"
+
 _packages = []
 _package_filelists = {}
 _package_src_filelists = {}
@@ -60,7 +63,7 @@ def get_package_files (package, options):
         real_name = package
         file_list = filelists[package]
     except KeyError:
-        if options.project == 'windows:mingw:win64':
+        if options.arch == 'w64':
             try:
                 real_name = 'mingw64-' + package
                 file_list = filelists[real_name]
@@ -76,6 +79,7 @@ def get_package_files (package, options):
                 real_name = None
                 file_list = None
     if file_list is not None:
+        file_list = [f for f in file_list if re.match(r'/usr/[^/]+-mingw32/sys-root/mingw', f['path']) is not None]
         for f in file_list:
             f['path'] = re.sub(r'/usr/[^/]+-mingw32/sys-root/mingw', prefix, f['path'])
     return (real_name, file_list)
@@ -102,7 +106,7 @@ def fix_package_symlinks (package, options):
         for f in file_list:
             fix_symlink (f['path'])
 
-def OpenRepository(repositoryLocation):
+def OpenRepository(repositoryLocation, arch):
   from xml.etree.cElementTree import parse as xmlparse
   global _packages
   global _package_filelists
@@ -125,7 +129,7 @@ def OpenRepository(repositoryLocation):
       # Download repository metadata (only if not already in cache)
       primary_filename = os.path.join(_repositoryCacheDirectory, os.path.splitext(os.path.basename(primary_url))[0])
       if not os.path.exists(primary_filename):
-        logging.warning('Dowloading repository data.')
+        logging.warning('Dowloading repository data: {}'.format(repositoryLocation + primary_url))
         with urlopen(repositoryLocation + primary_url, timeout = 5.0) as primaryGzFile:
           import io, gzip
           primaryGzString = io.BytesIO(primaryGzFile.read()) #3.2: use gzip.decompress
@@ -185,19 +189,27 @@ def OpenRepository(repositoryLocation):
       'provides': {provides.attrib['name'] for provides in p.findall('{%s}format/{%s}provides/{%s}entry'%(xmlns,rpmns,rpmns))},
       'requires': {req.attrib['name'] for req in p.findall('{%s}format/{%s}requires/{%s}entry'%(xmlns,rpmns,rpmns))}
     } for p in elements.findall('{%s}package'%xmlns)]
+  # Note: XPath should be able to find directly with:
+  # elements.findall("{%s}package/{%s}name[starts-with(., 'mingw')]/.."% (xmlns,xmlns))
+  # Unfortunaly XPath support of Python is too limited, so I have to do
+  # it in a separate step below.
+  _packages = [p for p in _packages if p['name'].startswith('ming' + arch + '-')]
   # Package's file lists.
   elements = xmlparse(filelist_filename)
   xmlns = 'http://linux.duke.edu/metadata/filelists'
   _package_filelists = {
       p.get('name') : [
         {'type': f.get('type', default='file'), 'path': f.text} for f in p.findall('{%s}file'%xmlns)
-    ] for p in elements.findall('{%s}package'%xmlns) if p.get('arch') == 'noarch'}
+    ] for p in elements.findall('{%s}package'%xmlns)
+  }
+  _package_filelists = {name : _package_filelists[name] for name in _package_filelists if name.startswith('ming' + arch + '-')}
   _package_src_filelists = {
       p.get('name') : [
         {'type': f.get('type', default='file'), 'path': f.text} for f in p.findall('{%s}file'%xmlns)
     ] for p in elements.findall('{%s}package'%xmlns) if p.get('arch') == 'src'}
+  _package_src_filelists = {name : _package_src_filelists[name] for name in _package_src_filelists if name.startswith('ming' + arch + '-')}
 
-def search_packages(keyword, srcpkg = False, search_files = False):
+def search_packages(keyword, arch, srcpkg = False, search_files = False):
   # Just in case the user was looking for a specific rpm file,
   # I trim out the filename parts and keep the main naming.
   keyword = re.sub('^mingw(32|64)-', '', packageBaseName(keyword.lower()))
@@ -212,16 +224,16 @@ def search_packages(keyword, srcpkg = False, search_files = False):
       packages = sorted([p for p in filelists if filter_func(p)])
   else:
       filter_func = lambda p: \
-         re.sub('^mingw(32|64)-', '', p['name'].lower()).find(keyword) != -1 \
-         and p['arch'] == ('src' if srcpkg else 'noarch')
+         re.sub('^ming' + arch + '-', '', p['name'].lower()).find(keyword) != -1 \
+         and ((p['arch'] == 'src') if srcpkg else True)
       packages = sorted([p['name'] for p in _packages if filter_func(p)])
   return packages
 
-def _findPackage(packageName, project, srcpkg=False):
+def _findPackage(packageName, arch, srcpkg=False):
   filter_func = lambda p: \
-    ((p['name'] == 'mingw64-' + packageName if project == 'windows:mingw:win64' else False)
-     or p['name'] == 'mingw32-' + packageName or p['name'] == packageName or p['filename'] == packageName) \
-    and p['arch'] == ('src' if srcpkg else 'noarch')
+    (p['name'] == 'ming' + arch + '-' + packageName            \
+     or p['name'] == packageName or p['filename'] == packageName) \
+    and ((p['arch'] == 'src') if srcpkg else True)
   sort_func = lambda p: p['buildtime']
   packages = sorted([p for p in _packages if filter_func(p)], key=sort_func, reverse=True)
   if len(packages) == 0:
@@ -247,10 +259,10 @@ def _checkPackageRequirements(package, packageNames):
 def packageBaseName(rpm):
     return re.sub(r'-([0-9]|\.)+-[0-9]\.[0-9].(src|noarch)\.(rpm|cpio)$', '', rpm)
 
-def packagesDownload(packageNames, project, withDependencies = False, srcpkg = False, nocache = False):
+def packagesDownload(packageNames, arch, withDependencies = False, srcpkg = False, nocache = False):
   packageNames_new = {pn for pn in packageNames if pn.endswith('.rpm')}
   for packageName in packageNames - packageNames_new:
-    matchedpackages = {p['name'] for p in _packages if fnmatch.fnmatchcase(p['name'].replace('mingw32-', '').replace('mingw64-', ''), packageName) and p['arch'] == ('src' if srcpkg else 'noarch')}
+    matchedpackages = {p['name'] for p in _packages if fnmatch.fnmatchcase(p['name'].replace('mingw32-', '').replace('mingw64-', ''), packageName) and ((p['arch'] == 'src') if srcpkg else True)}
     packageNames_new |= matchedpackages if len(matchedpackages) > 0 else {packageName}
   packageNames = list(packageNames_new)
   allPackageNames = set(packageNames)
@@ -258,10 +270,10 @@ def packagesDownload(packageNames, project, withDependencies = False, srcpkg = F
   packageFilenames = []
   while len(packageNames) > 0:
     packName = packageNames.pop()
-    package = _findPackage(packName, project, srcpkg)
+    package = _findPackage(packName, arch, srcpkg)
     if package is None:
       logging.error('Package %s not found', packName)
-      alt_packages = search_packages(packName, srcpkg)
+      alt_packages = search_packages(packName, arch, srcpkg)
       if len(alt_packages) > 0:
           logging.error('Did you mean:')
           for alt_pkg in alt_packages:
@@ -272,7 +284,7 @@ def packagesDownload(packageNames, project, withDependencies = False, srcpkg = F
     if withDependencies and len(dependencies) > 0:
       packageNames.extend(dependencies)
       allPackageNames |= dependencies
-    if packName[-6:] == '-devel' and _findPackage(packName[:-6], project, srcpkg) is not None:
+    if packName[-6:] == '-devel' and _findPackage(packName[:-6], arch, srcpkg) is not None:
         logging.warning('{} is a devel package. Adding {}'.format(packName, packName[:-6]))
         packageNames.append(packName[:-6])
         allPackageNames.add(packName[:-6])
@@ -322,10 +334,10 @@ def _extractFile(filename, output_dir=_extractedCacheDirectory):
     logging.error('Failed to extract %s', filename)
     return False
 
-def GetBaseDirectory(project):
-  if project == 'windows:mingw:win32' and os.path.exists(os.path.join(_extractedFilesDirectory, 'usr/i686-w64-mingw32/sys-root/mingw')):
+def GetBaseDirectory(arch):
+  if arch == 'w32' and os.path.exists(os.path.join(_extractedFilesDirectory, 'usr/i686-w64-mingw32/sys-root/mingw')):
     return os.path.join(_extractedFilesDirectory, 'usr/i686-w64-mingw32/sys-root/mingw')
-  elif project == 'windows:mingw:win64' and os.path.exists(os.path.join(_extractedFilesDirectory, 'usr/x86_64-w64-mingw32/sys-root/mingw')):
+  elif arch == 'w64' and os.path.exists(os.path.join(_extractedFilesDirectory, 'usr/x86_64-w64-mingw32/sys-root/mingw')):
     return os.path.join(_extractedFilesDirectory, 'usr/x86_64-w64-mingw32/sys-root/mingw')
   return None
 
@@ -489,16 +501,13 @@ def GetOptions():
                         description="Easy download of RPM packages for Windows.")
 
   # Options specifiying download repository
-  default_project = "windows:mingw:win32"
-  default_repository = "openSUSE_Leap_42.3"
-  default_repo_url = "http://download.opensuse.org/repositories/PROJECT/REPOSITORY/"
+  default_arch = "w64"
+  default_repo = "fedora"
   repoOptions = OptionGroup(parser, "Specify download repository")
-  repoOptions.add_option("-p", "--project", dest="project", default=default_project,
-                         metavar="PROJECT", help="Download from PROJECT [%default]")
-  repoOptions.add_option("-r", "--repository", dest="repository", default=default_repository,
-                         metavar="REPOSITORY", help="Download from REPOSITORY [%default]")
-  repoOptions.add_option("-u", "--repo-url", dest="repo_url", default=default_repo_url,
-                         metavar="URL", help="Download packages from URL (overrides PROJECT and REPOSITORY options) [%default]")
+  repoOptions.add_option("-a", "--arch", dest="arch", default=default_arch,
+                         metavar="ARCH", help="w32 or w64 [%default]")
+  repoOptions.add_option("-r", "--repo", dest="repo", default=default_repo,
+                         metavar="REPO", help="Download from REPO [%default]")
   parser.add_option_group(repoOptions)
 
   # Package selection options
@@ -542,28 +551,34 @@ if __name__ == "__main__":
   packages = set(args)
   logging.basicConfig(level=(logging.WARNING if options.verbose else logging.ERROR), format='%(message)s', stream=sys.stderr)
 
-  if options.project != 'w32' and options.project != 'w64':
-    logging.error('"{}" is not a known mingw project.\n'.format(options.project))
+  if options.arch != 'w32' and options.arch != 'w64':
+    logging.error('"{}" is not a known mingw arch.\n'.format(options.arch))
+    sys.exit(os.EX_USAGE)
+  if options.repo != 'fedora' and options.repo != 'suse':
+    logging.error('"{}" is not a known repository.\n'.format(options.repo))
     sys.exit(os.EX_USAGE)
 
   # Update the cache directories.
-  _packageCacheDirectory = os.path.join(_packageCacheDirectory, options.project)
-  _repositoryCacheDirectory = os.path.join(_repositoryCacheDirectory, options.project)
-  _extractedCacheDirectory = os.path.join(_extractedCacheDirectory, options.project)
-  _extractedFilesDirectory = os.path.join(_extractedFilesDirectory, options.project)
+  _packageCacheDirectory = os.path.join(_packageCacheDirectory, options.arch)
+  _repositoryCacheDirectory = os.path.join(_repositoryCacheDirectory, options.arch)
+  _extractedCacheDirectory = os.path.join(_extractedCacheDirectory, options.arch)
+  _extractedFilesDirectory = os.path.join(_extractedFilesDirectory, options.arch)
 
   # Update the project to the URL naming.
-  if options.project == 'w32':
-    options.project = 'windows:mingw:win32'
+  if options.repo == 'fedora':
+    # Always use the x86_64 URL on the Fedora repo.
+    repo = fedora_repo
   else:
-    options.project = 'windows:mingw:win64'
+    if options.arch == 'w32':
+      repo = suse_repo.replace('ARCH', 'win32');
+    else:
+      repo = suse_repo.replace('ARCH', 'win64');
 
   # Open repository
-  repository = options.repo_url.replace("PROJECT", options.project.replace(':', ':/')).replace("REPOSITORY", options.repository)
   try:
-    OpenRepository(repository)
+    OpenRepository(repo, options.arch)
   except Exception as e:
-    sys.exit('Error opening repository:\n\t%s\n\t%s' % (repository, e))
+    sys.exit('Error opening repository:\n\t%s\n\t%s' % (repo, e))
 
   if options.search:
     if (len(packages) == 0):
@@ -574,7 +589,7 @@ if __name__ == "__main__":
     else:
         package_type = 'Package'
     for keyword in packages:
-        alt_packages = search_packages(keyword, options.srcpkg)
+        alt_packages = search_packages(keyword, options.arch, options.srcpkg)
         if len(alt_packages) > 0:
             sys.stdout.write('The following packages were found for the search "{}":\n'.format(keyword))
             for alt_pkg in alt_packages:
@@ -582,7 +597,7 @@ if __name__ == "__main__":
         else:
             sys.stdout.write('"{}" not found in any package name.\n'.format(keyword))
         if options.list_files:
-            alt_packages = search_packages(keyword, options.srcpkg, options.list_files)
+            alt_packages = search_packages(keyword, options.arch, options.srcpkg, options.list_files)
             if len(alt_packages) > 0:
                 sys.stdout.write('The following packages have files matching the search "{}":\n'.format(keyword))
                 for alt_pkg in alt_packages:
@@ -601,7 +616,7 @@ if __name__ == "__main__":
         (real_name, file_list) = get_package_files (package, options)
         if file_list is None:
             sys.stderr.write('{} "{}" unknown.\n'.format(package_type, package))
-            alt_packages = search_packages(package, options.srcpkg)
+            alt_packages = search_packages(package, options.arch, options.srcpkg)
             if len(alt_packages) > 0:
                 logging.error('\tDid you mean:')
                 for alt_pkg in alt_packages:
@@ -625,10 +640,10 @@ if __name__ == "__main__":
     else:
         package_type = 'Package'
     for pkg in packages:
-        package = _findPackage(pkg, options.project, options.srcpkg)
+        package = _findPackage(pkg, options.arch, options.srcpkg)
         if package is None:
             sys.stderr.write('{} "{}" unknown.\n'.format(package_type, pkg))
-            alt_packages = search_packages(pkg, options.srcpkg)
+            alt_packages = search_packages(pkg, options.arch, options.srcpkg)
             if len(alt_packages) > 0:
                 logging.error('\tDid you mean:')
                 for alt_pkg in alt_packages:
@@ -657,7 +672,7 @@ if __name__ == "__main__":
         (real_name, file_list) = get_package_files (package, options)
         if file_list is None:
             sys.stderr.write('{} "{}" unknown.\n'.format(package_type, package))
-            alt_packages = search_packages(package, options.srcpkg)
+            alt_packages = search_packages(package, options.arch, options.srcpkg)
             if len(alt_packages) > 0:
                 logging.error('\tDid you mean:')
                 for alt_pkg in alt_packages:
@@ -720,10 +735,10 @@ if __name__ == "__main__":
     sys.exit(os.EX_CANTCREAT)
 
   if options.makezip or options.metadata:
-    package = _findPackage(args[0], options.project, options.srcpkg)
+    package = _findPackage(args[0], options.arch, options.srcpkg)
     if package == None:
       logging.error('Package not found:\n\t%s' % args[0])
-      alt_packages = search_packages(args[0], options.srcpkg)
+      alt_packages = search_packages(args[0], options.arch, options.srcpkg)
       if len(alt_packages) > 0:
           logging.error('Did you mean:')
           for alt_pkg in alt_packages:
@@ -731,13 +746,13 @@ if __name__ == "__main__":
       sys.exit(os.EX_UNAVAILABLE)
     packageBasename = re.sub('^mingw(32|64)-|\\.noarch|\\.rpm$', '', package['filename'])
 
-  (packages, packages_rpm) = packagesDownload(packages, options.project, options.withdeps, options.srcpkg, options.nocache)
+  (packages, packages_rpm) = packagesDownload(packages, options.arch, options.withdeps, options.srcpkg, options.nocache)
 
   if not packagesExtract(packages_rpm, options.srcpkg):
     logging.error('A package failed to extract. Please report a bug.')
     sys.exit(os.EX_CANTCREAT)
 
-  extracted_prefix = GetBaseDirectory(options.project)
+  extracted_prefix = GetBaseDirectory(options.arch)
   if extracted_prefix is None:
     logging.error('Unexpected error: files were not extracted. Please report a bug.')
     sys.exit(os.EX_CANTCREAT)

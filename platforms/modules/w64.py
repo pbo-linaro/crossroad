@@ -139,7 +139,7 @@ def crossroad_install(*packages:list, src:bool = False):
         sys.exit(os.EX_USAGE)
 
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
-               '-r', 'openSUSE_Leap_42.3', '-p', name, '--deps']
+               '-a', name, '--deps']
     if src:
         command += ['--src']
     command += list(packages)
@@ -154,7 +154,7 @@ def crossroad_list_files(*packages, src:bool = False):
         sys.exit(os.EX_USAGE)
 
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
-               '-r', 'openSUSE_Leap_42.3', '-p', name, '--list-files']
+               '-a', name, '--list-files']
     if src:
         command += ['--src']
     command += packages
@@ -169,7 +169,7 @@ def crossroad_info(*packages, src:bool = False):
         sys.exit(os.EX_USAGE)
 
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
-               '-r', 'openSUSE_Leap_42.3', '-p', name, '--info']
+               '-a', name, '--info']
     if src:
         command += ['--src']
     command += list(packages)
@@ -184,7 +184,7 @@ def crossroad_uninstall(*packages, src:bool = False):
         sys.exit(os.EX_USAGE)
 
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
-               '-r', 'openSUSE_Leap_42.3', '-p', name, '--uninstall']
+               '-a', name, '--uninstall']
     if src:
         command += ['--src']
     command += list(packages)
@@ -200,7 +200,7 @@ def crossroad_search(*keywords, src:bool = False, search_files:bool = False):
         sys.exit(os.EX_USAGE)
 
     command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
-               '-r', 'openSUSE_Leap_42.3', '-p', name, '--search']
+               '-a', name, '--search']
     if src:
         command += ['--src']
     if search_files:
