@@ -18,6 +18,7 @@ import time
 import mimetypes
 import subprocess
 import glob
+import marshal
 
 fedora_repo = "https://download.fedoraproject.org/pub/fedora/linux/releases/29/Everything/x86_64/os/"
 suse_repo = "http://download.opensuse.org/repositories/windows:/mingw:/ARCH/openSUSE_Leap_42.3/"
@@ -167,47 +168,63 @@ def OpenRepository(repositoryLocation, arch):
     else:
         # Reraise the download error.
         raise
-  # Parse package list from XML
-  elements = xmlparse(primary_filename)
-  xmlns = 'http://linux.duke.edu/metadata/common'
-  rpmns = 'http://linux.duke.edu/metadata/rpm'
-  _packages = [{
-      'name': p.find('{%s}name'%xmlns).text,
-      'arch': p.find('{%s}arch'%xmlns).text,
-      'summary': p.find('{%s}summary'%xmlns).text,
-      'description': p.find('{%s}description'%xmlns).text,
-      'project_url': p.find('{%s}url'%xmlns).text,
-      'version': {'epoch': p.find('{%s}version'%xmlns).get('epoch'),
-                  'ver': p.find('{%s}version'%xmlns).get('ver'),
-                  'rel': p.find('{%s}version'%xmlns).get('rel')},
-      #'license': p.find('{%s}location/{%s}format/{%s}license'%(xmlns, xmlns, rpmns)).text,
-      'buildtime': int(p.find('{%s}time'%xmlns).get('build')),
-      'url': repositoryLocation + p.find('{%s}location'%xmlns).get('href'),
-      'filename': os.path.basename(p.find('{%s}location'%xmlns).get('href')),
-      'checksum': {'type': p.find('{%s}checksum'%xmlns).get('type'),
-                   'sum': p.find('{%s}checksum'%xmlns).text},
-      'provides': {provides.attrib['name'] for provides in p.findall('{%s}format/{%s}provides/{%s}entry'%(xmlns,rpmns,rpmns))},
-      'requires': {req.attrib['name'] for req in p.findall('{%s}format/{%s}requires/{%s}entry'%(xmlns,rpmns,rpmns))}
-    } for p in elements.findall('{%s}package'%xmlns)]
-  # Note: XPath should be able to find directly with:
-  # elements.findall("{%s}package/{%s}name[starts-with(., 'mingw')]/.."% (xmlns,xmlns))
-  # Unfortunaly XPath support of Python is too limited, so I have to do
-  # it in a separate step below.
-  _packages = [p for p in _packages if p['name'].startswith('ming' + arch + '-')]
-  # Package's file lists.
-  elements = xmlparse(filelist_filename)
-  xmlns = 'http://linux.duke.edu/metadata/filelists'
-  _package_filelists = {
-      p.get('name') : [
-        {'type': f.get('type', default='file'), 'path': f.text} for f in p.findall('{%s}file'%xmlns)
-    ] for p in elements.findall('{%s}package'%xmlns)
-  }
-  _package_filelists = {name : _package_filelists[name] for name in _package_filelists if name.startswith('ming' + arch + '-')}
-  _package_src_filelists = {
-      p.get('name') : [
-        {'type': f.get('type', default='file'), 'path': f.text} for f in p.findall('{%s}file'%xmlns)
-    ] for p in elements.findall('{%s}package'%xmlns) if p.get('arch') == 'src'}
-  _package_src_filelists = {name : _package_src_filelists[name] for name in _package_src_filelists if name.startswith('ming' + arch + '-')}
+  try:
+      with open(primary_filename + ".data", "rb") as f:
+        _packages = marshal.load(f)
+  except:
+      # Parse package list from XML
+      elements = xmlparse(primary_filename)
+      xmlns = 'http://linux.duke.edu/metadata/common'
+      rpmns = 'http://linux.duke.edu/metadata/rpm'
+      _packages = [{
+          'name': p.find('{%s}name'%xmlns).text,
+          'arch': p.find('{%s}arch'%xmlns).text,
+          'summary': p.find('{%s}summary'%xmlns).text,
+          'description': p.find('{%s}description'%xmlns).text,
+          'project_url': p.find('{%s}url'%xmlns).text,
+          'version': {'epoch': p.find('{%s}version'%xmlns).get('epoch'),
+                      'ver': p.find('{%s}version'%xmlns).get('ver'),
+                      'rel': p.find('{%s}version'%xmlns).get('rel')},
+          #'license': p.find('{%s}location/{%s}format/{%s}license'%(xmlns, xmlns, rpmns)).text,
+          'buildtime': int(p.find('{%s}time'%xmlns).get('build')),
+          'url': repositoryLocation + p.find('{%s}location'%xmlns).get('href'),
+          'filename': os.path.basename(p.find('{%s}location'%xmlns).get('href')),
+          'checksum': {'type': p.find('{%s}checksum'%xmlns).get('type'),
+                       'sum': p.find('{%s}checksum'%xmlns).text},
+          'provides': {provides.attrib['name'] for provides in p.findall('{%s}format/{%s}provides/{%s}entry'%(xmlns,rpmns,rpmns))},
+          'requires': {req.attrib['name'] for req in p.findall('{%s}format/{%s}requires/{%s}entry'%(xmlns,rpmns,rpmns))}
+        } for p in elements.findall('{%s}package'%xmlns)]
+      # Note: XPath should be able to find directly with:
+      # elements.findall("{%s}package/{%s}name[starts-with(., 'mingw')]/.."% (xmlns,xmlns))
+      # Unfortunaly XPath support of Python is too limited, so I have to do
+      # it in a separate step below.
+      _packages = [p for p in _packages if p['name'].startswith('ming' + arch + '-')]
+      with open(primary_filename + ".data", "wb") as f:
+        marshal.dump(_packages, f)
+  try:
+      with open(filelist_filename + ".data", "rb") as f:
+        _package_filelists = marshal.load (f)
+      with open(filelist_filename + ".src.data", "rb") as f:
+        _package_src_filelists = marshal.load (f)
+  except:
+      # Package's file lists.
+      elements = xmlparse(filelist_filename)
+      xmlns = 'http://linux.duke.edu/metadata/filelists'
+      _package_filelists = {
+          p.get('name') : [
+            {'type': f.get('type', default='file'), 'path': f.text} for f in p.findall('{%s}file'%xmlns)
+        ] for p in elements.findall('{%s}package'%xmlns)
+      }
+      _package_filelists = {name : _package_filelists[name] for name in _package_filelists if name.startswith('ming' + arch + '-')}
+      _package_src_filelists = {
+          p.get('name') : [
+            {'type': f.get('type', default='file'), 'path': f.text} for f in p.findall('{%s}file'%xmlns)
+        ] for p in elements.findall('{%s}package'%xmlns) if p.get('arch') == 'src'}
+      _package_src_filelists = {name : _package_src_filelists[name] for name in _package_src_filelists if name.startswith('ming' + arch + '-')}
+      with open(filelist_filename + ".data", "wb") as f:
+        marshal.dump(_package_filelists, f)
+      with open(filelist_filename + ".src.data", "wb") as f:
+        marshal.dump(_package_src_filelists, f)
 
 def search_packages(keyword, arch, srcpkg = False, search_files = False):
   # Just in case the user was looking for a specific rpm file,
