@@ -396,7 +396,7 @@ def move_files(from_file, to_file):
                 fd = open(from_file, 'r')
                 contents = fd.read()
                 fd.close()
-                contents = re.sub(r'^prefix=.*$', 'prefix=' + prefix, contents, count=0, flags=re.MULTILINE)
+                contents = re.sub(r'/usr/[^/]+-mingw32/sys-root/mingw', prefix, contents, count=0, flags=re.MULTILINE)
             except IOError:
                 sys.stderr.write('File "{}" could not be read.\n'.format(from_file))
                 sys.exit(os.EX_CANTCREAT)
