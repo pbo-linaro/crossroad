@@ -103,7 +103,7 @@ fi
 mkdir -p $CROSSROAD_PREFIX/bin
 # no such file or directory error on non-existing aclocal.
 mkdir -p $CROSSROAD_PREFIX/share/aclocal
-export ACLOCAL_FLAGS="-I $CROSSROAD_PREFIX/share/aclocal"
+export ACLOCAL_FLAGS="-I$CROSSROAD_PREFIX/share/aclocal"
 # no such file or directory warning on non-existing include.
 mkdir -p $CROSSROAD_PREFIX/include
 mkdir -p $CROSSROAD_PREFIX/lib
