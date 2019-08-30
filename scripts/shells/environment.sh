@@ -115,3 +115,6 @@ do
 done;
 # For gdbus-codegen.
 export PYTHONPATH=$CROSSROAD_PREFIX/share/glib-2.0/:$PYTHONPATH
+
+# g-ir-scanner looks in XDG_DATA_DIRS/gir-1.0
+export XDG_DATA_DIRS="$CROSSROAD_PREFIX/share:$XDG_DATA_DIRS"
