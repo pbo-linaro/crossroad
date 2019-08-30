@@ -31,19 +31,34 @@ if [ x"$CROSSROAD_PLATFORM" == x"native" ]; then
 fi
 
 export PATH="$CROSSROAD_PREFIX/bin:$PATH"
+
 if [ x"$CROSSROAD_PLATFORM" == x"native" ]; then
   export LD_LIBRARY_PATH=$CROSSROAD_PREFIX/lib:$LD_LIBRARY_PATH
-  if [ "x$CROSSROAD_WORD_SIZE" != "x" ]; then
-    export LD_LIBRARY_PATH=$CROSSROAD_PREFIX/lib$CROSSROAD_WORD_SIZE:$LD_LIBRARY_PATH
-  fi
   export GI_TYPELIB_PATH=$CROSSROAD_PREFIX/lib/girepository-1.0/:$GI_TYPELIB_PATH
+
+  GCC="gcc"
 else
   export LD_LIBRARY_PATH=$CROSSROAD_PREFIX/lib
   export GI_TYPELIB_PATH=$CROSSROAD_PREFIX/lib/girepository-1.0/
+
+  GCC="${CROSSROAD_HOST}-gcc"
 fi
+
 if [ "x$CROSSROAD_WORD_SIZE" != "x" ]; then
   export LD_LIBRARY_PATH=$CROSSROAD_PREFIX/lib${CROSSROAD_WORD_SIZE}:$LD_LIBRARY_PATH
   export GI_TYPELIB_PATH=$CROSSROAD_PREFIX/lib${CROSSROAD_WORD_SIZE}/girepository-1.0/:$GI_TYPELIB_PATH
+fi
+
+# This relies on GCC. Clang/LLVM probably has an equivalent to find
+# specific multi-arch paths but I don't know about it.
+# This is needed because I realized that on some distributions, for
+# instance Debian, libraries were installed in lib/x86_64-linux-gnu/.
+# And it would seem that some build systems (like meson) would detect
+# the distribution standard paths and install the same in custom
+# prefixes. So we need to add these paths as well.
+if [ "x`$GCC -print-multiarch`" != "x" ]; then
+  export LD_LIBRARY_PATH=$CROSSROAD_PREFIX/lib/`$GCC -print-multiarch`:$LD_LIBRARY_PATH
+  export GI_TYPELIB_PATH=$CROSSROAD_PREFIX/lib/`$GCC -print-multiarch`/girepository-1.0/:$GI_TYPELIB_PATH
 fi
 
 if [ x"$CROSSROAD_PLATFORM" == x"w32" ] || \
@@ -89,6 +104,10 @@ if [ x"$CROSSROAD_PLATFORM" == x"native" ]; then
   if [ "x$CROSSROAD_WORD_SIZE" != "x" ]; then
     export PKG_CONFIG_PATH=$CROSSROAD_PREFIX/lib${CROSSROAD_WORD_SIZE}/pkgconfig:$PKG_CONFIG_PATH
   fi
+  if [ "x`$GCC -print-multiarch`" != "x" ]; then
+    export PKG_CONFIG_PATH=$CROSSROAD_PREFIX/lib/`$GCC -print-multiarch`/pkgconfig/:$PKG_CONFIG_PATH
+  fi
+
   export CROSSROAD_HOST="$CROSSROAD_BUILD"
 else
   # Adding some typical distribution paths.
