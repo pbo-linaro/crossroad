@@ -154,7 +154,6 @@ def OpenRepository(repositoryLocation, arch):
         if f[-12:] == '-primary.xml' and f != os.path.splitext(os.path.basename(primary_url))[0]:
             os.unlink(os.path.join(_repositoryCacheDirectory, f))
   except:
-    raise
     # If we can't download but there is already a primary.xml and filelists.xml, let's use them.
     primary_files = glob.glob (_repositoryCacheDirectory + '/*-primary.xml')
     filelist_files = glob.glob (_repositoryCacheDirectory + '/*-filelists.xml')
