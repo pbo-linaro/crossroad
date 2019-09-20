@@ -20,7 +20,7 @@ import subprocess
 import glob
 import marshal
 
-fedora_repo = "https://download.fedoraproject.org/pub/fedora/linux/releases/29/Everything/x86_64/os/"
+fedora_repo = "https://download.fedoraproject.org/pub/fedora/linux/releases/30/Everything/x86_64/os/"
 suse_repo = "http://download.opensuse.org/repositories/windows:/mingw:/ARCH/openSUSE_Leap_42.3/"
 
 _packages = []
