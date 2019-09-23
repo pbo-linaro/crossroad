@@ -563,6 +563,7 @@ if __name__ == "__main__":
         sys.exit(os.EX_SOFTWARE)
 
     env_path = os.path.join(xdg_data_home, 'crossroad/roads', available_platforms[target].name, project)
+    build_path = os.path.join(xdg_data_home, 'crossroad/artifacts', available_platforms[target].name, project)
     if not os.path.exists(env_path):
         try:
             sys.stdout.write('Creating project "{}" for target {}...'.format(project, available_platforms[target].name))
@@ -594,8 +595,18 @@ if __name__ == "__main__":
     elif options.copy is not None:
         sys.stderr.write('Option --copy cannot be used for existing projects\n')
         sys.exit(os.EX_USAGE)
+    if not os.path.exists(build_path):
+        try:
+            os.makedirs(build_path, exist_ok = True)
+        except PermissionError:
+            sys.stderr.write('"{}" cannot be created. Please verify your permissions. Aborting.\n'.format(build_path))
+            sys.exit(os.EX_CANTCREAT)
+        except NotADirectoryError:
+            sys.stderr.write('"{}" exists but is not a directory.  Aborting.\n'.format(build_path))
+            sys.exit(os.EX_CANTCREAT)
 
     environ['CROSSROAD_PREFIX'] = os.path.abspath(env_path)
+    environ['CROSSROAD_HOME'] = os.path.abspath(build_path)
 
     print('\033[1;35mYou are now at the crossroads...\033[0m\n')
     shell_proc = subprocess.Popen(command, shell = False, env = environ,
