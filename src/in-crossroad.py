@@ -355,6 +355,9 @@ if __name__ == "__main__":
     else:
         command_fun = getattr(platform, 'crossroad_' + command)
         (args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations) = inspect.getfullargspec(command_fun)
-        command_fun(*command_args, **command_kwargs)
+        try:
+          command_fun(*command_args, **command_kwargs)
+        except KeyboardInterrupt:
+          pass
         sys.exit(os.EX_OK)
 

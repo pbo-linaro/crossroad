@@ -723,10 +723,14 @@ if __name__ == "__main__":
           installed_packages = []
 
         sys.stdout.write('Crossroad will uninstall the following packages: {}\nin'.format(" ".join(file_lists)))
-        for i in range(5, 0, -1):
-            sys.stdout.write(' {}'.format(i))
-            sys.stdout.flush()
-            time.sleep(1)
+        try:
+          for i in range(5, 0, -1):
+              sys.stdout.write(' {}'.format(i))
+              sys.stdout.flush()
+              time.sleep(1)
+        except KeyboardInterrupt:
+          sys.stderr.write('\nCanceling uninstallation\n')
+          sys.exit(os.EX_USAGE)
         sys.stdout.write('...\nUninstalling...\n')
         sys.stdout.flush()
         for package in file_lists:

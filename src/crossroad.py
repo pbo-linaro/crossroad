@@ -39,7 +39,10 @@ except KeyError:
 # Redirect to the in-crossroad binary.
 if crossroad_platform is not None:
     in_crossroad = os.path.join('@DATADIR@', 'share/crossroad/scripts/in-crossroad.py')
-    sys.exit(subprocess.call([in_crossroad] + sys.argv[1:], shell=False))
+    try:
+      sys.exit(subprocess.call([in_crossroad] + sys.argv[1:], shell=False))
+    except KeyboardInterrupt:
+      sys.exit(os.EX_OK)
 
 ### Check all available platforms. ###
 
