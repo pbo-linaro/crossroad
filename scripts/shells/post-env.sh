@@ -55,7 +55,8 @@ fi
 # some things for our environment.
 if [ "x${CROSSROAD_SCRIPT}x" != "xx" ]; then
     . ${CROSSROAD_SCRIPT}
+    retval=$?
     if [ "x${CROSSROAD_SCRIPT_EXIT}x" = "xyesx" ]; then
-        exit
+        exit $retval
     fi
 fi

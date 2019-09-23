@@ -600,7 +600,7 @@ if __name__ == "__main__":
     print('\033[1;35mYou are now at the crossroads...\033[0m\n')
     shell_proc = subprocess.Popen(command, shell = False, env = environ,
                                   bufsize = 0)
-    shell_proc.wait()
+    retval = shell_proc.wait()
     print('\033[1;35mYou can run, you can run.\nTell your friend boy Greg T.\nthat you were standing at the crossroads.')
     print('I believe you were sinking down.\033[0m\n')
-    sys.exit(os.EX_OK)
+    sys.exit(retval)
