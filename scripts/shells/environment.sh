@@ -128,9 +128,9 @@ mkdir -p $CROSSROAD_PREFIX/include
 mkdir -p $CROSSROAD_PREFIX/lib
 
 # So that the system-wide python can still find any locale lib.
-for dir in $(find $CROSSROAD_PREFIX/lib/ $CROSSROAD_PREFIX/lib${CROSSROAD_WORD_SIZE}/ -maxdepth 1 -name 'python3.*');
+for dir in $(find $CROSSROAD_PREFIX/lib/ $CROSSROAD_PREFIX/lib${CROSSROAD_WORD_SIZE}/ -maxdepth 1 -name 'python3.*' 2>/dev/null);
 do
-    export PYTHONPATH=${dir}/site-packages:$PYTHONPATH
+  export PYTHONPATH=${dir}/site-packages:$PYTHONPATH
 done;
 # For gdbus-codegen.
 export PYTHONPATH=$CROSSROAD_PREFIX/share/glib-2.0/:$PYTHONPATH
