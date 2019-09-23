@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 #
 # Copyright (C) Maarten Bosmans 2011
-# Copyright (C) Jehan 2013
+# Copyright (C) Jehan 2013-2019
 #
 # The contents of this file are subject to the Mozilla Public License Version 1.1; you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at http://www.mozilla.org/MPL/
@@ -43,6 +43,14 @@ try:
     prefix = os.path.abspath(os.environ['CROSSROAD_PREFIX'])
 except KeyError:
     sys.stderr.write('$CROSSROAD_PREFIX was not set!\n')
+    sys.exit(os.EX_UNAVAILABLE)
+
+artifacts = None
+try:
+    artifacts = os.path.abspath(os.environ['CROSSROAD_HOME'])
+    installed_packages_file = os.path.join(artifacts, 'crossroad-mingw-install.installed')
+except KeyError:
+    sys.stderr.write('$CROSSROAD_HOME was not set!\n')
     sys.exit(os.EX_UNAVAILABLE)
 
 _packageCacheDirectory = os.path.join(xdg_cache_home, 'crossroad', 'package')
@@ -275,7 +283,12 @@ def _checkPackageRequirements(package, packageNames):
 def packageBaseName(rpm):
     return re.sub(r'-([0-9]|\.)+-[0-9]\.[0-9].(src|noarch)\.(rpm|cpio)$', '', rpm)
 
-def packagesDownload(packageNames, arch, withDependencies = False, srcpkg = False, nocache = False):
+def packagesDownload(packageNames, arch,
+                     installed_packages,
+                     withDependencies = False,
+                     srcpkg           = False,
+                     nocache          = False,
+                     force_install    = False):
   packageNames_new = {pn for pn in packageNames if pn.endswith('.rpm')}
   for packageName in packageNames - packageNames_new:
     matchedpackages = {p['name'] for p in _packages if fnmatch.fnmatchcase(p['name'].replace('mingw32-', '').replace('mingw64-', ''), packageName) and ((p['arch'] == 'src') if srcpkg else True)}
@@ -286,6 +299,9 @@ def packagesDownload(packageNames, arch, withDependencies = False, srcpkg = Fals
   packageFilenames = []
   while len(packageNames) > 0:
     packName = packageNames.pop()
+    if not force_install and packName in installed_packages:
+      logging.warning('Package "{}" already installed. Skipping.'.format(packName))
+      continue
     package = _findPackage(packName, arch, srcpkg)
     if package is None:
       logging.error('Package %s not found', packName)
@@ -538,6 +554,9 @@ def GetOptions():
   packageOptions.add_option("--search", action="store_true", dest="search", default=False, help="Search packages.")
   packageOptions.add_option("--info", action="store_true", dest="info", default=False, help="Output information about a package")
   packageOptions.add_option("--uninstall", action="store_true", dest="uninstall", default=False, help="Uninstall the list of packages")
+  packageOptions.add_option("--force-install", action="store_true",
+                            dest="force_install",
+                            default=False, help="Force already installed package re-installation")
   parser.add_option_group(packageOptions)
 
   # Output options
@@ -697,6 +716,12 @@ if __name__ == "__main__":
             file_lists[package] = (real_name, file_list)
     # Do we still have a positive number of packages?
     if (len(file_lists) > 0):
+        try:
+          with open(installed_packages_file) as f:
+            installed_packages = [package.rstrip('\n') for package in f.readlines()]
+        except FileNotFoundError:
+          installed_packages = []
+
         sys.stdout.write('Crossroad will uninstall the following packages: {}\nin'.format(" ".join(file_lists)))
         for i in range(5, 0, -1):
             sys.stdout.write(' {}'.format(i))
@@ -730,6 +755,13 @@ if __name__ == "__main__":
             for f in os.listdir(_extractedCacheDirectory):
                 if f[:len(real_name)] == real_name:
                     os.unlink(os.path.join(_extractedCacheDirectory, f))
+            try:
+              installed_packages.remove(real_name)
+            except ValueError:
+              # The package was already not in the list.
+              pass
+        with open(installed_packages_file, 'w') as f:
+          f.writelines('{}\n'.format(package) for package in installed_packages)
         sys.exit(os.EX_OK)
     else:
         logging.error('Exiting without uninstalling.')
@@ -762,7 +794,23 @@ if __name__ == "__main__":
       sys.exit(os.EX_UNAVAILABLE)
     packageBasename = re.sub('^mingw(32|64)-|\\.noarch|\\.rpm$', '', package['filename'])
 
-  (packages, packages_rpm) = packagesDownload(packages, options.arch, options.withdeps, options.srcpkg, options.nocache)
+  try:
+    with open(installed_packages_file) as f:
+      installed_packages = [package.rstrip('\n') for package in f.readlines()]
+  except FileNotFoundError:
+    installed_packages = []
+  (packages, packages_rpm) = packagesDownload(packages, options.arch,
+                                              installed_packages,
+                                              options.withdeps,
+                                              options.srcpkg,
+                                              options.nocache,
+                                              options.force_install)
+  if len(packages_rpm) == 0:
+    # An empty package list is not an error (packagesDownload() would
+    # exit directly the program upon error). It probably just means all
+    # packages were already installed.
+    logging.warning('Nothing to do.')
+    sys.exit(os.EX_OK)
 
   if not packagesExtract(packages_rpm, options.srcpkg):
     logging.error('A package failed to extract. Please report a bug.')
@@ -785,6 +833,11 @@ if __name__ == "__main__":
   sys.stdout.write('All installations done!\n')
   sys.stdout.flush()
 
+  installed_packages += packages
+  installed_packages = list(set(installed_packages))
+  with open(installed_packages_file, 'w') as f:
+    f.writelines('{}\n'.format(package) for package in installed_packages)
+
   if options.metadata:
     cleanup = lambda n: re.sub('^mingw(?:32|64)-(.*)', '\\1', re.sub('^mingw(?:32|64)[(](.*)[)]', '\\1', n))
     with open(os.path.join(prefix, packageBasename + '.metadata'), 'w') as m:
@@ -803,4 +856,3 @@ if __name__ == "__main__":
 
   if options.clean:
     CleanExtracted()
-
