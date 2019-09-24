@@ -13,12 +13,19 @@ distributions), and wishing to cross-compile projects from the same
 platform. It is not for end-users, and is useless in *running*
 software, only **building** them.
 
-4 target environments are supported currently:
+9 target environments are supported currently:
 
-- Windows (x86) 32-bit;
-- Windows (x86) 64-bit.
-- Android (arm) 32-bit.
-- Generic ARM 32-bit.
+- Windows (x86) 32-bit
+- Windows (x86) 64-bit
+- Android (arm)
+- Android (arm64)
+- Android (x86)
+- Android (x86-64)
+- Android (mips)
+- Android (mips64)
+- Native
+
+And 2 embedded ABI on ARM are barely tested and disabled.
 
 *Note: no differences are made between Windows platforms other than
 32/64-bit (in particular no software API versioning).
@@ -60,12 +67,22 @@ installed.
 List targets with::
 
     $ crossroad --list-targets
-    crossroad, version 0.4.4
+    $ crossroad --list-targets
+    crossroad, version 0.8
     Available targets:
-    w64                  Windows 64-bit
+    - w64                  Windows 64-bit
+    - android-mips         Generic Android/Bionic on MIPS
+    - android-arm          Generic Android/Bionic on ARM
+    - native               Native platform (x86_64 GNU/Linux)
+    - android-mips64       Generic Android/Bionic on MIPS64
+    - android-x86          Generic Android/Bionic on x86
+    - android-x86-64       Generic Android/Bionic on x86-64
+    - android-arm64        Generic Android/Bionic on ARM64
 
     Uninstalled targets:
     w32                  Windows 32-bit
+
+    See details about any target with `crossroad --help <TARGET>`.
 
 In the above example, I can compile for Windows 64-bit, not 32-bit.
 
@@ -90,10 +107,11 @@ your package manager).
 Install the missing requirements and run crossroad again::
 
     $ crossroad --list-targets
-    crossroad, version 0.4.4
+    crossroad, version 0.8
     Available targets:
-    w32                  Windows 32-bit
-    w64                  Windows 64-bit
+    - w64                  Windows 64-bit
+    - w32                  Windows 32-bit
+    [… more output …]
     $ crossroad -h w32
     w32: Setups a cross-compilation environment for Microsoft Windows operating systems (32-bit).
 
@@ -194,13 +212,15 @@ compilation system, for Windows 64-bit.
 
 (4) Here the configure may fail if you miss any **dependency**. You may
     install many dependencies easily through crossroad. Crossroad relies
-    on the `openSUSE cross-platform builds`_ for this feature and provides
-    basically a package manager for Windows cross-compiled packages (see
-    the manual for more details on its features).
-    Let's say for instance that your project depends on glib. You could
-    just run::
+    on the Fedora repositories (it used to rely on openSUSE
+    cross-platform builds but this was changed in crossroad 0.8) for
+    this feature and provides basically a package manager for Windows
+    cross-compiled packages (see the manual for more details on its
+    features as you can also search packages, get info, uninstall them
+    and so on). Let's say for instance that your project depends on
+    glib. You could just run::
 
-        $ crossroad install glib-devel
+        $ crossroad install glib
 
     Do this step as many times as necessary, until the configure step
     *3.* succeeds. Then go to the next step.
@@ -234,7 +254,7 @@ compilation system, for Windows 64-bit.
 
     a) Make a zip of your whole cross-compiled tree with the following::
 
-            $ crossroad -c mysoftware.zip w64 myproject
+            $ crossroad --compress=mysoftware.zip w64 myproject
 
        This will create a zip file `mysoftware.zip` that you can just
        move over to your test Windows OS. Then uncompress it, and set or
@@ -248,7 +268,7 @@ compilation system, for Windows 64-bit.
        partitions, you can just add a link in a shared directory.
        Just cd to the shared directory and run::
 
-            $ crossroad -s w64 myproject
+            $ crossroad --symlink w64 myproject
 
        This will create a symlink named `crossroad-w64-myproject/` to the
        "myproject" project for the "w64" target.
@@ -259,7 +279,7 @@ compilation system, for Windows 64-bit.
 
 *Note: this has been tested with success on many GNU projects,
 cross-compiled for Windows: cairo, babl, GEGL, glib, GTK+, libpng,
-pango, freetype2, gdk-pixbuf and GIMP.*
+pango, freetype2, gdk-pixbuf, GIMP and many more.*
 
 Example: CMake
 ~~~~~~~~~~~~~~~
@@ -301,6 +321,9 @@ Now you can simply build and install::
     $ ninja
     $ ninja install
 
+This has also been used with success on many programs, since Meson-using
+programs are increasing rapidly these days.
+
 Example: SCons
 ~~~~~~~~~~~~~~~
 
@@ -313,7 +336,7 @@ Another issue is that scons does not even have standard for basic
 features either like prefix path. So you have to use the environment
 variable `$CROSSROAD_PREFIX` and use it were appropriate yourself.
 
-For instance, assumins your scons scripts use `--prefix` option, running
+For instance, assuming your scons scripts use `--prefix` option, running
 scons through crossroad could be done this way:
 
     $ crossroad scons install --prefix=$CROSSROAD_PREFIX
@@ -322,6 +345,10 @@ In any cases, scons is really not a recommended build system if you wish to have
 an easy cross-buildable project. If you don't manage to cross-compile your
 project, rather than tweaking your SConscript files indefinitely, consider
 taking the time to port your project to autotools or cmake.
+
+Note that crossroad has been used on some scons-using projects back in
+the days, but I have not seen any more of them for a few years now. I am
+not sure of the current level of support.
 
 Example: other
 ~~~~~~~~~~~~~~
@@ -333,9 +360,9 @@ variables for you, and helps you download dependencies, no doubt it will
 already make your life easier.
 
 The `configure`, `cmake`, `ccmake` and `meson` subcommands are simple
-wrappers around respectively any `./configure` script, and `cmake`,
-`ccmake` and `meson` commands, adding some default options (which
-crossroad prepared) for successful cross-compilation.
+wrappers around respectively any `./configure` script, `cmake`, `ccmake`
+and `meson` commands, adding some default options (which crossroad
+prepared) for successful cross-compilation.
 
 For instance `crossroad configure` is the equivalent of running::
 
@@ -406,6 +433,104 @@ Then you just have to update any necessary environment variable in order
 for your builds to discover any library/header if necessary (I don't see
 how to do so automatically with a Windows tree being so "random").
 
+Environments
+============
+Windows
+~~~~~~~
+
+This tool has been originally created to cross-build GIMP (and its
+dependencies when needed) for Windows and this is still one my main
+usage. It has proven to be able to generically cross-build many dozens
+of projects and I am confident it should work pretty well for any
+Autotools, CMake or Meson project out there, unless they really use
+non-standard tricks (in which case, the most relevant course of action
+is often to send a patch to the upstream project).
+If you encounter standard cases which crossroad does not properly
+support, please send me a patch!
+
+Native
+~~~~~~
+
+This target environment may look very weird since this tool was
+originally made for cross-compilation, but it has become my main usage
+of crossroad these days (I mean a daily usage for all my development).
+
+Developers have all sort of tricks to build, install and test their
+software in non-standard prefix by tweaking environment variables.
+
+Sometimes you may have a unique place (set up in your `.bashrc` for
+instance), but then when you want to clean a single program without
+touching the rest, it can be a problem. Worse, you can't install several
+versions of the same program. And last, but not least, installing low
+level libraries (glib, GTK, etc.) may end up breaking your user system
+as these variables are picked up by your desktop.
+
+Other times, you make unique scripts to have these changes only in the
+current shell. This is very inconvenient and bug-prone as it requires
+one script per project with specific paths which you have to manage. You
+are bound to mess up at some point.
+
+With the native environment, `crossroad` just take care of everything
+for me, sets up my environment variable, and manage my prefix. Say I
+want to build GIMP. I'd run::
+
+    $ crossroad native gimp
+
+Now I am in a specifically generated environment for my GIMP build.
+Let's build GIMP::
+
+    $ cd $build/gimp
+    $ crossroad meson $src/gimp && ninja install
+
+I can now run GIMP from command line: `gimp-2.99`
+
+Note that this binary is only visible when inside the crossroad
+environment. I could also install any dependency in the same
+environment, say an experimental version of GTK+ for instance, without
+fearing it to be picked up by my desktop, and potentially breaking it.
+As soon as I get out of this shell, GIMP or any custom code is not
+visible by the rest of the system.
+
+Say now I want to create another GIMP build in another shell (with some
+patchs applied), I could create a new crossroad project::
+
+    $ crossroad native gimp-tests
+
+Both environment live next to each other without interfering and I can
+now call one or another without messing up with files.
+
+Now if I want to get rid of my `gimp-tests` project, I could just run::
+
+    $ crossroad --reset native gimp-tests
+
+And the whole project and all its files would be just gone. Cleaning as
+simple as ever.
+
+Android
+~~~~~~~
+
+A few years back, I started to use crossroad to cross-compile C
+libraries for Android. It did pretty well and I could successfully run
+some test programs in Java using these C libraries. I have not worked
+much on this platform since then. It may just be broken now, I don't
+know.
+
+Still I leave this here in case it is helpful to someone. If you need
+Android support and some of the support in `crossroad` is not really
+optimal, I will gladly accept patches.
+
+ARM
+~~~
+
+I had an early attempt to add arm-linux-gnu and arm-none-eabi (bare
+metal if not mistaken) but in the end didn't include them because I
+never actually tested these for real projects (never had the occasion!)
+so this support is deactivated in released `crossroad`.
+
+If anyone wants to play with it, please feel free to try the development
+version (edit the `deactivated_platforms` variable in `setup.py` before
+installing).
+
 Configuration
 =============
 
@@ -420,6 +545,10 @@ self-installed MinGW-w64 prefix of Windows libraries, if they are not in
 the same prefix as the MinGW-64 executables you run, you can set
 $CROSSROAD_CUSTOM_MINGW_W32_PREFIX and $CROSSROAD_CUSTOM_MINGW_W64_PREFIX
 respectively for your 32-bit and 64-bit installation of MinGW-w64.
+
+*Note: I have not used these 2 environment variables for years now and
+wonder if they are really useful. They may become deprecated in a close
+future.*
 
 Help
 ====
@@ -445,9 +574,8 @@ About the name
 The name is a hommage to "*cross road blues*" by Robert Johnson, which
 spawned dozens, if not hundreds, of other versions by so many artists.
 I myself always play this song (or rather a version with modified lyrics
-adapted to my life) in concerts.
+adapted to my experience) in concerts.
 
 .. _AGPL version 3: http://www.gnu.org/licenses/agpl.html
-.. _author: http://girinstud.io/
-.. _support: http://girinstud.io/support-us/
-.. _openSUSE cross-platform builds: https://en.opensuse.org/openSUSE:Build_Service_Concept_Windows_Support
+.. _author: https://film.zemarmot.net
+.. _support: https://film.zemarmot.net/en/donate
