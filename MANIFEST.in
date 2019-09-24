@@ -3,6 +3,7 @@ include src/*.py
 include platforms/modules/*.py
 include platforms/env/*.conf
 include platforms/cmake/*.cmake
+include platforms/meson/*.meson
 
 include scripts/config.guess
 include scripts/crossroad-mingw-install.py
