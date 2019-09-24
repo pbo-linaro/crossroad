@@ -29,7 +29,7 @@ import subprocess
 import shutil
 import configparser
 
-version = '0.7'
+version = '0.8.0'
 deactivated_platforms = ['arm', 'arm-gnu']
 srcdir   = os.path.dirname(os.path.realpath(sys.argv[0]))
 builddir = os.getcwd()
