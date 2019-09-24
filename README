@@ -67,7 +67,6 @@ installed.
 List targets with::
 
     $ crossroad --list-targets
-    $ crossroad --list-targets
     crossroad, version 0.8
     Available targets:
     - w64                  Windows 64-bit
@@ -220,7 +219,7 @@ compilation system, for Windows 64-bit.
     and so on). Let's say for instance that your project depends on
     glib. You could just run::
 
-        $ crossroad install glib
+        $ crossroad install glib2
 
     Do this step as many times as necessary, until the configure step
     *3.* succeeds. Then go to the next step.

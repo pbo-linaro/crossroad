@@ -6,7 +6,7 @@ crossroad
 Cross-Compilation Environment Toolkit.
 --------------------------------------
 
-:Date: 2013-10-14
+:Date: 2019-09-24
 :Version: @VERSION@
 :Manual section: 1
 :Author: jehan@girinstud.io
@@ -56,11 +56,16 @@ List available and unavailable targets with::
     crossroad, version 0.8
     Available targets:
     - w64                  Windows 64-bit
+    - android-mips         Generic Android/Bionic on MIPS
     - android-arm          Generic Android/Bionic on ARM
+    - native               Native platform (x86_64 GNU/Linux)
+    - android-mips64       Generic Android/Bionic on MIPS64
+    - android-x86          Generic Android/Bionic on x86
+    - android-x86-64       Generic Android/Bionic on x86-64
+    - android-arm64        Generic Android/Bionic on ARM64
 
     Uninstalled targets:
     w32                  Windows 32-bit
-    arm                  Generic Embedded ABI on ARM
 
     See details about any target with `crossroad --help <TARGET>`.
 
@@ -80,23 +85,18 @@ It will return a list of required binaries that `crossroad` cannot find.
 If you actually installed them, the most likely reason is that you should
 update your `$PATH` with the right location. In the above example,
 `crossroad` could find your minGW linker, but not the compiler. It also
-informs you of a possible package name (based on a Linux Mint
-distribution. Your distribution may use a different name, but it would
-still give a useful hint to search in your package manager).
+informs you of a possible package name (Your distribution may use a
+different name, but it would still give a useful hint to search in your
+package manager).
 
 Install the missing requirements and run crossroad again::
 
     $ crossroad --list-targets
-    crossroad, version 0.4.4
+    crossroad, version 0.8
     Available targets:
-    - w32                  Windows 32-bit
     - w64                  Windows 64-bit
-    - android-arm          Generic Android/Bionic on ARM
-
-    Uninstalled targets:
-    arm                  Generic Embedded ABI on ARM
-
-    See details about any target with `crossroad --help <TARGET>`.
+    - w32                  Windows 32-bit
+    [… more output …]
     $ crossroad -h w32
     w32: Setups a cross-compilation environment for Microsoft Windows operating systems (32-bit).
 
@@ -185,19 +185,23 @@ Display the list of commands with::
     Usage: crossroad [--help] [--version] <command> [<args>]
 
     Any crossroad environment provides the following commands:
-    configure            Run `./configure` in the following directory for your cross-compilation environment.
-    cmake                Run cmake for your cross-compilation environment.
-    ccmake               Run ccmake for your cross-compilation environment.
+    - configure            Run `./configure` in the following directory for your cross-compilation environment.
+    - cmake                Run cmake for your cross-compilation environment.
+    - ccmake               Run ccmake for your cross-compilation environment.
+    - meson                Run meson for your cross-compilation environment.
+    - scons                Run scons for your cross-compilation environment.
+    - help                 Print usage information.
 
     Crossroad's w64 environment proposes the following commands:
-    info                 Display package details.
-    install              Install the list of packages and all their dependencies.
-    list_files           List files provided by packages.
-    uninstall            Uninstall packages.
+    - info                 Display package details.
+    - install              Install the list of packages and all their dependencies.
+    - list-files           List files provided by packages.
+    - search               Search keywords in package names.
+    - uninstall            Uninstall packages.
 
-    See `crossroad help <command>` for more information on a specific command.
+    See `crossroad help <command>` for more information on an environment-specific command.
 
-Each target share some base commands (configure, cmake and ccmake) and
+Each target share some base commands (configure, cmake, ccmake, meson…) and
 may have its own custom list of commands.
 
 Windows only: Pre-Built Dependency Manager
@@ -209,27 +213,27 @@ Let's say your app requires gtk2 and zlib.
 
 First you can see if the pre-built gtk2 version is sufficient::
 
-    $ crossroad info gtk2
-    Package "mingw64-gtk2":
-            Summary: Library for Creation of Graphical User Interfaces (version 2)
-            Project URL: http://www.gtk.org/
-            Version: 2.24.18 (release: 2.2 - epoch: 0)
-            Description: GTK+ is a highly usable, feature rich toolkit for creating graphical user interfaces which boasts cross platform
-                         compatibility and an easy to use API.
-                         
-                         GTK+ was initially developed for and used by the GIMP, the GNU Image Manipulation Program. It is called the "The GIMP
-                         ToolKit" so that the origins of the project are remembered. Today it is more commonly known as GTK+ for short and is
-                         used by a large number of applications including the GNU project's GNOME desktop.
+    $ crossroad info gtk3
+    Package "mingw64-gtk3":
+        Summary: MinGW Windows GTK+ library
+        Project URL: http://www.gtk.org
+        Version: 3.22.30 (release: 2.fc29 - epoch: 0)
+        Description: GTK+ is a multi-platform toolkit for creating graphical user
+                     interfaces. Offering a complete set of widgets, GTK+ is suitable for
+                     projects ranging from small one-off tools to complete application
+                     suites.
+
+                     This package contains the MinGW Windows cross compiled GTK+ 3 library.
 
 You can do the same for zlib and if it suits you, install them::
 
-    $ crossroad install gtk2-devel zlib-devel
+    $ crossroad install gtk3 zlib
 
 All dependencies of these packages will be installed as well.
 
 In case of mistake, you can also uninstall a package with::
 
-    $ crossroad uninstall zlib-devel
+    $ crossroad uninstall zlib
 
 If ever `crossroad` dependency manager does not have your required
 package, or with inadequate version, you will have to compile it
@@ -238,9 +242,7 @@ package, or with inadequate version, you will have to compile it
 *Note: even though `crossroad` already has a nice built-in dependency
 manager, many features are still missing. In particular there is no
 dependency support on uninstall (so be aware you may end up with a
-broken prefix when you uninstall carelessly), and there is no track
-of what you already installed (so you can endlessly reinstall the
-same packages).*
+broken prefix when you uninstall carelessly).*
 
 Also the package manager will overwrite any file in the crossroad tree.
 This is by-design, and you should never consider the crossroad tree as a
@@ -249,8 +251,9 @@ binaries, which can be erased or moved over to the foreign platform at
 any time. In particular keep your code and any working material at your
 usual development location.
 
-Currently `crossroad` uses pre-compiled package repositories from the
-`openSUSE cross-platform builds`_.
+Currently `crossroad` uses pre-compiled package repositories from Fedora
+repositories. It used to pull from SUSE repositories as well, but this
+has been changed in crossroad 0.8.
 I would welcome any patch to use any other pre-compiled repositories
 alongside, provided they are safe.
 
@@ -301,17 +304,13 @@ compilation system, for Windows 64-bit.
     Do this step as many times as necessary, until the configure step (2)
     succeeds. Then go to the next step.
 
-(4) Build::
+(4) Build and install::
 
         $ make
         $ make install
 
 (5) All done! Just exit your cross-compilation environment with *ctrl-d*
     or `exit` when you are finished compiling all your programs.
-
-INFO: this has been tested with success on many GNU projects,
-cross-compiled for Windows: cairo, babl, GEGL, glib, GTK+, libpng,
-pango, freetype2, gdk-pixbuf and GIMP.
 
 CMake Project
 *************
@@ -337,9 +336,6 @@ Alternatively crossroad allows also to use the curses interface of
 The rest will be the same as a normal CMake build, and you can add
 any options to your build the usual way.
 
-INFO: This has been tested with success on allegro 5 and Exiv2,
-cross-compiled for Windows.
-
 Meson Project
 *************
 
@@ -355,22 +351,20 @@ Now you can simply build and install::
     $ ninja
     $ ninja install
 
-INFO: This has been tested with success on json-glib, cross-compiled for
-Android.
-
 Other Build System
 ******************
 
-It has not been tested with any other compilation system up to now. So
-it all depends what they require for a cross-compilation.
-But since a `crossroad` environment prepares a bunch of environment
-variables for you, and helps you download dependencies, no doubt it will
-already make your life easier.
+It has not been tested with any other compilation system up to now
+(actually there is some basic `scons` support, but this has been unused
+for years so support is probably lacking). So it all depends what they
+require for a cross-compilation.  But since a `crossroad` environment
+prepares a bunch of environment variables for you, and helps you
+download dependencies, no doubt it will already make your life easier.
 
-The `configure`, `cmake` and `ccmake` command are simple wrappers around
-any normal `./configure` script, and the `cmake` and `ccmake` commands,
-adding some default options (which crossroad prepared) for successful
-cross-compilation.
+The `configure`, `cmake`, `ccmake` and `meson` commands are simple
+wrappers around any normal `./configure` script, and the `cmake` and
+`ccmake` shell commands, adding some default options (which crossroad
+prepared) for successful cross-compilation.
 
 For instance `crossroad configure` is the equivalent of running::
 
@@ -588,7 +582,7 @@ The name is a hommage to "*cross road blues*" by **Robert Johnson**,
 which itself spawned dozens, if not hundreds, of other versions by so
 many artists.
 I myself always play this song (or rather a version with modified lyrics
-adapted to my life) in concerts.
+adapted to my experience) in concerts.
 The colored texts when you enter and exits a crossroad are excerpts of
 my modified lyrics.
 
@@ -597,10 +591,10 @@ See Also
 
 * Author's website: http://girinstud.io
 
+* Author's main projects: https://film.zemarmot.net and https://gimp.org
+
+* Support the author: https://film.zemarmot.net/en/donate
+
 * MinGW-w64 project: http://mingw-w64.sourceforge.net/
 
 * Fedora MinGW project: https://fedoraproject.org/wiki/MinGW
-
-* openSUSE cross-platform builds: https://en.opensuse.org/openSUSE:Build_Service_Concept_Windows_Support
-
-.. _openSUSE cross-platform builds: https://en.opensuse.org/openSUSE:Build_Service_Concept_Windows_Support
