@@ -329,7 +329,12 @@ if __name__ == "__main__":
         command_list += '\n- {:<20} {}'.format('configure', 'Run `./configure` in the following directory for your cross-compilation environment.')
         command_list += '\n- {:<20} {}'.format('cmake', 'Run cmake for your cross-compilation environment.')
         command_list += '\n- {:<20} {}'.format('ccmake', 'Run ccmake for your cross-compilation environment.')
-        command_list += '\n- {:<20} {}'.format('prefix', 'Return the installation prefix.')
+        command_list += '\n- {:<20} {}'.format('meson', 'Run meson for your cross-compilation environment.')
+        command_list += '\n- {:<20} {}'.format('scons', 'Run scons for your cross-compilation environment.')
+
+        #command_list += '\n- {:<20} {}'.format('prefix', 'Return the installation prefix.')
+
+        command_list += '\n- {:<20} {}'.format('help', 'Print usage information.')
         command_list += "\n\nCrossroad's {} environment proposes the following commands:".format(crossroad_platform)
         for command in commands:
             command_fun = getattr(platform, 'crossroad_' + command)
@@ -341,7 +346,7 @@ if __name__ == "__main__":
                 command_list += '\n- {:<20} {}'.format(command.replace('_', '-'), shortdesc)
             else:
                 command_list += '\n{}'.format(command)
-        command_list += '\n\nSee `crossroad help <command>` for more information on a specific command.\n'
+        command_list += '\n\nSee `crossroad help <command>` for more information on an environment-specific command.\n'
         sys.stdout.write(command_list)
         if usage_error:
             sys.exit(os.EX_USAGE)
