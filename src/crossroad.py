@@ -511,6 +511,8 @@ if __name__ == "__main__":
     target = args[0]
     shell = None
     environ = os.environ
+    if options.verbose:
+      sys.stdout.write("Base environment: {}\n".format(os.environ))
     # Initialize the environment if needed.
     if hasattr(available_platforms[target], 'init') and \
        not available_platforms[target].init(environ):
@@ -625,6 +627,7 @@ if __name__ == "__main__":
     print('\033[1;35mYou are now at the crossroads...\033[0m\n')
     if options.verbose:
       sys.stdout.write("Running: {}\n".format(' '.join(command)))
+      sys.stdout.write("Environment: {}\n".format(environ))
     shell_proc = subprocess.Popen(command, shell = False, env = environ,
                                   bufsize = 0)
     retval = shell_proc.wait()
