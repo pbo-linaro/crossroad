@@ -352,6 +352,7 @@ if __name__ == "__main__":
                 project = None
                 continue
             platform_path = os.path.join(xdg_data_home, 'crossroad/roads', platform, project)
+            build_path = os.path.join(xdg_data_home, 'crossroad/artifacts', platform, project)
             # XXX Or a --force option?
             try:
                 sys.stdout.write('Project "{}" for target {} ({}) is going to be deleted in'.format(project, platform, platform_path))
@@ -367,6 +368,7 @@ if __name__ == "__main__":
             sys.stdout.write('...\nDeleting {}...\n'.format(platform_path))
             try:
                 shutil.rmtree(platform_path)
+                shutil.rmtree(build_path)
             except:
                 sys.stderr.write('Warning: deletion of {} failed with {}\n'.format(platform_path, sys.exc_info()[0]))
             platform = None
