@@ -156,6 +156,7 @@ maintainer = '<jehan at girinstud.io>'
 usage  = 'Usage: crossroad [--help] [--version] [<TARGET> <PROJECT> [--copy=<PROJECT>] [--run=<script> [--no-exit-after-run]]\n'
 usage += '                 [--reset <TARGET> <PROJECT>] [...]] [--list-targets] [--list-projects=<TARGET>]\n'
 usage += '                 [--symlink <TARGET> <PROJECT> [<link-name>]] [--compress=<archive.zip> <TARGET> <PROJECT> [...]]\n'
+usage += '                 [--verbose]\n'
 
 platform_list = "Available targets:\n"
 for name in available_platforms:
@@ -198,6 +199,9 @@ cmdline.add_option('-s', '--symlink',
 cmdline.add_option('--reset',
     help = "effectively delete TARGET's tree. Don't do this if you have important data saved in there.",
     action = 'store_true', dest = 'reset', default = False)
+cmdline.add_option('', '--verbose',
+    help = 'Verbose output',
+    action = 'store_true', dest = 'verbose', default = False)
 
 (options, args) = cmdline.parse_args()
 
@@ -517,6 +521,8 @@ if __name__ == "__main__":
         # not necessarilly the current shell. $0 would return the
         # current shell. But is it really what we want?
         shell = os.environ['SHELL']
+        if options.verbose:
+          sys.stdout.write("Detected shell: {}\n".format(shell))
     except KeyError:
         shell = None
 
@@ -549,7 +555,10 @@ if __name__ == "__main__":
         # which may overwrite some variables. So instead I set my own bashrc,
         # where I make sure to first run the user rc files.
         bashrc_path = os.path.join(install_datadir, 'crossroad/scripts/shells/bash/bashrc.' + available_platforms[target].name)
-        command = [shell, '--rcfile', bashrc_path]
+        if options.verbose:
+            command = [shell, '--verbose', '--rcfile', bashrc_path]
+        else:
+            command = [shell, '--rcfile', bashrc_path]
     elif shell[-3:] == 'zsh':
         zdotdir = os.path.join(install_datadir, 'crossroad/scripts/shells/zsh.' + available_platforms[target].name)
         # SETUP the $ZDOTDIR env.
@@ -614,6 +623,8 @@ if __name__ == "__main__":
     environ['CROSSROAD_HOME'] = os.path.abspath(build_path)
 
     print('\033[1;35mYou are now at the crossroads...\033[0m\n')
+    if options.verbose:
+      sys.stdout.write("Running: {}\n".format(' '.join(command)))
     shell_proc = subprocess.Popen(command, shell = False, env = environ,
                                   bufsize = 0)
     retval = shell_proc.wait()
