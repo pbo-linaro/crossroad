@@ -639,6 +639,7 @@ if __name__ == "__main__":
     environ['CROSSROAD_HOME'] = os.path.abspath(build_path)
 
     print('\033[1;35mYou are now at the crossroads...\033[0m\n')
+    sys.stdout.flush()
     if options.verbose:
       sys.stdout.write("Running: {}\n".format(' '.join(command)))
       sys.stdout.write("Environment: {}\n".format(environ))
