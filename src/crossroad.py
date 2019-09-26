@@ -557,10 +557,24 @@ if __name__ == "__main__":
         # which may overwrite some variables. So instead I set my own bashrc,
         # where I make sure to first run the user rc files.
         bashrc_path = os.path.join(install_datadir, 'crossroad/scripts/shells/bash/bashrc.' + available_platforms[target].name)
-        if options.verbose:
-            command = [shell, '--verbose', '--rcfile', bashrc_path]
+
+        # Initially I was always running as --rcfile and just exiting
+        # inside our custom rcfile, but this became a problem in some
+        # environment like the gitlab-CI one. For some reason, a bash
+        # run with --rcfile was immediately returning (it looks like it
+        # was able to detect interactive calls and immediately break
+        # from these, even though this one was not really interactive
+        # because the rcfile was going to exit).
+        if options.script is not None and not options.no_exit:
+          bash_run_option = '-c'
+          bash_run_value  = '. {}'.format(bashrc_path)
         else:
-            command = [shell, '--rcfile', bashrc_path]
+          bash_run_option = '--rcfile'
+          bash_run_value  = bashrc_path
+        if options.verbose:
+            command = [shell, '--verbose', bash_run_option, bash_run_value]
+        else:
+            command = [shell, bash_run_option, bash_run_value]
     elif shell[-3:] == 'zsh':
         zdotdir = os.path.join(install_datadir, 'crossroad/scripts/shells/zsh.' + available_platforms[target].name)
         # SETUP the $ZDOTDIR env.
