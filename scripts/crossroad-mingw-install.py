@@ -343,7 +343,7 @@ def packagesDownload(packageNames, arch,
                         local_file.write(remote_package.read())
                 break
             except urllib.error.URLError as e:
-                logging.warning('Download failed: {}'.format(e.reason))
+                logging.warning('Download failed: {} (errno: {})'.format(e.reason, e.errno))
                 if e.errno == 110: # ETIMEDOUT
                     logging.warning('Retrying…')
                     retry -= 1
