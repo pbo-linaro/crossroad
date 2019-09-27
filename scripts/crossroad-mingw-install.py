@@ -338,10 +338,12 @@ def packagesDownload(packageNames, arch,
         retry = 1
         while retry >= 0:
             try:
-                urlretrieve(package['url'], localFilenameFull)
+                with urlopen(package['url'], timeout = 60.0) as remote_package:
+                    with open(localFilenameFull, 'wb') as local_file:
+                        local_file.write(remote_package.read())
                 break
             except urllib.error.URLError as e:
-                logging.warning('Download failed: {} - '.format(e.reason))
+                logging.warning('Download failed: {}'.format(e.reason))
                 if e.errno == 110: # ETIMEDOUT
                     logging.warning('Retrying…')
                     retry -= 1
