@@ -7,6 +7,7 @@
 # compliance with the License. You may obtain a copy of the License at http://www.mozilla.org/MPL/
 
 from urllib.request import urlretrieve, urlopen
+import urllib.error
 import fnmatch
 import logging
 import os.path
@@ -334,7 +335,22 @@ def packagesDownload(packageNames, arch,
         for f in os.listdir(_extractedCacheDirectory):
             if packageBaseName(f) == package_basename:
                 os.unlink(os.path.join(_extractedCacheDirectory, f))
-        urlretrieve(package['url'], localFilenameFull)
+        retry = 1
+        while retry >= 0:
+            try:
+                urlretrieve(package['url'], localFilenameFull)
+                break
+            except urllib.error.URLError as e:
+                logging.warning('Download failed: {} - '.format(e.reason))
+                if e.errno == 110: # ETIMEDOUT
+                    logging.warning('Retrying…')
+                    retry -= 1
+                    continue
+                logging.warning('Abandonning.')
+                # An error occured. Re-raise the error because
+                # continuing with a partial list of packages leads to
+                # hard-to-debug errors.
+                raise
     else:
         logging.warning('Using cached package %s', localFilenameFull)
     packageFilenames.append(package['filename'])
@@ -803,12 +819,17 @@ if __name__ == "__main__":
       installed_packages = [package.rstrip('\n') for package in f.readlines()]
   except FileNotFoundError:
     installed_packages = []
-  (packages, packages_rpm) = packagesDownload(packages, options.arch,
-                                              installed_packages,
-                                              options.withdeps,
-                                              options.srcpkg,
-                                              options.nocache,
-                                              options.force_install)
+  try:
+    (packages, packages_rpm) = packagesDownload(packages, options.arch,
+                                                installed_packages,
+                                                options.withdeps,
+                                                options.srcpkg,
+                                                options.nocache,
+                                                options.force_install)
+  except:
+    logging.error('Package download failed. Installation canceled.')
+    sys.exit(os.EX_UNAVAILABLE)
+
   if len(packages_rpm) == 0:
     # An empty package list is not an error (packagesDownload() would
     # exit directly the program upon error). It probably just means all
