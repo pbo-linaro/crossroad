@@ -190,7 +190,7 @@ def init(environ, api:int = None):
             else:
                 sys.stdout.write('keeping cached Android NDK.\n')
         if not os.path.exists(ndk_path):
-            sys.stdout.write('Dowloading Android NDK…')
+            sys.stdout.write('Downloading Android NDK…')
             (_, headers) = urllib.request.urlretrieve(download_url + ndk_filename,
                                                       filename=ndk_path,
                                                       reporthook=download_progress)

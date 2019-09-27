@@ -139,7 +139,7 @@ def OpenRepository(repositoryLocation, arch):
       # Download repository metadata (only if not already in cache)
       primary_filename = os.path.join(_repositoryCacheDirectory, os.path.splitext(os.path.basename(primary_url))[0])
       if not os.path.exists(primary_filename):
-        logging.warning('Dowloading repository data: {}'.format(repositoryLocation + primary_url))
+        logging.warning('Downloading repository data: {}'.format(repositoryLocation + primary_url))
         with urlopen(repositoryLocation + primary_url, timeout = 5.0) as primaryGzFile:
           import io, gzip
           primaryGzString = io.BytesIO(primaryGzFile.read()) #3.2: use gzip.decompress
@@ -149,7 +149,7 @@ def OpenRepository(repositoryLocation, arch):
       # Also download the filelist.
       filelist_filename = os.path.join(_repositoryCacheDirectory, os.path.splitext(os.path.basename(filelist_url))[0])
       if not os.path.exists(filelist_filename):
-        logging.warning('Dowloading repository file list.')
+        logging.warning('Downloading repository file list.')
         with urlopen(repositoryLocation + filelist_url, timeout = 5.0) as GzFile:
           import io, gzip
           GzString = io.BytesIO(GzFile.read()) #3.2: use gzip.decompress
