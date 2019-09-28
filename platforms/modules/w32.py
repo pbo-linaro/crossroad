@@ -143,7 +143,7 @@ def crossroad_install(*packages:list, src:bool = False):
     if src:
         command += ['--src']
     command += list(packages)
-    subprocess.call(command, shell=False)
+    return subprocess.call(command, shell=False)
 
 def crossroad_list_files(*packages, src:bool = False):
     '''
@@ -158,7 +158,7 @@ def crossroad_list_files(*packages, src:bool = False):
     if src:
         command += ['--src']
     command += packages
-    subprocess.call(command, shell=False)
+    return subprocess.call(command, shell=False)
 
 def crossroad_info(*packages, src:bool = False):
     '''
@@ -173,7 +173,7 @@ def crossroad_info(*packages, src:bool = False):
     if src:
         command += ['--src']
     command += list(packages)
-    subprocess.call(command, shell=False)
+    return subprocess.call(command, shell=False)
 
 def crossroad_uninstall(*packages, src:bool = False):
     '''
@@ -188,7 +188,7 @@ def crossroad_uninstall(*packages, src:bool = False):
     if src:
         command += ['--src']
     command += list(packages)
-    subprocess.call(command, shell=False)
+    return subprocess.call(command, shell=False)
 
 def crossroad_search(*keywords, src:bool = False, search_files:bool = False):
     '''
@@ -206,5 +206,4 @@ def crossroad_search(*keywords, src:bool = False, search_files:bool = False):
     if search_files:
         command += ['--list-files']
     command += list(keywords)
-    subprocess.call(command, shell=False)
-
+    return subprocess.call(command, shell=False)
