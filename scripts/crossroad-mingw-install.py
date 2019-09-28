@@ -336,6 +336,7 @@ def packagesDownload(packageNames, arch,
             if packageBaseName(f) == package_basename:
                 os.unlink(os.path.join(_extractedCacheDirectory, f))
         retry = 1
+        last_error = None
         while retry >= 0:
             try:
                 with urlopen(package['url'], timeout = 60.0) as remote_package:
@@ -347,15 +348,14 @@ def packagesDownload(packageNames, arch,
                 #if e.errno == 110: # ETIMEDOUT
                 #logging.warning('Retrying…')
                 retry -= 1
+                last_error = e
                 continue
-                #logging.warning('Abandonning.')
-                # An error occured. Re-raise the error because
-                # continuing with a partial list of packages leads to
-                # hard-to-debug errors.
-                #raise
         else:
+            # Errors occured at every attempt.
+            # Re-raise the last exception because continuing with a
+            # partial list of packages leads to hard-to-debug errors.
             logging.warning('Abandonning.')
-            continue
+            raise last_error
     else:
         logging.warning('Using cached package %s', localFilenameFull)
     packageFilenames.append(package['filename'])
