@@ -60,6 +60,17 @@ except KeyError:
     if home_dir != '~':
         xdg_data_home = os.path.join(home_dir, '.local/share')
 
+xdg_cache_home = None
+try:
+    xdg_cache_home = os.environ['XDG_CACHE_HOME']
+except KeyError:
+    home_dir = os.path.expanduser('~')
+    if home_dir != '~':
+        xdg_cache_home = os.path.join(home_dir, '.cache')
+    else:
+        sys.stderr.write('$XDG_CACHE_HOME not set, and this user has no $HOME either.\n')
+        sys.exit(os.EX_UNAVAILABLE)
+
 def get_datadirs():
     '''
     {datadir} is evaluated using XDG rules.
@@ -530,11 +541,22 @@ if __name__ == "__main__":
 
     environ['CROSSROAD_PROJECT'] = project
     # Do we have a script to run?
+    stdin_script = None
     if options.script is not None:
-        if not os.path.isfile(options.script):
+        if options.script == '-':
+            stdin_contents = sys.stdin.readlines()
+            stdin_script   = os.path.join(xdg_cache_home, 'crossroad',
+                                          'script-{}-{}.stdin'.format(available_platforms[target].name,
+                                                                      project))
+            stdin_script = os.path.abspath(stdin_script)
+            with open(stdin_script, 'w') as f:
+                f.writelines(stdin_contents)
+            environ['CROSSROAD_SCRIPT'] = stdin_script
+        elif not os.path.isfile(options.script):
             sys.stderr.write('The script "{}" does not exist.\n'.format(options.script))
             sys.exit(os.EX_NOINPUT)
-        environ['CROSSROAD_SCRIPT'] = os.path.abspath(options.script)
+        else:
+            environ['CROSSROAD_SCRIPT'] = os.path.abspath(options.script)
         if not options.no_exit:
             environ['CROSSROAD_SCRIPT_EXIT'] = 'yes'
     elif options.no_exit:
@@ -646,6 +668,8 @@ if __name__ == "__main__":
     shell_proc = subprocess.Popen(command, shell = False, env = environ,
                                   bufsize = 0)
     retval = shell_proc.wait()
+    if stdin_script is not None:
+        os.unlink (stdin_script)
     print('\033[1;35mYou can run, you can run.\nTell your friend boy Greg T.\nthat you were standing at the crossroads.')
     print('I believe you were sinking down.\033[0m\n')
     sys.exit(retval)
