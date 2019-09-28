@@ -344,15 +344,18 @@ def packagesDownload(packageNames, arch,
                 break
             except urllib.error.URLError as e:
                 logging.warning('Download failed: {} (errno: {})'.format(e.reason, e.errno))
-                if e.errno == 110: # ETIMEDOUT
-                    logging.warning('Retrying…')
-                    retry -= 1
-                    continue
-                logging.warning('Abandonning.')
+                #if e.errno == 110: # ETIMEDOUT
+                #logging.warning('Retrying…')
+                retry -= 1
+                continue
+                #logging.warning('Abandonning.')
                 # An error occured. Re-raise the error because
                 # continuing with a partial list of packages leads to
                 # hard-to-debug errors.
-                raise
+                #raise
+        else:
+            logging.warning('Abandonning.')
+            continue
     else:
         logging.warning('Using cached package %s', localFilenameFull)
     packageFilenames.append(package['filename'])
