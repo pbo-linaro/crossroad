@@ -136,4 +136,9 @@ done;
 export PYTHONPATH=$CROSSROAD_PREFIX/share/glib-2.0/:$PYTHONPATH
 
 # g-ir-scanner looks in XDG_DATA_DIRS/gir-1.0
-export XDG_DATA_DIRS="$CROSSROAD_PREFIX/share:$XDG_DATA_DIRS"
+# If XDG_DATA_DIRS is set, many software won't add the default values
+# (i.e. "/usr/local/share/:/usr/share/") which breaks some native tools
+# (for instance glib's g_content_type_guess() will fail mime types
+# guesses). Since cross-platform GObject Introspection won't work
+# properly yet, I temporarily disable this env value setting.
+#export XDG_DATA_DIRS="$CROSSROAD_PREFIX/share:$XDG_DATA_DIRS:/usr/local/share/:/usr/share/"
