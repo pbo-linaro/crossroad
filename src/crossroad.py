@@ -563,13 +563,18 @@ if __name__ == "__main__":
         sys.stderr.write('The --no-exit-after-run option is meaningless without --script being set. Exiting.\n')
         sys.exit(os.EX_NOINPUT)
 
-    if shell is None or (shell[-4:] != 'bash' and shell[-3:] != 'zsh'):
+    if shell is None:
+        sys.stderr.write("Info: no detected shell.\n")
+    elif shell[-4:] != 'bash' and shell[-3:] != 'zsh':
         sys.stderr.write("Warning: sorry, only bash and zsh are supported right now (detected by $SHELL environment variable).\n")
+        shell = None
+
+    if shell is None:
         shell = shutil.which('bash')
         if shell is None:
             shell = shutil.which('zsh')
         if shell is None:
-            sys.stderr.write(" Neither bash nor zsh were found in your path.\n")
+            sys.stderr.write(" Error: neither bash nor zsh were found in your path.\n")
             sys.exit(os.EX_UNAVAILABLE)
         sys.stderr.write(" Defaulting to {}.\n".format(shell))
         sys.stderr.flush()
