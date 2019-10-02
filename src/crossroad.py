@@ -544,8 +544,11 @@ if __name__ == "__main__":
     stdin_script = None
     if options.script is not None:
         if options.script == '-':
+            cache_dir = os.path.join(xdg_cache_home, 'crossroad')
+            os.makedirs(cache_dir, exist_ok = True)
+
             stdin_contents = sys.stdin.readlines()
-            stdin_script   = os.path.join(xdg_cache_home, 'crossroad',
+            stdin_script   = os.path.join(cache_dir,
                                           'script-{}-{}.stdin'.format(available_platforms[target].name,
                                                                       project))
             stdin_script = os.path.abspath(stdin_script)
