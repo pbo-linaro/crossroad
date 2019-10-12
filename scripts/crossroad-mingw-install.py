@@ -335,11 +335,11 @@ def packagesDownload(packageNames, arch,
         for f in os.listdir(_extractedCacheDirectory):
             if packageBaseName(f) == package_basename:
                 os.unlink(os.path.join(_extractedCacheDirectory, f))
-        retry = 1
+        retry = 4
         last_error = None
         while retry >= 0:
             try:
-                with urlopen(package['url'], timeout = 60.0) as remote_package:
+                with urlopen(package['url'], timeout = 120.0) as remote_package:
                     with open(localFilenameFull, 'wb') as local_file:
                         local_file.write(remote_package.read())
                 break
