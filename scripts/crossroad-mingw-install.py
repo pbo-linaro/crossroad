@@ -50,6 +50,7 @@ artifacts = None
 try:
     artifacts = os.path.abspath(os.environ['CROSSROAD_HOME'])
     installed_packages_file = os.path.join(artifacts, 'crossroad-mingw-install.installed')
+    masked_packages_file = os.path.join(artifacts, 'crossroad-mingw-install.masked')
 except KeyError:
     sys.stderr.write('$CROSSROAD_HOME was not set!\n')
     sys.exit(os.EX_UNAVAILABLE)
@@ -286,6 +287,7 @@ def packageBaseName(rpm):
 
 def packagesDownload(packageNames, arch,
                      installed_packages,
+                     masked_packages,
                      withDependencies = False,
                      srcpkg           = False,
                      nocache          = False,
@@ -300,9 +302,13 @@ def packagesDownload(packageNames, arch,
   packageFilenames = []
   while len(packageNames) > 0:
     packName = packageNames.pop()
-    if not force_install and packName in installed_packages:
-      logging.warning('Package "{}" already installed. Skipping.'.format(packName))
-      continue
+    if not force_install:
+      if packName in installed_packages:
+        logging.warning('Package "{}" already installed. Skipping.'.format(packName))
+        continue
+      elif packName in masked_packages:
+        logging.warning('Package "{}" is masked. Skipping.'.format(packName))
+        continue
     package = _findPackage(packName, arch, srcpkg)
     if package is None:
       logging.error('Package %s not found', packName)
@@ -575,6 +581,8 @@ def GetOptions():
   packageOptions.add_option("--search", action="store_true", dest="search", default=False, help="Search packages.")
   packageOptions.add_option("--info", action="store_true", dest="info", default=False, help="Output information about a package")
   packageOptions.add_option("--uninstall", action="store_true", dest="uninstall", default=False, help="Uninstall the list of packages")
+  packageOptions.add_option("--mask", action="store_true", dest="mask", default=False, help="Mask the list of packages")
+  packageOptions.add_option("--unmask", action="store_true", dest="unmask", default=False, help="Unmask the list of packages")
   packageOptions.add_option("--force-install", action="store_true",
                             dest="force_install",
                             default=False, help="Force already installed package re-installation")
@@ -792,6 +800,104 @@ if __name__ == "__main__":
         logging.error('Exiting without uninstalling.')
         sys.exit(os.EX_NOINPUT)
 
+  if options.mask:
+    if len(packages) == 0:
+        logging.error('Please provide at least one package to mask.\n')
+        sys.exit(os.EX_USAGE)
+    if options.srcpkg:
+        package_type = 'Source package'
+    else:
+        package_type = 'Package'
+    mask_list = {}
+    for package in packages:
+      (real_name, _) = get_package_files (package, options)
+      if real_name is None:
+        sys.stderr.write('{} "{}" unknown.\n'.format(package_type, package))
+        alt_packages = search_packages(package, options.arch, options.srcpkg)
+        if len(alt_packages) > 0:
+          logging.error('\tDid you mean:')
+          for alt_pkg in alt_packages:
+            logging.error('\t- {}'.format(re.sub('^mingw(32|64)-', '', alt_pkg)))
+      else:
+        mask_list[package] = real_name
+
+    # Do we still have a positive number of packages?
+    if len(mask_list) > 0:
+        try:
+          with open(masked_packages_file) as f:
+            masked_packages = [package.rstrip('\n') for package in f.readlines()]
+        except FileNotFoundError:
+          masked_packages = []
+
+        for package in mask_list:
+          real_name = mask_list[package]
+          # I delete any cached rpm and cpio.
+          for f in os.listdir(_packageCacheDirectory):
+            if f[:len(real_name)] == real_name:
+              os.unlink(os.path.join(_packageCacheDirectory, f))
+          for f in os.listdir(_extractedCacheDirectory):
+            if f[:len(real_name)] == real_name:
+              os.unlink(os.path.join(_extractedCacheDirectory, f))
+          if real_name in masked_packages:
+            sys.stdout.write('Package {} already masked. Skipping.\n'.format(package))
+          else:
+            masked_packages += [ real_name ]
+
+        with open(masked_packages_file, 'w') as f:
+          f.writelines('{}\n'.format(package) for package in masked_packages)
+
+        sys.stdout.write('Crossroad masked the following packages: {}\n'.format(" ".join(mask_list)))
+        sys.stdout.flush()
+        sys.exit(os.EX_OK)
+    else:
+        logging.error('Exiting without masking anything.')
+        sys.exit(os.EX_NOINPUT)
+
+  if options.unmask:
+    if len(packages) == 0:
+        logging.error('Please provide at least one package to unmask.\n')
+        sys.exit(os.EX_USAGE)
+    if options.srcpkg:
+        package_type = 'Source package'
+    else:
+        package_type = 'Package'
+    unmask_list = {}
+    for package in packages:
+      (real_name, _) = get_package_files (package, options)
+      if real_name is None:
+        sys.stderr.write('{} "{}" unknown.\n'.format(package_type, package))
+        alt_packages = search_packages(package, options.arch, options.srcpkg)
+        if len(alt_packages) > 0:
+          logging.error('\tDid you mean:')
+          for alt_pkg in alt_packages:
+            logging.error('\t- {}'.format(re.sub('^mingw(32|64)-', '', alt_pkg)))
+      else:
+        unmask_list[package] = real_name
+
+    # Do we still have a positive number of packages?
+    if len(unmask_list) > 0:
+        try:
+          with open(masked_packages_file) as f:
+            masked_packages = [package.rstrip('\n') for package in f.readlines()]
+        except FileNotFoundError:
+          masked_packages = []
+
+        for package in unmask_list:
+          real_name = unmask_list[package]
+          if real_name not in masked_packages:
+            sys.stdout.write('Package {} is not masked. Skipping.\n'.format(package))
+          else:
+            masked_packages.remove(real_name)
+
+        with open(masked_packages_file, 'w') as f:
+          f.writelines('{}\n'.format(package) for package in masked_packages)
+
+        sys.stdout.write('Crossroad unmasked the following packages: {}\n'.format(" ".join(unmask_list)))
+        sys.stdout.flush()
+        sys.exit(os.EX_OK)
+    else:
+        logging.error('Exiting without masking anything.')
+        sys.exit(os.EX_NOINPUT)
   if options.clean:
     CleanExtracted()
 
@@ -825,8 +931,14 @@ if __name__ == "__main__":
   except FileNotFoundError:
     installed_packages = []
   try:
+    with open(masked_packages_file) as f:
+      masked_packages = [package.rstrip('\n') for package in f.readlines()]
+  except FileNotFoundError:
+    masked_packages = []
+  try:
     (packages, packages_rpm) = packagesDownload(packages, options.arch,
                                                 installed_packages,
+                                                masked_packages,
                                                 options.withdeps,
                                                 options.srcpkg,
                                                 options.nocache,

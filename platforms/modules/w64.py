@@ -207,3 +207,33 @@ def crossroad_search(*keywords, src:bool = False, search_files:bool = False):
         command += ['--list-files']
     command += list(keywords)
     return subprocess.call(command, shell=False)
+
+def crossroad_mask(*packages, src:bool = False):
+    '''
+    Mask packages.
+    '''
+    if len(packages) == 0:
+        sys.stderr.write('Please provide at least one package name.\n')
+        sys.exit(os.EX_USAGE)
+
+    command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
+               '-a', name, '--mask']
+    if src:
+        command += ['--src']
+    command += list(packages)
+    return subprocess.call(command, shell=False)
+
+def crossroad_unmask(*packages, src:bool = False):
+    '''
+    Unmask packages.
+    '''
+    if len(packages) == 0:
+        sys.stderr.write('Please provide at least one package name.\n')
+        sys.exit(os.EX_USAGE)
+
+    command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
+               '-a', name, '--unmask']
+    if src:
+        command += ['--src']
+    command += list(packages)
+    return subprocess.call(command, shell=False)
