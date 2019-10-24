@@ -431,8 +431,17 @@ if __name__ == "__main__":
             for dirpath, dirnames, filenames in os.walk(project_path):
               for filename in filenames:
                 file_path = os.path.join(dirpath, filename)
-                archive_file.write(file_path,
-                                   arcname = file_path.replace(archive_root, ''))
+                try:
+                  archive_file.write(file_path,
+                                     arcname = file_path.replace(archive_root, ''))
+                except (PermissionError, FileNotFoundError) as err:
+                  # These seem to happen with some special files (for
+                  # instance, I had these with wine device files) or
+                  # broken symlinks. Let's not break the whole
+                  # archiving, yet output warning messages.
+                  sys.stderr.write('Warning: {} skipped ({}).\n'.format(file_path, err))
+                  sys.stderr.flush()
+
         sys.stdout.write('Archive file {} completed.\n'.format(options.archive))
         archive_file.close()
         sys.exit(os.EX_OK)
