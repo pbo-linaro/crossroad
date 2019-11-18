@@ -142,3 +142,23 @@ export PYTHONPATH=$CROSSROAD_PREFIX/share/glib-2.0/:$PYTHONPATH
 # guesses). Since cross-platform GObject Introspection won't work
 # properly yet, I temporarily disable this env value setting.
 #export XDG_DATA_DIRS="$CROSSROAD_PREFIX/share:$XDG_DATA_DIRS:/usr/local/share/:/usr/share/"
+
+ccd() {
+  if [ ! -d "$CROSSROAD_HOME/$1" ]; then
+    if [ -a "$CROSSROAD_HOME/$1" ]; then
+      echo "Path $CROSSROAD_HOME/$1 is not a directory";
+      return 1;
+    else
+      read -p "Folder $CROSSROAD_HOME/$1 does not exist. Do you want to create it? [yN] " answer
+      case $answer in
+        [yY]* ) mkdir -p "$CROSSROAD_HOME/$1";;
+        * ) echo "Directory creation cancelled";;
+      esac
+    fi
+  fi
+  if [ -d "$CROSSROAD_HOME/$1" ]; then
+    cd $CROSSROAD_HOME/$1
+    return 0;
+  fi
+  return 2;
+}
