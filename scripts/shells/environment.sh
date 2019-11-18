@@ -144,20 +144,53 @@ export PYTHONPATH=$CROSSROAD_PREFIX/share/glib-2.0/:$PYTHONPATH
 #export XDG_DATA_DIRS="$CROSSROAD_PREFIX/share:$XDG_DATA_DIRS:/usr/local/share/:/usr/share/"
 
 ccd() {
-  if [ ! -d "$CROSSROAD_HOME/$1" ]; then
-    if [ -a "$CROSSROAD_HOME/$1" ]; then
-      echo "Path $CROSSROAD_HOME/$1 is not a directory";
+  # Yes == 1 / No == -1 / Ask == 0
+  yesno=0
+  setdir=0
+  dir=""
+  nooption=0
+  for arg in "$@"
+  do
+    case "$arg" in
+      "-y"|"--yes" ) if [ $nooption -eq 0 ]; then
+                       yesno=1
+                     else
+                       setdir=1
+                     fi;;
+      "-n"|"--no" ) yesno=-1;;
+      * ) setdir=1;;
+    esac
+    if [ $setdir -eq 1 ]; then
+      if [ "x$dir" != "x" ]; then
+        echo "Usage: ccd: too many arguments '$dir'"
+        return 3
+      else
+        dir="$arg"
+      fi
+    fi
+    setdir=0
+  done
+  if [ ! -d "$CROSSROAD_HOME/$dir" ]; then
+    if [ -a "$CROSSROAD_HOME/$dir" ]; then
+      echo "Path $CROSSROAD_HOME/$dir is not a directory";
       return 1;
     else
-      read -p "Folder $CROSSROAD_HOME/$1 does not exist. Do you want to create it? [yN] " answer
-      case $answer in
-        [yY]* ) mkdir -p "$CROSSROAD_HOME/$1";;
-        * ) echo "Directory creation cancelled";;
-      esac
+      if [ $yesno -eq 0 ]; then
+        read -p "Folder $CROSSROAD_HOME/$dir does not exist. Do you want to create it? [yN] " answer
+        case $answer in
+          [yY]* ) yesno=1;;
+          * ) yesno=0;;
+        esac
+      fi
+      if [ $yesno -eq 1 ]; then
+        mkdir -p "$CROSSROAD_HOME/$dir"
+      else
+        echo "Directory creation cancelled"
+      fi
     fi
   fi
-  if [ -d "$CROSSROAD_HOME/$1" ]; then
-    cd $CROSSROAD_HOME/$1
+  if [ -d "$CROSSROAD_HOME/$dir" ]; then
+    cd -- $CROSSROAD_HOME/$dir
     return 0;
   fi
   return 2;
