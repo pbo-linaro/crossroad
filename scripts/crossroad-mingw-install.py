@@ -21,9 +21,6 @@ import subprocess
 import glob
 import marshal
 
-fedora_repo = "https://download.fedoraproject.org/pub/fedora/linux/releases/30/Everything/x86_64/os/"
-suse_repo = "http://download.opensuse.org/repositories/windows:/mingw:/ARCH/openSUSE_Leap_42.3/"
-
 _packages = []
 _package_filelists = {}
 _package_src_filelists = {}
@@ -59,6 +56,47 @@ _packageCacheDirectory = os.path.join(xdg_cache_home, 'crossroad', 'package')
 _repositoryCacheDirectory = os.path.join(xdg_cache_home, 'crossroad', 'repository')
 _extractedCacheDirectory = os.path.join(xdg_cache_home, 'crossroad', 'extracted')
 _extractedFilesDirectory = os.path.join(xdg_cache_home, 'crossroad', 'prefix')
+
+repositories = {
+  'fedora30':
+    'https://download.fedoraproject.org/pub/fedora/linux/releases/30/Everything/x86_64/os/',
+  'fedora31':
+    'https://download.fedoraproject.org/pub/fedora/linux/releases/31/Everything/x86_64/os/',
+  'suse':
+    'http://download.opensuse.org/repositories/windows:/mingw:/ARCH/openSUSE_Leap_42.3/'
+}
+
+def detect_distribution_repo (options):
+  '''
+  Detect the current repository distribution so that you install
+  libraries compiled by the used compiler by default.
+  When your distribution has no Mingw-w64 packages, just use the last
+  Fedora repository. You may encounter build issues, but at least you
+  tried!
+  '''
+
+  # Default to Fedora 31 repo.
+  repo = repositories['fedora31']
+
+  if options.repo is not None:
+    if options.repo in repositories:
+      repo = repositories['options.repo']
+    else:
+      logging.error('"{}" is not a known repository.\n'.format(options.repo))
+      sys.exit(os.EX_USAGE)
+  elif os.path.isfile('/etc/fedora-release'):
+    release = None
+    with open('/etc/fedora-release', 'r') as f:
+      release = f.read().strip()
+      if release.find('Fedora release 30') != -1:
+        repo = repositories['fedora30']
+  elif os.path.isfile('/etc/SuSE-release'):
+    repo = repositories['suse']
+    if options.arch == 'w32':
+      repo = repo.replace('ARCH', 'win32');
+    else:
+      repo = repo.replace('ARCH', 'win64');
+  return repo
 
 def get_package_files (package, options):
     '''
@@ -561,7 +599,7 @@ def GetOptions():
 
   # Options specifiying download repository
   default_arch = "w64"
-  default_repo = "fedora"
+  default_repo = None
   repoOptions = OptionGroup(parser, "Specify download repository")
   repoOptions.add_option("-a", "--arch", dest="arch", default=default_arch,
                          metavar="ARCH", help="w32 or w64 [%default]")
@@ -618,9 +656,6 @@ if __name__ == "__main__":
   if options.arch != 'w32' and options.arch != 'w64':
     logging.error('"{}" is not a known mingw arch.\n'.format(options.arch))
     sys.exit(os.EX_USAGE)
-  if options.repo != 'fedora' and options.repo != 'suse':
-    logging.error('"{}" is not a known repository.\n'.format(options.repo))
-    sys.exit(os.EX_USAGE)
 
   # Update the cache directories.
   _packageCacheDirectory = os.path.join(_packageCacheDirectory, options.arch)
@@ -628,17 +663,8 @@ if __name__ == "__main__":
   _extractedCacheDirectory = os.path.join(_extractedCacheDirectory, options.arch)
   _extractedFilesDirectory = os.path.join(_extractedFilesDirectory, options.arch)
 
-  # Update the project to the URL naming.
-  if options.repo == 'fedora':
-    # Always use the x86_64 URL on the Fedora repo.
-    repo = fedora_repo
-  else:
-    if options.arch == 'w32':
-      repo = suse_repo.replace('ARCH', 'win32');
-    else:
-      repo = suse_repo.replace('ARCH', 'win64');
-
   # Open repository
+  repo = detect_distribution_repo(options)
   try:
     OpenRepository(repo, options.arch)
   except Exception as e:
