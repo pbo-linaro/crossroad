@@ -48,6 +48,7 @@ try:
     artifacts = os.path.abspath(os.environ['CROSSROAD_HOME'])
     installed_packages_file = os.path.join(artifacts, 'crossroad-mingw-install.installed')
     masked_packages_file = os.path.join(artifacts, 'crossroad-mingw-install.masked')
+    repository_file = os.path.join(artifacts, 'crossroad-mingw-install.repository')
 except KeyError:
     sys.stderr.write('$CROSSROAD_HOME was not set!\n')
     sys.exit(os.EX_UNAVAILABLE)
@@ -75,28 +76,51 @@ def detect_distribution_repo (options):
   tried!
   '''
 
-  # Default to Fedora 31 repo.
-  repo = repositories['fedora31']
+  reponame = None
 
   if options.repo is not None:
+    # A repo has been specified on this command, bypass settings.
     if options.repo in repositories:
-      repo = repositories['options.repo']
+      reponame = options.repo
     else:
       logging.error('"{}" is not a known repository.\n'.format(options.repo))
       sys.exit(os.EX_USAGE)
-  elif os.path.isfile('/etc/fedora-release'):
-    release = None
-    with open('/etc/fedora-release', 'r') as f:
-      release = f.read().strip()
-      if release.find('Fedora release 30') != -1:
-        repo = repositories['fedora30']
-  elif os.path.isfile('/etc/SuSE-release'):
-    repo = repositories['suse']
+  else:
+    # Look up stored settings.
+    try:
+      with open(repository_file, 'r') as f:
+        contents = f.read().strip()
+        if contents in repositories:
+          reponame = contents
+    except FileNotFoundError:
+      pass
+
+    if reponame is None:
+      # Finally auto-detect.
+      if os.path.isfile('/etc/fedora-release'):
+        release = None
+        with open('/etc/fedora-release', 'r') as f:
+          release = f.read().strip()
+          if release.find('Fedora release 30') != -1:
+            reponame = 'fedora30'
+          elif release.find('Fedora release 31') != -1:
+            reponame = 'fedora31'
+      elif os.path.isfile('/etc/SuSE-release'):
+        reponame = 'suse'
+
+  # Default to Fedora 31 repo.
+  if reponame is None:
+    reponame = 'fedora31'
+
+  repo = repositories[reponame]
+  # Unlike Fedora which has both 32-bit and 64-bit Windows package in a
+  # same repository, SUSE provides 2 repositories.
+  if reponame == 'suse':
     if options.arch == 'w32':
       repo = repo.replace('ARCH', 'win32');
     else:
       repo = repo.replace('ARCH', 'win64');
-  return repo
+  return reponame, repo
 
 def get_package_files (package, options):
     '''
@@ -621,6 +645,8 @@ def GetOptions():
   packageOptions.add_option("--uninstall", action="store_true", dest="uninstall", default=False, help="Uninstall the list of packages")
   packageOptions.add_option("--mask", action="store_true", dest="mask", default=False, help="Mask the list of packages")
   packageOptions.add_option("--unmask", action="store_true", dest="unmask", default=False, help="Unmask the list of packages")
+  packageOptions.add_option("--list-sources", action="store_true", dest="list_sources", default=False, help="List package sources")
+  packageOptions.add_option("--set-source", action="store_true", dest="set_source", default=False, help="Set package source")
   packageOptions.add_option("--force-install", action="store_true",
                             dest="force_install",
                             default=False, help="Force already installed package re-installation")
@@ -642,10 +668,6 @@ def GetOptions():
 
   (options, args) = parser.parse_args()
 
-  if len(args) == 0:
-    parser.print_help(file=sys.stderr)
-    sys.exit(1)
-
   return (options, args)
 
 if __name__ == "__main__":
@@ -663,8 +685,31 @@ if __name__ == "__main__":
   _extractedCacheDirectory = os.path.join(_extractedCacheDirectory, options.arch)
   _extractedFilesDirectory = os.path.join(_extractedFilesDirectory, options.arch)
 
+  reponame, repo = detect_distribution_repo(options)
+
+  if options.list_sources:
+    sys.stdout.write('Available repository sources: {}, autodetect.\n'.format(', '.join(repositories)))
+    sys.stdout.write('Currently selected repository: {}.\n'.format(reponame))
+    sys.exit(os.EX_OK)
+  if options.set_source:
+    if len(args) != 1:
+      sys.stderr.write('Error: only one source repository expected, {} provided.\n'.format(len(args)))
+      sys.exit(os.EX_USAGE)
+    reponame = args[0]
+    if reponame == 'autodetect':
+      try:
+        os.unlink (repository_file)
+      except FileNotFoundError:
+        pass
+      sys.exit(os.EX_OK)
+    elif reponame not in repositories:
+      sys.stderr.write('Error: unknown package source "{}".\n'.format(reponame))
+      sys.exit(os.EX_DATAERR)
+    with open(repository_file, 'w') as f:
+      f.write(reponame)
+    sys.exit(os.EX_OK)
+
   # Open repository
-  repo = detect_distribution_repo(options)
   try:
     OpenRepository(repo, options.arch)
   except Exception as e:

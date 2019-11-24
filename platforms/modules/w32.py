@@ -237,3 +237,16 @@ def crossroad_unmask(*packages, src:bool = False):
         command += ['--src']
     command += list(packages)
     return subprocess.call(command, shell=False)
+
+def crossroad_source(set:str = None):
+    '''
+    List or set repository sources.
+    '''
+    if set is None:
+      command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
+                 '-a', name, '--list-sources']
+      return subprocess.call(command, shell=False)
+    else:
+      command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
+                 '-a', name, '--set-source', set]
+      return subprocess.call(command, shell=False)
