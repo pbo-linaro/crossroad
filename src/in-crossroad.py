@@ -122,6 +122,7 @@ if __name__ == "__main__":
     command_name = None
     command_args = []
     command_kwargs = {}
+    command_kwarg_no_value = None
     usage_error = False
     show_help = False
     if crossroad_platform == 'arm' or \
@@ -136,10 +137,32 @@ if __name__ == "__main__":
                 command_fun = getattr(platform, 'crossroad_' + command)
                 (args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations) = inspect.getfullargspec(command_fun)
                 command_kwarg = arg[2:].replace('-', '_')
-                if command_kwarg not in kwonlyargs:
+                command_arg = None
+                command_arg_value = None
+                if command_kwarg.find('=') != -1:
+                  eq_pos = command_kwarg.find('=')
+                  command_arg = command_kwarg[:eq_pos]
+                  command_arg_value = command_kwarg[eq_pos+1:]
+                  command_kwarg = None
+                else:
+                  command_arg = command_kwarg
+                if command_kwarg is not None and command_kwarg in kwonlyargs:
+                    command_kwargs[command_kwarg] = True
+                elif command_arg is not None and command_arg in args:
+                    if command_arg_value is not None:
+                      command_kwargs[command_arg] = command_arg_value
+                    else:
+                      command_kwarg_no_value = command_arg
+                else:
                     command_usage = '{} {}'.format(program, command_name)
                     for positional_arg in args:
-                        command_usage += ' <{}>'.format(positional_arg)
+                        sig = inspect.signature(command_fun)
+                        if sig.parameters[positional_arg].kind == inspect.Parameter.POSITIONAL_OR_KEYWORD and \
+                           sig.parameters[positional_arg].annotation == str:
+                          # Process it as a keyword argument.
+                          command_usage += ' [--{}={}]'.format(positional_arg, sig.parameters[positional_arg].default)
+                        else:
+                          command_usage += ' <{}>'.format(positional_arg)
                     if varargs is not None:
                         command_usage += ' <{}...>'.format(varargs)
                     for option in kwonlyargs:
@@ -150,9 +173,11 @@ if __name__ == "__main__":
                         command_usage += '\n'
                     sys.stderr.write(command_usage)
                     sys.exit(os.EX_USAGE)
-                command_kwargs[command_kwarg] = True
             else:
-                command_args.append(arg)
+                if command_kwarg_no_value is not None:
+                    command_kwargs[command_kwarg_no_value] = arg
+                else:
+                    command_args.append(arg)
             continue
         elif show_help:
             if arg.replace('-', '_') in commands:
