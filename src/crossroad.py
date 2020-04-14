@@ -533,6 +533,13 @@ if __name__ == "__main__":
     environ = os.environ
     if options.verbose:
       sys.stdout.write("Base environment: {}\n".format(os.environ))
+
+    env_path = os.path.join(xdg_data_home, 'crossroad/roads', available_platforms[target].name, project)
+    build_path = os.path.join(xdg_data_home, 'crossroad/artifacts', available_platforms[target].name, project)
+
+    environ['CROSSROAD_PREFIX'] = os.path.abspath(env_path)
+    environ['CROSSROAD_HOME'] = os.path.abspath(build_path)
+
     # Initialize the environment if needed.
     if hasattr(available_platforms[target], 'init') and \
        not available_platforms[target].init(environ):
@@ -631,8 +638,6 @@ if __name__ == "__main__":
         sys.stderr.write("Unexpected error. Please contact the developer.\n")
         sys.exit(os.EX_SOFTWARE)
 
-    env_path = os.path.join(xdg_data_home, 'crossroad/roads', available_platforms[target].name, project)
-    build_path = os.path.join(xdg_data_home, 'crossroad/artifacts', available_platforms[target].name, project)
     if not os.path.exists(env_path):
         try:
             sys.stdout.write('Creating project "{}" for target {}...'.format(project, available_platforms[target].name))
@@ -673,9 +678,6 @@ if __name__ == "__main__":
         except NotADirectoryError:
             sys.stderr.write('"{}" exists but is not a directory.  Aborting.\n'.format(build_path))
             sys.exit(os.EX_CANTCREAT)
-
-    environ['CROSSROAD_PREFIX'] = os.path.abspath(env_path)
-    environ['CROSSROAD_HOME'] = os.path.abspath(build_path)
 
     print('\033[1;35mYou are now at the crossroads...\033[0m\n')
     sys.stdout.flush()
