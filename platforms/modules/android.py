@@ -139,13 +139,28 @@ def init(environ, api:int = None):
             sys.stderr.write('$XDG_CACHE_HOME not set, and this user has no $HOME either.\n')
             sys.exit(os.EX_UNAVAILABLE)
     # Set the platform/API level.
+    artifacts = environ['CROSSROAD_HOME']
+    api_file = os.path.join(artifacts, '.crossroad')
+    os.makedirs(api_file, exist_ok = True)
+    api_file = os.path.join(api_file, 'android_api')
+    api_saved = False
     if api is None:
-        api = input('Specify target Android API: ')
+        if not os.path.exists(api_file):
+            api = input('Specify target Android API: ')
+        else:
+            with open(api_file) as f:
+                api = f.read()
+                api_saved = True
     api = api.strip()
     if api not in valid_apis:
+        if api_saved:
+            os.unlink(api_file)
         sys.stderr.write('API "{}" is not available. Valid Android APIs: '.format(api))
         sys.stderr.write(', '.join(valid_apis) + '\n')
         sys.exit(os.EX_UNAVAILABLE)
+    else:
+        with open(api_file, 'w') as f:
+            f.write(api)
     # Create the directory.
     android_dir = os.path.join(xdg_cache_home, 'crossroad', 'android')
     toolchain_dir = os.path.join(android_dir, 'toolchain')
