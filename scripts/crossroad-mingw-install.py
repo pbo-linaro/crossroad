@@ -627,6 +627,7 @@ def packagesExtract(packageFilenames, srcpkg=False):
   return True
 
 def move_files(from_file, to_file):
+    regexp = re.compile(b'/usr/[^/]+-mingw32/sys-root/mingw')
     if os.path.isdir(from_file) and not os.path.islink(from_file):
         # A normal directory.
         # Directory symlinks will be later fixed by fix_package_symlinks().
@@ -653,78 +654,24 @@ def move_files(from_file, to_file):
             os.unlink (to_file)
             shutil.move(from_file, to_file)
     else:
-        if to_file[-3:] == '.pc':
-            try:
-                fd = open(from_file, 'r')
-                contents = fd.read()
-                fd.close()
-                contents = re.sub(r'/usr/[^/]+-mingw32/sys-root/mingw', prefix, contents, count=0, flags=re.MULTILINE)
-            except IOError:
-                sys.stderr.write('File "{}" could not be read.\n'.format(from_file))
-                sys.exit(os.EX_CANTCREAT)
-            try:
-                # XXX shouldn't I os.unlink it first, just in case it does exist?
-                fd = open(to_file, 'w')
-                fd.write(contents)
-                fd.close()
-            except IOError:
-                sys.stderr.write('File {} cannot be written.'.format(to_file))
-                sys.exit(os.EX_CANTCREAT)
-            # Since it's a move, unlink the original.
-            os.unlink (from_file)
-        elif (mimetypes.guess_type(from_file)[0] is not None and mimetypes.guess_type(from_file)[0][:5] == 'text/') or \
-             (shutil.which('mimetype') is not None and
-              (subprocess.check_output(['mimetype', '-b', from_file], universal_newlines=True)[:5] == 'text/' or \
-               subprocess.check_output(['mimetype', '-b', from_file], universal_newlines=True) == 'application/x-shared-library-la')):
-            # I had the case with "bin/gdbus-codegen" which has the prefix inside the script.
-            # mimetypes python module would not work because it only relies on extension.
+        if to_file[-3:] == '.pc'     or \
+           to_file[-3:] == '.la'     or \
+           to_file[-3:] == '.py'     or \
+           to_file[-7:] == '-config' or \
+           (to_file.endswith('gdbus-codegen')    and \
+            shutil.which('mimetype') is not None and \
+            subprocess.check_output(['mimetype', '-b', from_file], universal_newlines=True)[:5] == 'text/'):
+            # XXX I had the case with "bin/gdbus-codegen" which has the prefix inside the script.
+            # XXX mimetypes python module would not always work because it only relies on extension.
             # Use mimetype command if possible instead.
-            # XXX should I also want to check binary files?
             try:
-                fd = open(from_file, 'r')
-                contents = fd.read()
-                fd.close()
-                contents = re.sub(r'/usr/[^/]+-mingw32/sys-root/mingw', prefix, contents, count=0, flags=re.MULTILINE)
-            except (IOError, UnicodeDecodeError):
-                #sys.stderr.write('File "{}" could not be read.\n'.format(from_file))
-                #sys.exit(os.EX_CANTCREAT)
-                # May fail if the file encoding is problematic for instance.
-                # When this happens, just bypass the contents check and move the file.
-                shutil.move(from_file, to_file)
-                return
-            try:
-                # XXX shouldn't I os.unlink it first, just in case it does exist?
-                fd = open(to_file, 'w')
-                fd.write(contents)
-                fd.close()
+                with open(from_file, 'rb') as fr, open(to_file, 'wb') as fw:
+                  for lr in fr:
+                    lr = regexp.sub(prefix, lr, count=0)
+                    fw.write(lr)
             except IOError:
-                #sys.stderr.write('File {} cannot be written.'.format(to_file))
-                #sys.exit(os.EX_CANTCREAT)
-                shutil.move(from_file, to_file)
-                return
-            # Since it's a move, unlink the original.
-            os.unlink (from_file)
-        elif to_file[-7:] == '-config':
-            try:
-                fd = open(from_file, 'r')
-                contents = fd.read()
-                fd.close()
-                contents = re.sub(r'/usr/[^/]+-mingw32/sys-root/mingw', prefix, contents, count=0, flags=re.MULTILINE)
-            except IOError:
-                #sys.stderr.write('File "{}" could not be read.\n'.format(from_file))
-                #sys.exit(os.EX_CANTCREAT)
-                shutil.move(from_file, to_file)
-                return
-            try:
-                # XXX shouldn't I os.unlink it first, just in case it does exist?
-                fd = open(to_file, 'w')
-                fd.write(contents)
-                fd.close()
-            except IOError:
-                #sys.stderr.write('File {} cannot be written.'.format(to_file))
-                #sys.exit(os.EX_CANTCREAT)
-                shutil.move(from_file, to_file)
-                return
+                sys.stderr.write('File "{}" could not be moved.\n'.format(from_file))
+                sys.exit(os.EX_CANTCREAT)
             # Since it's a move, unlink the original.
             os.unlink (from_file)
         else:
