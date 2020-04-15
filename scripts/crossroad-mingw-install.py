@@ -131,7 +131,7 @@ def detect_distribution_repo (options):
 
   return reponame, repo
 
-def get_package_files (package, options):
+def get_package_files (package, repo, options):
     '''
     Research and return the list of files for a package name.
     '''
@@ -147,7 +147,10 @@ def get_package_files (package, options):
     except KeyError:
         if options.arch == 'w64':
             try:
-                real_name = 'mingw64-' + package
+                if repo == 'msys2':
+                    real_name = 'mingw-w64-x86_64-' + package
+                else:
+                    real_name = 'mingw64-' + package
                 file_list = filelists[real_name]
             except KeyError:
                 real_name = None
@@ -155,15 +158,30 @@ def get_package_files (package, options):
         if file_list is None:
             # There are some 32-bit package in the 64-bit list.
             try:
-                real_name = 'mingw32-' + package
+                if repo == 'msys2':
+                    real_name = 'mingw-w64-i686-' + package
+                else:
+                    real_name = 'mingw32-' + package
                 file_list = filelists[real_name]
             except KeyError:
                 real_name = None
                 file_list = None
     if file_list is not None:
-        file_list = [f for f in file_list if re.match(r'/usr/[^/]+-mingw32/sys-root/mingw', f['path']) is not None]
+        if repo == 'msys2':
+            if options.arch == 'w64':
+                file_list = [f for f in file_list if re.match(r'^mingw64/', f['path']) is not None]
+            else:
+                file_list = [f for f in file_list if re.match(r'^mingw32/', f['path']) is not None]
+        else:
+            file_list = [f for f in file_list if re.match(r'/usr/[^/]+-mingw32/sys-root/mingw', f['path']) is not None]
         for f in file_list:
-            f['path'] = re.sub(r'/usr/[^/]+-mingw32/sys-root/mingw', prefix, f['path'])
+            if repo == 'msys2':
+                if options.arch == 'w64':
+                    f['path'] = re.sub(r'^mingw64', prefix, f['path'])
+                else:
+                    f['path'] = re.sub(r'^mingw32', prefix, f['path'])
+            else:
+                f['path'] = re.sub(r'/usr/[^/]+-mingw32/sys-root/mingw', prefix, f['path'])
     return (real_name, file_list)
 
 def fix_symlink (path):
@@ -182,8 +200,8 @@ def fix_symlink (path):
             os.unlink (path)
             os.symlink (link_path, path, target_is_directory = os.path.isdir (path))
 
-def fix_package_symlinks (package, options):
-    (real_name, file_list) = get_package_files (package, options)
+def fix_package_symlinks (package, repo, options):
+    (real_name, file_list) = get_package_files (package, repo, options)
     if file_list is not None:
         for f in file_list:
             fix_symlink (f['path'])
@@ -459,9 +477,14 @@ def search_packages(keyword, arch, srcpkg = False, search_files = False):
   return packages
 
 def _findPackage(packageName, arch, srcpkg=False):
+  if arch == 'w32':
+    arch_pkg_prefix = 'mingw-w64-i686-'
+  else:
+    arch_pkg_prefix = 'mingw-w64-x86_64-'
   filter_func = lambda p: \
-    (p['name'] == 'ming' + arch + '-' + packageName            \
-     or p['name'] == packageName or p['filename'] == packageName) \
+    (p['name'] == 'ming' + arch + '-' + packageName          or \
+     p['name'] == arch_pkg_prefix + packageName              or \
+     p['name'] == packageName or p['filename'] == packageName)  \
     and ((p['arch'] == 'src') if srcpkg else True)
   sort_func = lambda p: p['buildtime']
   packages = sorted([p for p in _packages if filter_func(p)], key=sort_func, reverse=True)
@@ -476,7 +499,7 @@ def _findPackage(packageName, arch, srcpkg=False):
 def _checkPackageRequirements(package, packageNames):
   allProviders = set()
   for requirement in package['requires']:
-    providers = {p['name'] for p in _packages if requirement in p['provides']}
+    providers = {p['name'] for p in _packages if requirement in p['provides'] or requirement == p['name']}
     if len(providers & packageNames) == 0:
       if len(providers) == 0:
         logging.error('Package %s requires %s, not provided by any package', package['name'], requirement)
@@ -497,7 +520,7 @@ def packagesDownload(packageNames, arch,
                      force_install    = False):
   packageNames_new = {pn for pn in packageNames if pn.endswith('.rpm')}
   for packageName in packageNames - packageNames_new:
-    matchedpackages = {p['name'] for p in _packages if fnmatch.fnmatchcase(p['name'].replace('mingw32-', '').replace('mingw64-', ''), packageName) and ((p['arch'] == 'src') if srcpkg else True)}
+    matchedpackages = {p['name'] for p in _packages if fnmatch.fnmatchcase(p['name'].replace('mingw32-', '').replace('mingw64-', '').replace('mingw-w64-x86_64-', '').replace('mingw-w64-i686-', ''), packageName) and ((p['arch'] == 'src') if srcpkg else True)}
     packageNames_new |= matchedpackages if len(matchedpackages) > 0 else {packageName}
   packageNames = list(packageNames_new)
   allPackageNames = set(packageNames)
@@ -596,38 +619,66 @@ def _extractFile(filename, output_dir=_extractedCacheDirectory):
     logging.error('Failed to extract %s', filename)
     return False
 
-def GetBaseDirectory(arch):
-  if arch == 'w32' and os.path.exists(os.path.join(_extractedFilesDirectory, 'usr/i686-w64-mingw32/sys-root/mingw')):
-    return os.path.join(_extractedFilesDirectory, 'usr/i686-w64-mingw32/sys-root/mingw')
-  elif arch == 'w64' and os.path.exists(os.path.join(_extractedFilesDirectory, 'usr/x86_64-w64-mingw32/sys-root/mingw')):
-    return os.path.join(_extractedFilesDirectory, 'usr/x86_64-w64-mingw32/sys-root/mingw')
+def GetBaseDirectory(repo, arch):
+  if repo == 'msys2':
+    if arch == 'w32' and os.path.exists(os.path.join(_extractedFilesDirectory, 'mingw32')):
+      return os.path.join(_extractedFilesDirectory, 'mingw32')
+    elif arch == 'w64' and os.path.exists(os.path.join(_extractedFilesDirectory, 'mingw64')):
+      return os.path.join(_extractedFilesDirectory, 'mingw64')
+  else:
+    if arch == 'w32' and os.path.exists(os.path.join(_extractedFilesDirectory, 'usr/i686-w64-mingw32/sys-root/mingw')):
+      return os.path.join(_extractedFilesDirectory, 'usr/i686-w64-mingw32/sys-root/mingw')
+    elif arch == 'w64' and os.path.exists(os.path.join(_extractedFilesDirectory, 'usr/x86_64-w64-mingw32/sys-root/mingw')):
+      return os.path.join(_extractedFilesDirectory, 'usr/x86_64-w64-mingw32/sys-root/mingw')
   return None
 
 def packagesExtract(packageFilenames, srcpkg=False):
   for packageFilename in packageFilenames :
     logging.warning('Extracting %s', packageFilename)
-    rpm_path = os.path.join(_packageCacheDirectory, packageFilename)
-    if shutil.which('rpm2cpio') is None:
-        # If using 7z, we have to make an intermediary step.
-        cpioFilename = os.path.join(_extractedCacheDirectory, os.path.splitext(packageFilename)[0] + '.cpio')
-        if not os.path.exists(cpioFilename) and not _extractFile(rpm_path, _extractedCacheDirectory):
-            return False
-        if srcpkg:
-          if not _extractFile(cpioFilename, os.path.join(_extractedFilesDirectory, os.path.splitext(packageFilename)[0])):
-              return False
-        else:
-          if not _extractFile(cpioFilename, _extractedFilesDirectory):
-              return False
-    elif srcpkg:
-        if not _extractFile(rpm_path, os.path.join(_extractedFilesDirectory, os.path.splitext(packageFilename)[0])):
-            return False
+    if packageFilename.endswith('.rpm'):
+      if not packagesExtractRPM(packageFilename, srcpkg):
+        return False
     else:
-        if not _extractFile(rpm_path, _extractedFilesDirectory):
-            return False
+      if not packagesExtractTAR(packageFilename, srcpkg):
+        return False
   return True
 
-def move_files(from_file, to_file):
-    regexp = re.compile(b'/usr/[^/]+-mingw32/sys-root/mingw')
+def packagesExtractTAR(packageFilename, srcpkg=False):
+  tar_path = os.path.join(_packageCacheDirectory, packageFilename)
+  tar = tarfile.open(tar_path, 'r:xz')
+  tar.extractall(path=_extractedFilesDirectory)
+  tar.close()
+  return True
+
+def packagesExtractRPM(packageFilename, srcpkg=False):
+  rpm_path = os.path.join(_packageCacheDirectory, packageFilename)
+  if shutil.which('rpm2cpio') is None:
+      # If using 7z, we have to make an intermediary step.
+      cpioFilename = os.path.join(_extractedCacheDirectory, os.path.splitext(packageFilename)[0] + '.cpio')
+      if not os.path.exists(cpioFilename) and not _extractFile(rpm_path, _extractedCacheDirectory):
+          return False
+      if srcpkg:
+        if not _extractFile(cpioFilename, os.path.join(_extractedFilesDirectory, os.path.splitext(packageFilename)[0])):
+            return False
+      else:
+        if not _extractFile(cpioFilename, _extractedFilesDirectory):
+            return False
+  elif srcpkg:
+      if not _extractFile(rpm_path, os.path.join(_extractedFilesDirectory, os.path.splitext(packageFilename)[0])):
+          return False
+  else:
+      if not _extractFile(rpm_path, _extractedFilesDirectory):
+          return False
+  return True
+
+def move_files(repo, arch, from_file, to_file):
+    if repo == 'msys2':
+        if arch == 'w64':
+            regexp = re.compile(b'/mingw64')
+        else:
+            regexp = re.compile(b'/mingw32')
+    else:
+        regexp = re.compile(b'/usr/[^/]+-mingw32/sys-root/mingw')
     if os.path.isdir(from_file) and not os.path.islink(from_file):
         # A normal directory.
         # Directory symlinks will be later fixed by fix_package_symlinks().
@@ -641,7 +692,7 @@ def move_files(from_file, to_file):
             os.unlink (to_file)
             os.makedirs(to_file, exist_ok=True)
         for f in os.listdir(from_file):
-            move_files(os.path.join(from_file, f), os.path.join(to_file, f))
+            move_files(repo, arch, os.path.join(from_file, f), os.path.join(to_file, f))
         shutil.rmtree(from_file)
     elif os.path.islink(from_file):
         try:
@@ -667,7 +718,7 @@ def move_files(from_file, to_file):
             try:
                 with open(from_file, 'rb') as fr, open(to_file, 'wb') as fw:
                   for lr in fr:
-                    lr = regexp.sub(prefix, lr, count=0)
+                    lr = regexp.sub(prefix.encode(), lr, count=0)
                     fw.write(lr)
             except IOError:
                 sys.stderr.write('File "{}" could not be moved.\n'.format(from_file))
@@ -678,7 +729,7 @@ def move_files(from_file, to_file):
             shutil.move(from_file, to_file)
 
 def CleanExtracted():
-    shutil.rmtree(os.path.join(_extractedFilesDirectory, 'usr'), True)
+    shutil.rmtree(_extractedFilesDirectory, True)
 
 def SetExecutableBit():
     # set executable bit on anything in bin/
@@ -845,7 +896,7 @@ if __name__ == "__main__":
     else:
         package_type = 'Package'
     for package in packages:
-        (real_name, file_list) = get_package_files (package, options)
+        (real_name, file_list) = get_package_files (package, reponame, options)
         if file_list is None:
             sys.stderr.write('{} "{}" unknown.\n'.format(package_type, package))
             alt_packages = search_packages(package, options.arch, options.srcpkg)
@@ -882,7 +933,8 @@ if __name__ == "__main__":
                     logging.error('\t- {}'.format(re.sub('^mingw(32|64)-', '', alt_pkg)))
             continue
         sys.stdout.write('{} "{}":\n'.format(package_type, package['name']))
-        sys.stdout.write('\tSummary: {}\n'.format(package['summary']))
+        if package['summary'] is not None:
+            sys.stdout.write('\tSummary: {}\n'.format(package['summary']))
         sys.stdout.write('\tProject URL: {}\n'.format(package['project_url']))
         sys.stdout.write('\tVersion: {} (release: {} - epoch: {})\n'.format(package['version']['ver'],
                                                                             package['version']['rel'],
@@ -901,7 +953,7 @@ if __name__ == "__main__":
         package_type = 'Package'
     file_lists = {}
     for package in packages:
-        (real_name, file_list) = get_package_files (package, options)
+        (real_name, file_list) = get_package_files (package, reponame, options)
         if file_list is None:
             sys.stderr.write('{} "{}" unknown.\n'.format(package_type, package))
             alt_packages = search_packages(package, options.arch, options.srcpkg)
@@ -978,7 +1030,7 @@ if __name__ == "__main__":
         package_type = 'Package'
     mask_list = {}
     for package in packages:
-      (real_name, _) = get_package_files (package, options)
+      (real_name, _) = get_package_files (package, reponame, options)
       if real_name is None:
         sys.stderr.write('{} "{}" unknown.\n'.format(package_type, package))
         alt_packages = search_packages(package, options.arch, options.srcpkg)
@@ -1031,7 +1083,7 @@ if __name__ == "__main__":
         package_type = 'Package'
     unmask_list = {}
     for package in packages:
-      (real_name, _) = get_package_files (package, options)
+      (real_name, _) = get_package_files (package, reponame, options)
       if real_name is None:
         sys.stderr.write('{} "{}" unknown.\n'.format(package_type, package))
         alt_packages = search_packages(package, options.arch, options.srcpkg)
@@ -1104,39 +1156,40 @@ if __name__ == "__main__":
   except FileNotFoundError:
     masked_packages = []
   try:
-    (packages, packages_rpm) = packagesDownload(packages, options.arch,
-                                                installed_packages,
-                                                masked_packages,
-                                                options.withdeps,
-                                                options.srcpkg,
-                                                options.nocache,
-                                                options.force_install)
+    (packages, package_files) = packagesDownload(packages, options.arch,
+                                                 installed_packages,
+                                                 masked_packages,
+                                                 options.withdeps,
+                                                 options.srcpkg,
+                                                 options.nocache,
+                                                 options.force_install)
   except:
     logging.error('Package download failed. Installation canceled.')
     sys.exit(os.EX_UNAVAILABLE)
 
-  if len(packages_rpm) == 0:
+  if len(package_files) == 0:
     # An empty package list is not an error (packagesDownload() would
     # exit directly the program upon error). It probably just means all
     # packages were already installed.
     logging.warning('Nothing to do.')
     sys.exit(os.EX_OK)
 
-  if not packagesExtract(packages_rpm, options.srcpkg):
+  CleanExtracted()
+  if not packagesExtract(package_files, options.srcpkg):
     logging.error('A package failed to extract. Please report a bug.')
     sys.exit(os.EX_CANTCREAT)
 
-  extracted_prefix = GetBaseDirectory(options.arch)
+  extracted_prefix = GetBaseDirectory(reponame, options.arch)
   if extracted_prefix is None:
     logging.error('Unexpected error: files were not extracted. Please report a bug.')
     sys.exit(os.EX_CANTCREAT)
   sys.stdout.write('Installing...\n')
   sys.stdout.flush()
-  move_files(extracted_prefix, prefix)
+  move_files(reponame, options.arch, extracted_prefix, prefix)
   sys.stdout.write('Fixing symlinks...\n')
   sys.stdout.flush()
   for package in packages:
-      fix_package_symlinks (package, options)
+      fix_package_symlinks (package, reponame, options)
   sys.stdout.write('Make binaries executable...\n')
   sys.stdout.flush()
   SetExecutableBit()
@@ -1151,7 +1204,7 @@ if __name__ == "__main__":
   if options.metadata:
     cleanup = lambda n: re.sub('^mingw(?:32|64)-(.*)', '\\1', re.sub('^mingw(?:32|64)[(](.*)[)]', '\\1', n))
     with open(os.path.join(prefix, packageBasename + '.metadata'), 'w') as m:
-      for packageFilename in sorted(packages_rpm):
+      for packageFilename in sorted(package_files):
         package = [p for p in _packages if p['filename'] == packageFilename][0]
         m.writelines(['provides:%s\r\n' % cleanup(p) for p in package['provides']])
         m.writelines(['requires:%s\r\n' % cleanup(r) for r in package['requires']])
