@@ -1,7 +1,7 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 #
 # Copyright (C) Maarten Bosmans 2011
-# Copyright (C) Jehan 2013-2019
+# Copyright (C) Jehan 2013-2020
 #
 # The contents of this file are subject to the Mozilla Public License Version 1.1; you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at http://www.mozilla.org/MPL/
@@ -13,6 +13,7 @@ import logging
 import os.path
 import sys
 import shutil
+import tarfile
 import re
 import zipfile
 import time
@@ -59,6 +60,8 @@ _extractedCacheDirectory = os.path.join(xdg_cache_home, 'crossroad', 'extracted'
 _extractedFilesDirectory = os.path.join(xdg_cache_home, 'crossroad', 'prefix')
 
 repositories = {
+  'msys2':
+    'http://repo.msys2.org/mingw/ARCH/',
   'fedora30':
     'https://download.fedoraproject.org/pub/fedora/linux/releases/30/Everything/x86_64/os/',
   'fedora31':
@@ -108,9 +111,9 @@ def detect_distribution_repo (options):
       elif os.path.isfile('/etc/SuSE-release'):
         reponame = 'suse'
 
-  # Default to Fedora 31 repo.
+  # Default to msys2 repo.
   if reponame is None:
-    reponame = 'fedora31'
+    reponame = 'msys2'
 
   repo = repositories[reponame]
   # Unlike Fedora which has both 32-bit and 64-bit Windows package in a
@@ -120,6 +123,12 @@ def detect_distribution_repo (options):
       repo = repo.replace('ARCH', 'win32');
     else:
       repo = repo.replace('ARCH', 'win64');
+  elif reponame == 'msys2':
+    if options.arch == 'w32':
+      repo = repo.replace('ARCH', 'i686');
+    else:
+      repo = repo.replace('ARCH', 'x86_64');
+
   return reponame, repo
 
 def get_package_files (package, options):
@@ -179,7 +188,140 @@ def fix_package_symlinks (package, options):
         for f in file_list:
             fix_symlink (f['path'])
 
-def OpenRepository(repositoryLocation, arch):
+def arch_files_to_package(repository, path):
+  files = []
+  with open(path, 'r') as f:
+    for line in f:
+      if line.strip() == '%FILES%':
+        break
+    for line in f:
+      filename = line.strip()
+      if filename == '':
+        break
+      if filename.endswith('/'):
+        files += [{'type': 'dir', 'path': filename}]
+      else:
+        files += [{'type': 'file', 'path': filename}]
+  return files
+
+def arch_desc_to_package(repository, path):
+  name        = None
+  arch        = None
+  summary     = None
+  description = None
+  project_url = None
+  version     = None
+  license     = None
+  buildtime   = None
+  url         = None
+  filename    = None
+  checksum    = {}
+  provides    = set()
+  requires    = set()
+  with open(path, 'r') as f:
+    for line in f:
+        if line.strip() == '%FILENAME%':
+            filename = f.readline().strip()
+            url = os.path.join(repository, filename)
+        elif line.strip() == '%ARCH%':
+            arch = f.readline().strip()
+        elif line.strip() == '%LICENSE%':
+            license = f.readline().strip()
+        elif line.strip() == '%NAME%':
+            name = f.readline().strip()
+        elif line.strip() == '%VERSION%':
+            version = f.readline().strip()
+            index = version.rfind('-')
+            if index != -1:
+                rel = version[index + 1:]
+                version = version[:index]
+            version = { 'epoch': 0, 'ver': version, 'rel': rel }
+        elif line.strip() == '%DESC%':
+            description = f.readline().strip()
+        elif line.strip() == '%URL%':
+            project_url = f.readline().strip()
+        elif line.strip() == '%SHA256SUM%':
+            checksum['sha256'] = f.readline().strip()
+        elif line.strip() == '%MD5SUM%':
+            checksum['md5'] = f.readline().strip()
+        elif line.strip() == '%BUILDDATE%':
+            buildtime = int(f.readline().strip())
+        elif line.strip() == '%PROVIDES%':
+            for deps in f:
+                if deps.strip() == '':
+                    break;
+                provides.add(deps.strip())
+        elif line.strip() == '%DEPENDS%':
+            for deps in f:
+                if deps.strip() == '':
+                    break;
+                requires.add(deps.strip())
+  package = {
+      'name': name,
+      'arch': arch,
+      'summary': summary,
+      'description': description,
+      'project_url': project_url,
+      'version': version,
+      'license': license,
+      'buildtime': buildtime,
+      'url': url,
+      'filename': filename,
+      'checksum': checksum,
+      'provides': provides,
+      'requires': requires,
+    }
+  return package
+
+def OpenArchRepository(repositoryLocation, arch):
+  from xml.etree.cElementTree import parse as xmlparse
+  global _packages
+  global _package_filelists
+  global _package_src_filelists
+
+  # It is to be noted that 2 files are available, for instance for w64:
+  # mingw64.db and mingw64.files. It turns out that the *.files contain
+  # also all the information from the *.db. So let's just download the
+  # *.files one.
+  #db_name = 'ming{}.db'.format(arch)
+  db_name = 'ming{}.files'.format(arch)
+  db_dir = os.path.join(_repositoryCacheDirectory, 'msys2')
+  os.makedirs(db_dir, exist_ok=True)
+  db_tar = os.path.join(db_dir, db_name)
+  if os.path.exists(db_tar):
+    os.unlink(db_tar)
+  logging.warning('Downloading repository data: {}'.format(repositoryLocation + db_name))
+  with urlopen(repositoryLocation + db_name, timeout = 5.0) as db_file:
+    with open(db_tar, 'wb') as local_file:
+      local_file.write(db_file.read())
+
+  # Cleaning old files once new download completed, so that we still
+  # have some old repo data if download failed.
+  for f in os.listdir(db_dir):
+    if f.startswith('mingw-w64-'):
+      os.unlink(os.path.join(db_dir, f, 'desc'))
+      os.unlink(os.path.join(db_dir, f, 'files'))
+      os.rmdir(os.path.join(db_dir, f))
+
+  logging.warning('Extracting repository data: {}'.format(db_tar))
+  tar = tarfile.open(db_tar, 'r:gz')
+  tar.extractall(path=db_dir)
+  tar.close()
+
+  for package_name in os.listdir(path=db_dir):
+    package_dir = os.path.join(db_dir, package_name)
+    if os.path.isdir(package_dir):
+      desc_path = os.path.join(package_dir, 'desc')
+      if os.path.isfile(desc_path):
+        package = arch_desc_to_package(repositoryLocation, desc_path)
+        _packages += [ package ]
+
+        files_path = os.path.join(package_dir, 'files')
+        if os.path.isfile(files_path):
+          files = arch_files_to_package(repositoryLocation, files_path)
+          _package_filelists[package['name']] = files
+
+def OpenRPMRepository(repositoryLocation, arch):
   from xml.etree.cElementTree import parse as xmlparse
   global _packages
   global _package_filelists
@@ -260,8 +402,7 @@ def OpenRepository(repositoryLocation, arch):
           'buildtime': int(p.find('{%s}time'%xmlns).get('build')),
           'url': repositoryLocation + p.find('{%s}location'%xmlns).get('href'),
           'filename': os.path.basename(p.find('{%s}location'%xmlns).get('href')),
-          'checksum': {'type': p.find('{%s}checksum'%xmlns).get('type'),
-                       'sum': p.find('{%s}checksum'%xmlns).text},
+          'checksum': { p.find('{%s}checksum'%xmlns).get('type') : p.find('{%s}checksum'%xmlns).text },
           'provides': {provides.attrib['name'] for provides in p.findall('{%s}format/{%s}provides/{%s}entry'%(xmlns,rpmns,rpmns))},
           'requires': {req.attrib['name'] for req in p.findall('{%s}format/{%s}requires/{%s}entry'%(xmlns,rpmns,rpmns))}
         } for p in elements.findall('{%s}package'%xmlns)]
@@ -711,7 +852,10 @@ if __name__ == "__main__":
 
   # Open repository
   try:
-    OpenRepository(repo, options.arch)
+    if reponame in [ 'msys2' ]:
+      OpenArchRepository(repo, options.arch)
+    else:
+      OpenRPMRepository(repo, options.arch)
   except Exception as e:
     sys.exit('Error opening repository:\n\t%s\n\t%s' % (repo, e))
 
@@ -728,6 +872,9 @@ if __name__ == "__main__":
         if len(alt_packages) > 0:
             sys.stdout.write('The following packages were found for the search "{}":\n'.format(keyword))
             for alt_pkg in alt_packages:
+              if reponame == 'msys2':
+                sys.stdout.write('\t- {}\n'.format(re.sub('^mingw-w64-(i686|x86_64)-', '', alt_pkg)))
+              else:
                 sys.stdout.write('\t- {}\n'.format(re.sub('^mingw(32|64)-', '', alt_pkg)))
         else:
             sys.stdout.write('"{}" not found in any package name.\n'.format(keyword))
@@ -736,6 +883,9 @@ if __name__ == "__main__":
             if len(alt_packages) > 0:
                 sys.stdout.write('The following packages have files matching the search "{}":\n'.format(keyword))
                 for alt_pkg in alt_packages:
+                  if reponame == 'msys2':
+                    sys.stdout.write('\t- {}\n'.format(re.sub('^mingw-w64-(i686|x86_64)-', '', alt_pkg)))
+                  else:
                     sys.stdout.write('\t- {}\n'.format(re.sub('^mingw(32|64)-', '', alt_pkg)))
     sys.exit(os.EX_OK)
 
