@@ -292,7 +292,6 @@ def arch_desc_to_package(repository, path):
   return package
 
 def OpenArchRepository(repositoryLocation, arch):
-  from xml.etree.cElementTree import parse as xmlparse
   global _packages
   global _package_filelists
   global _package_src_filelists
@@ -306,38 +305,54 @@ def OpenArchRepository(repositoryLocation, arch):
   db_dir = os.path.join(_repositoryCacheDirectory, 'msys2')
   os.makedirs(db_dir, exist_ok=True)
   db_tar = os.path.join(db_dir, db_name)
-  if os.path.exists(db_tar):
-    os.unlink(db_tar)
-  logging.warning('Downloading repository data: {}'.format(repositoryLocation + db_name))
-  with urlopen(repositoryLocation + db_name, timeout = 5.0) as db_file:
-    with open(db_tar, 'wb') as local_file:
-      local_file.write(db_file.read())
 
-  # Cleaning old files once new download completed, so that we still
-  # have some old repo data if download failed.
-  for f in os.listdir(db_dir):
-    if f.startswith('mingw-w64-'):
-      os.unlink(os.path.join(db_dir, f, 'desc'))
-      os.unlink(os.path.join(db_dir, f, 'files'))
-      os.rmdir(os.path.join(db_dir, f))
+  try:
+    # Try to load directly our serialized database. Unlike the RPM
+    # repository where we can check if the database is up-to-date, we
+    # can't do so on the Arch repo (not that I found at least). So we
+    # just have to rely on people manually updating the repo.
+    with open(db_tar + ".descs", "rb") as f:
+      _packages = marshal.load(f)
+    with open(db_tar + ".filelists", "rb") as f:
+      _package_filelists = marshal.load (f)
+  except:
+    if not os.path.exists(db_tar):
+      logging.warning('Downloading repository data: {}'.format(repositoryLocation + db_name))
+      with urlopen(repositoryLocation + db_name, timeout = 5.0) as db_file:
+        with open(db_tar, 'wb') as local_file:
+          local_file.write(db_file.read())
 
-  logging.warning('Extracting repository data: {}'.format(db_tar))
-  tar = tarfile.open(db_tar, 'r:gz')
-  tar.extractall(path=db_dir)
-  tar.close()
+    # Cleaning old files once new download completed, so that we still
+    # have some old repo data if download failed.
+    for f in os.listdir(db_dir):
+      if f.startswith('mingw-w64-'):
+        os.unlink(os.path.join(db_dir, f, 'desc'))
+        os.unlink(os.path.join(db_dir, f, 'files'))
+        os.rmdir(os.path.join(db_dir, f))
 
-  for package_name in os.listdir(path=db_dir):
-    package_dir = os.path.join(db_dir, package_name)
-    if os.path.isdir(package_dir):
-      desc_path = os.path.join(package_dir, 'desc')
-      if os.path.isfile(desc_path):
-        package = arch_desc_to_package(repositoryLocation, desc_path)
-        _packages += [ package ]
+    logging.warning('Extracting repository data: {}'.format(db_tar))
+    tar = tarfile.open(db_tar, 'r:gz')
+    tar.extractall(path=db_dir)
+    tar.close()
 
-        files_path = os.path.join(package_dir, 'files')
-        if os.path.isfile(files_path):
-          files = arch_files_to_package(repositoryLocation, files_path)
-          _package_filelists[package['name']] = files
+    for package_name in os.listdir(path=db_dir):
+      package_dir = os.path.join(db_dir, package_name)
+      if os.path.isdir(package_dir):
+        desc_path = os.path.join(package_dir, 'desc')
+        if os.path.isfile(desc_path):
+          package = arch_desc_to_package(repositoryLocation, desc_path)
+          _packages += [ package ]
+
+          files_path = os.path.join(package_dir, 'files')
+          if os.path.isfile(files_path):
+            files = arch_files_to_package(repositoryLocation, files_path)
+            _package_filelists[package['name']] = files
+
+    # Save serialized databases for later easy reuse.
+    with open(db_tar + ".descs", "wb") as f:
+      marshal.dump(_packages, f)
+    with open(db_tar + ".filelists", "wb") as f:
+      marshal.dump(_package_filelists, f)
 
 def OpenRPMRepository(repositoryLocation, arch):
   from xml.etree.cElementTree import parse as xmlparse
