@@ -145,6 +145,14 @@ def crossroad_install(*packages:list, src:bool = False):
     command += list(packages)
     return subprocess.call(command, shell=False)
 
+def crossroad_update():
+    '''
+    Update the repository information.
+    '''
+    command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
+               '-a', name, '--update']
+    return subprocess.call(command, shell=False)
+
 def crossroad_list_files(*packages, src:bool = False):
     '''
     List files provided by packages.

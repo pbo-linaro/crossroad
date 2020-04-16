@@ -291,6 +291,62 @@ def arch_desc_to_package(repository, path):
     }
   return package
 
+def UpdateArchRepository(repositoryLocation, arch, force=True):
+  global _packages
+  global _package_filelists
+  global _package_src_filelists
+
+  # It is to be noted that 2 files are available, for instance for w64:
+  # mingw64.db and mingw64.files. It turns out that the *.files contain
+  # also all the information from the *.db. So let's just download the
+  # *.files one.
+  #db_name = 'ming{}.db'.format(arch)
+  db_name = 'ming{}.files'.format(arch)
+  db_dir = os.path.join(_repositoryCacheDirectory, 'msys2')
+  os.makedirs(db_dir, exist_ok=True)
+  db_tar = os.path.join(db_dir, db_name)
+
+  if force and os.path.exists(db_tar):
+    os.unlink(db_tar)
+
+  if force or not os.path.exists(db_tar):
+    logging.warning('Downloading repository data: {}'.format(repositoryLocation + db_name))
+    with urlopen(repositoryLocation + db_name, timeout = 5.0) as db_file:
+      with open(db_tar, 'wb') as local_file:
+        local_file.write(db_file.read())
+
+  # Cleaning old files once new download completed, so that we still
+  # have some old repo data if download failed.
+  for f in os.listdir(db_dir):
+    if f.startswith('mingw-w64-'):
+      os.unlink(os.path.join(db_dir, f, 'desc'))
+      os.unlink(os.path.join(db_dir, f, 'files'))
+      os.rmdir(os.path.join(db_dir, f))
+
+  logging.warning('Extracting repository data: {}'.format(db_tar))
+  tar = tarfile.open(db_tar, 'r:gz')
+  tar.extractall(path=db_dir)
+  tar.close()
+
+  for package_name in os.listdir(path=db_dir):
+    package_dir = os.path.join(db_dir, package_name)
+    if os.path.isdir(package_dir):
+      desc_path = os.path.join(package_dir, 'desc')
+      if os.path.isfile(desc_path):
+        package = arch_desc_to_package(repositoryLocation, desc_path)
+        _packages += [ package ]
+
+        files_path = os.path.join(package_dir, 'files')
+        if os.path.isfile(files_path):
+          files = arch_files_to_package(repositoryLocation, files_path)
+          _package_filelists[package['name']] = files
+
+  # Save serialized databases for later easy reuse.
+  with open(db_tar + ".descs", "wb") as f:
+    marshal.dump(_packages, f)
+  with open(db_tar + ".filelists", "wb") as f:
+    marshal.dump(_package_filelists, f)
+
 def OpenArchRepository(repositoryLocation, arch):
   global _packages
   global _package_filelists
@@ -316,43 +372,7 @@ def OpenArchRepository(repositoryLocation, arch):
     with open(db_tar + ".filelists", "rb") as f:
       _package_filelists = marshal.load (f)
   except:
-    if not os.path.exists(db_tar):
-      logging.warning('Downloading repository data: {}'.format(repositoryLocation + db_name))
-      with urlopen(repositoryLocation + db_name, timeout = 5.0) as db_file:
-        with open(db_tar, 'wb') as local_file:
-          local_file.write(db_file.read())
-
-    # Cleaning old files once new download completed, so that we still
-    # have some old repo data if download failed.
-    for f in os.listdir(db_dir):
-      if f.startswith('mingw-w64-'):
-        os.unlink(os.path.join(db_dir, f, 'desc'))
-        os.unlink(os.path.join(db_dir, f, 'files'))
-        os.rmdir(os.path.join(db_dir, f))
-
-    logging.warning('Extracting repository data: {}'.format(db_tar))
-    tar = tarfile.open(db_tar, 'r:gz')
-    tar.extractall(path=db_dir)
-    tar.close()
-
-    for package_name in os.listdir(path=db_dir):
-      package_dir = os.path.join(db_dir, package_name)
-      if os.path.isdir(package_dir):
-        desc_path = os.path.join(package_dir, 'desc')
-        if os.path.isfile(desc_path):
-          package = arch_desc_to_package(repositoryLocation, desc_path)
-          _packages += [ package ]
-
-          files_path = os.path.join(package_dir, 'files')
-          if os.path.isfile(files_path):
-            files = arch_files_to_package(repositoryLocation, files_path)
-            _package_filelists[package['name']] = files
-
-    # Save serialized databases for later easy reuse.
-    with open(db_tar + ".descs", "wb") as f:
-      marshal.dump(_packages, f)
-    with open(db_tar + ".filelists", "wb") as f:
-      marshal.dump(_package_filelists, f)
+    UpdateArchRepository(repositoryLocation, arch, force=False)
 
 def OpenRPMRepository(repositoryLocation, arch):
   from xml.etree.cElementTree import parse as xmlparse
@@ -788,6 +808,7 @@ def GetOptions():
   # Package selection options
   parser.set_defaults(withdeps=False)
   packageOptions = OptionGroup(parser, "Package selection")
+  packageOptions.add_option("--update", action="store_true", dest="update", default=False, help="Update the repository data")
   packageOptions.add_option("--deps", action="store_true", dest="withdeps", help="Download dependencies")
   packageOptions.add_option("--no-deps", action="store_false", dest="withdeps", help="Do not download dependencies [default]")
   packageOptions.add_option("--src", action="store_true", dest="srcpkg", default=False, help="Download source instead of noarch package")
@@ -871,6 +892,18 @@ if __name__ == "__main__":
       OpenRPMRepository(repo, options.arch)
   except Exception as e:
     sys.exit('Error opening repository:\n\t%s\n\t%s' % (repo, e))
+
+  if options.update:
+    try:
+      if reponame in [ 'msys2' ]:
+        UpdateArchRepository(repo, options.arch, force=True)
+      else:
+        # Nothing to do for the RPM repo. It'll update by itself when
+        # needed.
+        pass
+    except Exception as e:
+      sys.exit(os.EX_UNAVAILABLE)
+    sys.exit(os.EX_OK)
 
   if options.search:
     if (len(packages) == 0):
