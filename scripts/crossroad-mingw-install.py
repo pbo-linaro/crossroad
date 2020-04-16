@@ -296,6 +296,10 @@ def UpdateArchRepository(repositoryLocation, arch, force=True):
   global _package_filelists
   global _package_src_filelists
 
+  _packages = []
+  _package_filelists = {}
+  _package_src_filelists = {}
+
   # It is to be noted that 2 files are available, for instance for w64:
   # mingw64.db and mingw64.files. It turns out that the *.files contain
   # also all the information from the *.db. So let's just download the
@@ -340,6 +344,11 @@ def UpdateArchRepository(repositoryLocation, arch, force=True):
         if os.path.isfile(files_path):
           files = arch_files_to_package(repositoryLocation, files_path)
           _package_filelists[package['name']] = files
+
+  if os.path.exists(db_tar + '.descs'):
+    os.unlink(db_tar + '.descs')
+  if os.path.exists(db_tar + '.filelists'):
+    os.unlink(db_tar + '.filelists')
 
   # Save serialized databases for later easy reuse.
   with open(db_tar + ".descs", "wb") as f:
