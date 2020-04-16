@@ -598,6 +598,8 @@ def packagesDownload(packageNames, arch,
         packageNames.append(packName[:-6])
         allPackageNames.add(packName[:-6])
     localFilenameFull = os.path.join(_packageCacheDirectory, package['filename'])
+    os.makedirs(_packageCacheDirectory, exist_ok=True)
+    os.makedirs(_extractedCacheDirectory, exist_ok=True)
     # First removing any outdated version of the rpm.
     package_basename = packageBaseName(package['filename'])
     for f in os.listdir(_packageCacheDirectory):
