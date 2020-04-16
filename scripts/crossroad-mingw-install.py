@@ -223,19 +223,20 @@ def arch_files_to_package(repository, path):
   return files
 
 def arch_desc_to_package(repository, path):
-  name        = None
-  arch        = None
-  summary     = None
-  description = None
-  project_url = None
-  version     = None
-  license     = None
-  buildtime   = None
-  url         = None
-  filename    = None
-  checksum    = {}
-  provides    = set()
-  requires    = set()
+  name         = None
+  arch         = None
+  summary      = None
+  description  = None
+  project_url  = None
+  packager_url = None
+  url          = None
+  version      = None
+  license      = None
+  buildtime    = None
+  filename     = None
+  checksum     = {}
+  provides     = set()
+  requires     = set()
   with open(path, 'r') as f:
     for line in f:
         if line.strip() == '%FILENAME%':
@@ -247,6 +248,7 @@ def arch_desc_to_package(repository, path):
             license = f.readline().strip()
         elif line.strip() == '%NAME%':
             name = f.readline().strip()
+            packager_url = 'https://packages.msys2.org/package/' + name
         elif line.strip() == '%VERSION%':
             version = f.readline().strip()
             index = version.rfind('-')
@@ -280,10 +282,11 @@ def arch_desc_to_package(repository, path):
       'summary': summary,
       'description': description,
       'project_url': project_url,
+      'packager_url': packager_url,
+      'url': url,
       'version': version,
       'license': license,
       'buildtime': buildtime,
-      'url': url,
       'filename': filename,
       'checksum': checksum,
       'provides': provides,
@@ -457,12 +460,13 @@ def OpenRPMRepository(repositoryLocation, arch):
           'summary': p.find('{%s}summary'%xmlns).text,
           'description': p.find('{%s}description'%xmlns).text,
           'project_url': p.find('{%s}url'%xmlns).text,
+          'packager_url': None,
+          'url': repositoryLocation + p.find('{%s}location'%xmlns).get('href'),
           'version': {'epoch': p.find('{%s}version'%xmlns).get('epoch'),
                       'ver': p.find('{%s}version'%xmlns).get('ver'),
                       'rel': p.find('{%s}version'%xmlns).get('rel')},
           #'license': p.find('{%s}location/{%s}format/{%s}license'%(xmlns, xmlns, rpmns)).text,
           'buildtime': int(p.find('{%s}time'%xmlns).get('build')),
-          'url': repositoryLocation + p.find('{%s}location'%xmlns).get('href'),
           'filename': os.path.basename(p.find('{%s}location'%xmlns).get('href')),
           'checksum': { p.find('{%s}checksum'%xmlns).get('type') : p.find('{%s}checksum'%xmlns).text },
           'provides': {provides.attrib['name'] for provides in p.findall('{%s}format/{%s}provides/{%s}entry'%(xmlns,rpmns,rpmns))},
@@ -995,6 +999,10 @@ if __name__ == "__main__":
         if package['summary'] is not None:
             sys.stdout.write('\tSummary: {}\n'.format(package['summary']))
         sys.stdout.write('\tProject URL: {}\n'.format(package['project_url']))
+        if package['packager_url'] is not None:
+            sys.stdout.write('\tPackager URL: {}\n'.format(package['packager_url']))
+        if package['url'] is not None:
+            sys.stdout.write('\tPackage URL: {}\n'.format(package['url']))
         sys.stdout.write('\tVersion: {} (release: {} - epoch: {})\n'.format(package['version']['ver'],
                                                                             package['version']['rel'],
                                                                             package['version']['epoch']))
