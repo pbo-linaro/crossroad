@@ -695,9 +695,26 @@ def packagesExtract(packageFilenames, srcpkg=False):
 
 def packagesExtractTAR(packageFilename, srcpkg=False):
   tar_path = os.path.join(_packageCacheDirectory, packageFilename)
-  tar = tarfile.open(tar_path, 'r:xz')
-  tar.extractall(path=_extractedFilesDirectory)
-  tar.close()
+  if tar_path.endswith('.tar.xz'):
+      tar = tarfile.open(tar_path, 'r:xz')
+      tar.extractall(path=_extractedFilesDirectory)
+      tar.close()
+  elif tar_path.endswith('tar.zst'):
+      import zstandard
+      import tempfile
+      decomp = zstandard.ZstdDecompressor()
+      with open(tar_path, 'rb') as inp, tempfile.TemporaryFile() as out:
+          decomp.copy_stream(inp, out)
+          out.seek(0)
+          tar = tarfile.open(fileobj=out, mode='r|')
+          tar.extractall(path=_extractedFilesDirectory)
+          tar.close()
+  else:
+      # So far, I've seen only xz and zst-compressed archives in Arch
+      # repository. Let's make this as a catch-all for other cases.
+      tar = tarfile.open(tar_path, 'r:*')
+      tar.extractall(path=_extractedFilesDirectory)
+      tar.close()
   return True
 
 def packagesExtractRPM(packageFilename, srcpkg=False):
