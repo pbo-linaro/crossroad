@@ -22,17 +22,17 @@ export CROSSROAD_CMAKE_TOOLCHAIN_FILE="@DATADIR@/share/crossroad/scripts/cmake/t
 export CROSSROAD_MESON_TOOLCHAIN_FILE="@DATADIR@/share/crossroad/scripts/meson/toolchain-${CROSSROAD_PLATFORM}.meson"
 
 # Compute the platform word-size for the "native" platform.
-if [ x"$CROSSROAD_PLATFORM" == x"native" ]; then
+if [ x"$CROSSROAD_PLATFORM" = x"native" ]; then
   LONG_BIT=`getconf LONG_BIT`
-  if [ x"$LONG_BIT" == x"32" ] || \
-     [ x"$LONG_BIT" == x"64" ]; then
+  if [ x"$LONG_BIT" = x"32" ] || \
+     [ x"$LONG_BIT" = x"64" ]; then
     export CROSSROAD_WORD_SIZE=$LONG_BIT
   fi
 fi
 
 export PATH="$CROSSROAD_PREFIX/bin:$PATH"
 
-if [ x"$CROSSROAD_PLATFORM" == x"native" ]; then
+if [ x"$CROSSROAD_PLATFORM" = x"native" ]; then
   export LD_LIBRARY_PATH=$CROSSROAD_PREFIX/lib:$LD_LIBRARY_PATH
   export GI_TYPELIB_PATH=$CROSSROAD_PREFIX/lib/girepository-1.0/:$GI_TYPELIB_PATH
 
@@ -61,8 +61,8 @@ if [ "x`$GCC -print-multiarch`" != "x" ]; then
   export GI_TYPELIB_PATH=$CROSSROAD_PREFIX/lib/`$GCC -print-multiarch`/girepository-1.0/:$GI_TYPELIB_PATH
 fi
 
-if [ x"$CROSSROAD_PLATFORM" == x"w32" ] || \
-   [ x"$CROSSROAD_PLATFORM" == x"w64" ]; then
+if [ x"$CROSSROAD_PLATFORM" = x"w32" ] || \
+   [ x"$CROSSROAD_PLATFORM" = x"w64" ]; then
   # ld is a mandatory file to enter this environment.
   # Also it is normally not touched by ccache, which makes it a better
   # prefix-searching tool than gcc.
@@ -86,10 +86,10 @@ if [ x"$CROSSROAD_PLATFORM" == x"w32" ] || \
   unset host_ld_dir
   unset host_ld
 
-  if [ x"$CROSSROAD_PLATFORM" == x"w32" ] && [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX" ]; then
+  if [ x"$CROSSROAD_PLATFORM" = x"w32" ] && [ -d "$CROSSROAD_CUSTOM_MINGW_W32_PREFIX" ]; then
       export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib32/:$CROSSROAD_CUSTOM_MINGW_W32_PREFIX/lib/"
   fi
-  if [ x"$CROSSROAD_PLATFORM" == x"w64" ] && [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX" ]; then
+  if [ x"$CROSSROAD_PLATFORM" = x"w64" ] && [ -d "$CROSSROAD_CUSTOM_MINGW_W64_PREFIX" ]; then
       export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib64/:$CROSSROAD_CUSTOM_MINGW_W64_PREFIX/lib/"
   fi
   if [ -d "$CROSSROAD_GUESSED_MINGW_PREFIX" ]; then
@@ -97,7 +97,7 @@ if [ x"$CROSSROAD_PLATFORM" == x"w32" ] || \
   fi
 fi
 
-if [ x"$CROSSROAD_PLATFORM" == x"native" ]; then
+if [ x"$CROSSROAD_PLATFORM" = x"native" ]; then
   # Native environment does not need much tweaking nor any additional
   # tools. We only need to add pkg-config path.
   export PKG_CONFIG_PATH=$CROSSROAD_PREFIX/lib/pkgconfig:$CROSSROAD_PREFIX/share/pkgconfig:$PKG_CONFIG_PATH
