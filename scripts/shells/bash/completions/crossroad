@@ -88,3 +88,17 @@ __crossroad ()
 complete -F __crossroad -o default crossroad
 COMP_WORDBREAKS=${COMP_WORDBREAKS//:}
 
+__ccd ()
+{
+    local cur
+
+    COMPREPLY=()
+    cur=${COMP_WORDS[COMP_CWORD]}
+    prev=${COMP_WORDS[COMP_CWORD-1]}
+
+    if [[ -v CROSSROAD_HOME ]]; then
+        COMPREPLY=( $( compgen -W '$( ls -d "$CROSSROAD_HOME"/"$cur"*/ 2>/dev/null| sed "s*^$CROSSROAD_HOME/**" )' -- $cur ) )
+    fi
+
+}
+complete -F __ccd -o default -o nospace ccd
