@@ -97,7 +97,7 @@ __ccd ()
     prev=${COMP_WORDS[COMP_CWORD-1]}
 
     if [[ -v CROSSROAD_HOME ]]; then
-        COMPREPLY=( $( compgen -W '$( ls -d "$CROSSROAD_HOME"/"$cur"*/ 2>/dev/null| sed "s*^$CROSSROAD_HOME/**" )' -- $cur ) )
+        COMPREPLY=( $( compgen -W '$( ls -d "$CROSSROAD_HOME"/"$cur"*/ 2>/dev/null| sed "s*^$CROSSROAD_HOME/**" ) -y -n' -- $cur ) )
     fi
 
 }
