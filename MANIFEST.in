@@ -15,4 +15,4 @@ include scripts/bin-wrappers/crossroad-gcc
 include scripts/bin-wrappers/crossroad-pkg-config
 include scripts/bin-wrappers/crossroad-cpp
 
-include README README.rst COPYING doc/*.rst
+include README README.rst COPYING doc/*.rst requirements.txt
