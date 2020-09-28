@@ -8,9 +8,9 @@ distribution.
 
 Be aware that this is essentially a developer tool. Its target audience
 are developers working on UNIX systems (tested on GNU/Linux
-systems: Fedora, Linux Mint, and Mageia, and expected to work on other
-distributions), and wishing to cross-compile projects from the same
-platform. It is not for end-users, and is useless in *running*
+systems: Debian, Fedora, Linux Mint, and Mageia, and expected to work on
+other distributions), and wishing to cross-compile projects from the
+same platform. It is not for end-users, and is useless in *running*
 software, only **building** them.
 
 9 target environments are supported currently:
@@ -34,8 +34,8 @@ flags.*
 
 This is Free Software, under the license `AGPL version 3`_.
 
-If you liked this software, you are free to contact the author_,
-or even support_ him.
+If you appreciate this software, you are free to contact the author_, or
+even support_ him.
 
 Also you are more than welcome to propose patches: bugfixes, or new
 features, like support of more target environments, other shells than
@@ -46,7 +46,8 @@ Installation
 ============
 
 `Crossroad` is a typical python-style project, relying on Python 3.3 or
-above. You will also need either `7z` or `rpm2cpio` installed.
+above. See `requirements.txt` for additional Python 3 modules to
+install. You will also need either `7z` or `rpm2cpio` installed.
 
 To install from `pypi`, just run::
 
@@ -56,7 +57,7 @@ Or download from the archive::
 
     $ ./setup.py install
 
-Setting-UP
+Setting-Up
 ==========
 
 `Crossroad` does not need any particular cross-compilation tool to run
@@ -98,7 +99,7 @@ Windows 32-bit::
 It will return a list of required binaries that crossroad cannot find.
 If you actually have them, the most likely reason is that you should
 update your `$PATH` with the right location. In the above example,
-`crossroad` could find your minGW linker, but not the compiler. It also
+`crossroad` could find your MinGW linker, but not the compiler. It also
 informs you of a possible package name (your distribution may use a
 different name, but it would still give a useful hint for searching in
 your package manager).
@@ -177,7 +178,7 @@ compilation system, for Windows 64-bit.
 
         $ crossroad w64 myproject
 
-    *Normally here your shell prompt will be modified at this point.*
+    *Normally your shell prompt will be modified at this point.*
 
 (2) **Enter your source code**::
 
@@ -210,13 +211,12 @@ compilation system, for Windows 64-bit.
         $ crossroad ../some/other/path/configure --without-libjpeg
 
 (4) Here the configure may fail if you miss any **dependency**. You may
-    install many dependencies easily through crossroad. Crossroad relies
-    on the Fedora repositories (it used to rely on openSUSE
-    cross-platform builds but this was changed in crossroad 0.8) for
-    this feature and provides basically a package manager for Windows
-    cross-compiled packages (see the manual for more details on its
-    features as you can also search packages, get info, uninstall them
-    and so on). Let's say for instance that your project depends on
+    install many dependencies easily through crossroad. Crossroad
+    supports pre-built Windows packages from Fedora, openSUSE and msys2
+    projects.
+    *See the manual for more details on this feature as you can also
+    search packages, get info, uninstall them and so on.*
+    Let's say for instance that your project depends on
     glib. You could just run::
 
         $ crossroad install glib2
@@ -238,7 +238,7 @@ compilation system, for Windows 64-bit.
     set up properly the Wine environment so that it can find the
     executables and DLLs you installed with `make install`. As a
     consequence, a `make check` might just work, even though there is no
-    certaincy, since this is not exactly the same as running on the native
+    certainty, since this is not exactly the same as running on the native
     win32 platform. For the records, I have been able to run successful
     `make check` on projects as complicated as **GIMP**.
     Of course, a failed `make check` of Windows binaries in a GNU/Linux
@@ -276,9 +276,9 @@ compilation system, for Windows 64-bit.
 
 (8) Then run your app, and enjoy!
 
-*Note: this has been tested with success on many GNU projects,
+*Note: this has been tested with success on many projects,
 cross-compiled for Windows: cairo, babl, GEGL, glib, GTK+, libpng,
-pango, freetype2, gdk-pixbuf, GIMP and many more.*
+pango, freetype2, gdk-pixbuf, GIMP, Siril and many more.*
 
 Example: CMake
 ~~~~~~~~~~~~~~~
@@ -295,16 +295,15 @@ You can do so with crossroad, of course::
     $ mkdir build; cd build
     $ crossroad cmake ..
 
-Alternatively crossroad allows also to use the curses interface of
-`cmake`::
+Alternatively crossroad allows to use the curses interface of `cmake`::
 
     $ crossroad ccmake .
 
 The rest should be the same, with `make && make install`, and you can
 add any options to your build the usual way.
 
-This has been tested with success on allegro 5, and Exiv2 libraries,
-cross-compiled for Windows.
+*This has been tested with success on allegro 5, and Exiv2 libraries,
+cross-compiled for Windows.*
 
 Example: Meson
 ~~~~~~~~~~~~~~
@@ -332,18 +331,19 @@ As a consequence, the support in crossroad is only following some common
 usage I saw in a few projects, but it may not work in your case.
 
 Another issue is that scons does not even have standard for basic
-features either like prefix path. So you have to use the environment
-variable `$CROSSROAD_PREFIX` and use it were appropriate yourself.
+features like prefix path. So you have to use the environment variable
+`$CROSSROAD_PREFIX` and use it were appropriate yourself.
 
 For instance, assuming your scons scripts use `--prefix` option, running
 scons through crossroad could be done this way:
 
     $ crossroad scons install --prefix=$CROSSROAD_PREFIX
 
-In any cases, scons is really not a recommended build system if you wish to have
-an easy cross-buildable project. If you don't manage to cross-compile your
-project, rather than tweaking your SConscript files indefinitely, consider
-taking the time to port your project to autotools or cmake.
+In any cases, scons is really not a recommended build system if you wish
+to have an easy cross-buildable project. If you don't manage to
+cross-compile your project, rather than tweaking your SConscript files
+indefinitely, consider taking the time to port your project to autotools
+or meson.
 
 Note that crossroad has been used on some scons-using projects back in
 the days, but I have not seen any more of them for a few years now. I am
@@ -374,13 +374,17 @@ And `crossroad cmake /some/path` is nothing more than::
 Here is the list of useful, easy-to-remember and ready-to-use,
 environment variables, prepared by crossroad:
 
-- $CROSSROAD_PREFIX;
+- $CROSSROAD_PREFIX
 
-- $CROSSROAD_HOST;
+- $CROSSROAD_HOME
 
-- $CROSSROAD_BUILD;
+- $CROSSROAD_HOST
 
-- $CROSSROAD_CMAKE_TOOLCHAIN_FILE.
+- $CROSSROAD_BUILD
+
+- $CROSSROAD_CMAKE_TOOLCHAIN_FILE
+
+- $CROSSROAD_MESON_TOOLCHAIN_FILE
 
 - $CROSSROAD_PLATFORM
 
@@ -395,7 +399,7 @@ for your builds to work successfully. If you modify these, you will get
 into trouble.
 
 What it means though is that you can use these for other compilation
-systems.  You can also use your `crossroad` prefix, even for systems
+systems. You can also use your `crossroad` prefix, even for systems
 which do not require any compilation. Let's say for instance you wish
 to include a pure python project in your build. No per-platform
 compilation is needed, but you still want to carry all the files in the
@@ -405,8 +409,8 @@ $ ./setup.py install --prefix=$CROSSROAD_PREFIX
 
 and so on.
 
-*Note: as you may have guess `$CROSSROAD_PREFIX` encapsulates your new
-cross-build and all its dependencies.
+*Note: as you may have guessed, `$CROSSROAD_PREFIX` encapsulates your
+new cross-built project and all its dependencies.
 Though in most cases, you should not need to manually go there do
 anything, you still can (for instance to change software settings, etc.)
 with `cd $CROSSROAD_PREFIX`.*
@@ -443,7 +447,8 @@ usage. It has proven to be able to generically cross-build many dozens
 of projects and I am confident it should work pretty well for any
 Autotools, CMake or Meson project out there, unless they really use
 non-standard tricks (in which case, the most relevant course of action
-is often to send a patch to the upstream project).
+is often to send a patch to the upstream project in order to improve
+their build system).
 If you encounter standard cases which crossroad does not properly
 support, please send me a patch!
 
@@ -455,7 +460,7 @@ originally made for cross-compilation, but it has become my main usage
 of crossroad these days (I mean a daily usage for all my development).
 
 Developers have all sort of tricks to build, install and test their
-software in non-standard prefix by tweaking environment variables.
+software in non-standard prefixes by tweaking environment variables.
 
 Sometimes you may have a unique place (set up in your `.bashrc` for
 instance), but then when you want to clean a single program without
@@ -478,8 +483,8 @@ want to build GIMP. I'd run::
 Now I am in a specifically generated environment for my GIMP build.
 Let's build GIMP::
 
-    $ cd $build/gimp
-    $ crossroad meson $src/gimp && ninja install
+    $ ccd -y gimp
+    $ crossroad meson /path/to/gimp && ninja && ninja install
 
 I can now run GIMP from command line: `gimp-2.99`
 
