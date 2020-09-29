@@ -66,6 +66,8 @@ repositories = {
     'https://download.fedoraproject.org/pub/fedora/linux/releases/30/Everything/x86_64/os/',
   'fedora31':
     'https://download.fedoraproject.org/pub/fedora/linux/releases/31/Everything/x86_64/os/',
+  'fedora32':
+    'https://download.fedoraproject.org/pub/fedora/linux/releases/32/Everything/x86_64/os/',
   'suse':
     'http://download.opensuse.org/repositories/windows:/mingw:/ARCH/openSUSE_Leap_42.3/'
 }
