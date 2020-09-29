@@ -1016,7 +1016,7 @@ if __name__ == "__main__":
         if package['summary'] is not None:
             sys.stdout.write('\tSummary: {}\n'.format(package['summary']))
         sys.stdout.write('\tProject URL: {}\n'.format(package['project_url']))
-        if package['packager_url'] is not None:
+        if 'packager_url' in package and package['packager_url'] is not None:
             sys.stdout.write('\tPackager URL: {}\n'.format(package['packager_url']))
         if package['url'] is not None:
             sys.stdout.write('\tPackage URL: {}\n'.format(package['url']))
