@@ -6,7 +6,7 @@ crossroad
 Cross-Compilation Environment Toolkit.
 --------------------------------------
 
-:Date: 2019-09-24
+:Date: 2020-09-29
 :Version: @VERSION@
 :Manual section: 1
 :Author: jehan@girinstud.io
@@ -84,7 +84,7 @@ Windows 32-bit::
 It will return a list of required binaries that `crossroad` cannot find.
 If you actually installed them, the most likely reason is that you should
 update your `$PATH` with the right location. In the above example,
-`crossroad` could find your minGW linker, but not the compiler. It also
+`crossroad` could find your MinGW linker, but not the compiler. It also
 informs you of a possible package name (Your distribution may use a
 different name, but it would still give a useful hint to search in your
 package manager).
@@ -250,12 +250,25 @@ safe working place, but rather as a temporary cache of foreign-platform
 binaries, which can be erased or moved over to the foreign platform at
 any time. In particular keep your code and any working material at your
 usual development location.
+Nevertheless a mechanism exists to prevent specific packages from being
+installed. Say you built your own GLib and want to make sure that it
+won't be overwritten by a pre-built glib pulled in as a dependency of
+another packager (e.g. GTK+). You could mask the package with this
+command::
 
-Currently `crossroad` uses pre-compiled package repositories from Fedora
-repositories. It used to pull from SUSE repositories as well, but this
-has been changed in crossroad 0.8.
-I would welcome any patch to use any other pre-compiled repositories
-alongside, provided they are safe.
+    $ crossroad mask glib2
+
+GLib will now be ignored by the dependency system. You can unmask any
+packager later with the reverse `unmask` subcommand.
+
+Currently `crossroad` uses pre-compiled package repositories from either
+Fedora, OpenSUSE or msys2 repositories. One of them is selected by
+default depending on which distribution is detected. Use the subcommand
+`source` to list all available pre-built package source and show which
+one is currently selected, then use it again to select another one.
+
+I would welcome any patch to use any alternative pre-compiled
+repositories alongside, provided they are safe.
 
 Build a Project
 ...............
@@ -377,13 +390,17 @@ And `crossroad cmake /some/path` is nothing more than::
 Here is the list of useful, easy-to-remember and ready-to-use,
 environment variables, prepared by crossroad:
 
-- $CROSSROAD_PREFIX;
+- $CROSSROAD_PREFIX
 
-- $CROSSROAD_HOST;
+- $CROSSROAD_HOME
 
-- $CROSSROAD_BUILD;
+- $CROSSROAD_HOST
 
-- $CROSSROAD_CMAKE_TOOLCHAIN_FILE.
+- $CROSSROAD_BUILD
+
+- $CROSSROAD_CMAKE_TOOLCHAIN_FILE
+
+- $CROSSROAD_MESON_TOOLCHAIN_FILE
 
 - $CROSSROAD_PLATFORM
 
@@ -525,7 +542,7 @@ self-installed MinGW-w64 prefix of Windows libraries, if they are not in
 the same prefix as the MinGW-64 executables you run, you can set
 `$CROSSROAD_CUSTOM_MINGW_W32_PREFIX` and
 `$CROSSROAD_CUSTOM_MINGW_W64_PREFIX` respectively for your 32-bit and
-64-bit installation of MinGW-w64.  Normally you will not need these. In
+64-bit installation of MinGW-w64. Normally you will not need these. In
 most usual installation of MinGW-w64, `crossroad` should be able to
 find your Windows libraries prefix.
 
