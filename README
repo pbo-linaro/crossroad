@@ -57,6 +57,16 @@ Or download from the archive::
 
     $ ./setup.py install
 
+**Warning about pip3 version:** some older versions of pip3 breaks the
+installation of Crossroad. This has been reported at least for pip3
+version 18.1 (as outputted by `pip3 --version`). pip3 version 19.1.1 and
+likely higher versions are reported to work fine.
+If you are in a case where Crossroad does not work correctly (in
+particular when entering the development environment, all inner
+Crossroad commands fail and your shell prompt is not updated, this is
+likely your problem), install if from the archive or from the repository
+(or update `pip3` if possible).
+
 Setting-Up
 ==========
 
