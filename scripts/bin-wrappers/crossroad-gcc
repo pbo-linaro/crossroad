@@ -132,4 +132,10 @@ if [ -d "/usr/$CROSSROAD_HOST/lib" ]; then
     export CROSSROAD_LDFLAGS="$CROSSROAD_LDFLAGS -L/usr/$CROSSROAD_HOST/lib "
 fi
 
+if [ "`which -a ${CROSSROAD_HOST}-${TOOL} | wc -l`" -lt "2" ]; then
+  echo "** [Crossroad] Error: actual compiler (${CROSSROAD_HOST}-${TOOL}) does not exist in your PATH."
+  echo "** [Crossroad] Error: please install ${CROSSROAD_HOST}-${TOOL}."
+  exit 1
+fi
+
 `which -a ${CROSSROAD_HOST}-${TOOL} | grep -v $0 |head -n 1` "$@" $CROSSROAD_LDFLAGS $CROSSROAD_CPPFLAGS
