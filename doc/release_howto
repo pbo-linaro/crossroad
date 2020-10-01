@@ -48,4 +48,4 @@ setup.py and MANIFEST.in)
 
 * Install crossroad from pypi and ensure everything worked out fine:
 
-    $ sudo pip3 install --upgrade crossroad
+    $ pip3 install --user --upgrade crossroad
