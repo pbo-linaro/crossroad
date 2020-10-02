@@ -72,6 +72,11 @@ repositories = {
     'http://download.opensuse.org/repositories/windows:/mingw:/ARCH/openSUSE_Leap_42.3/'
 }
 
+msys2_mirrorlist = {
+  'w32': 'https://raw.githubusercontent.com/msys2/MSYS2-packages/master/pacman-mirrors/mirrorlist.mingw32',
+  'w64': 'https://raw.githubusercontent.com/msys2/MSYS2-packages/master/pacman-mirrors/mirrorlist.mingw64'
+}
+
 def detect_distribution_repo (options):
   '''
   Detect the current repository distribution so that you install
@@ -320,9 +325,25 @@ def UpdateArchRepository(repositoryLocation, arch, force=True):
 
   if force or not os.path.exists(db_tar):
     logging.warning('Downloading repository data: {}'.format(repositoryLocation + db_name))
-    with urlopen(repositoryLocation + db_name, timeout = 5.0) as db_file:
-      with open(db_tar, 'wb') as local_file:
-        local_file.write(db_file.read())
+    try:
+      with urlopen(repositoryLocation + db_name, timeout = 5.0) as db_file:
+        with open(db_tar, 'wb') as local_file:
+          local_file.write(db_file.read())
+    except urllib.error.URLError as err:
+      sys.stderr.write('\tDownload failed with reason: {}\n'.format(err.reason))
+      mirrors = crossroad_get_msys2_mirrors(repositoryLocation, arch)
+      for mirror in mirrors:
+        sys.stderr.write('Attempting to update with alternative mirror: {}\n'.format(mirror))
+        try:
+          with urlopen(mirror + db_name, timeout = 5.0) as db_file:
+            with open(db_tar, 'wb') as local_file:
+              local_file.write(db_file.read())
+              break
+        except urllib.error.URLError as err:
+          sys.stderr.write('\tDownload failed with reason: {}\n'.format(err.reason))
+      else:
+        sys.stderr.write('Error: no mirrors could be reached.\n')
+        return False
 
   # Cleaning old files once new download completed, so that we still
   # have some old repo data if download failed.
@@ -361,6 +382,8 @@ def UpdateArchRepository(repositoryLocation, arch, force=True):
   with open(db_tar + ".filelists", "wb") as f:
     marshal.dump(_package_filelists, f)
 
+  return True
+
 def OpenArchRepository(repositoryLocation, arch):
   global _packages
   global _package_filelists
@@ -386,7 +409,26 @@ def OpenArchRepository(repositoryLocation, arch):
     with open(db_tar + ".filelists", "rb") as f:
       _package_filelists = marshal.load (f)
   except:
-    UpdateArchRepository(repositoryLocation, arch, force=False)
+    return UpdateArchRepository(repositoryLocation, arch, force=False)
+
+  return True
+
+def crossroad_get_msys2_mirrors(main_repo, arch):
+  mirrors = []
+  mirrorlist = msys2_mirrorlist[arch]
+  f = urlopen(mirrorlist, timeout = 5.0)
+  lines = f.readlines()
+  for line in lines:
+    line = line.decode('utf-8')
+    if line.startswith('#'):
+      continue
+    else:
+      kv = line.strip().split('=', maxsplit=1)
+      if kv[0].strip() == 'Server':
+        mirror = kv[1].strip()
+        if mirror != main_repo.strip():
+          mirrors += [kv[1].strip()]
+  return mirrors
 
 def OpenRPMRepository(repositoryLocation, arch):
   from xml.etree.cElementTree import parse as xmlparse
@@ -562,6 +604,7 @@ def packageBaseName(rpm):
     return re.sub(r'-([0-9]|\.)+-[0-9]\.[0-9].(src|noarch)\.(rpm|cpio)$', '', rpm)
 
 def packagesDownload(packageNames, arch,
+                     repo, reponame,
                      installed_packages,
                      masked_packages,
                      withDependencies = False,
@@ -613,17 +656,24 @@ def packagesDownload(packageNames, arch,
             logging.warning('Deleting outdated cached version of {}.'.format(package_basename))
             os.unlink(os.path.join(_packageCacheDirectory, f))
     if nocache or not os.path.exists(localFilenameFull):
-        logging.warning('Downloading %s', package['filename'])
         # When I download a rpm, I would also remove any extracted cpio
         # of this package which may have been left behind.
         for f in os.listdir(_extractedCacheDirectory):
             if packageBaseName(f) == package_basename:
                 os.unlink(os.path.join(_extractedCacheDirectory, f))
-        retry = 4
+        package_url = package['url']
+        if reponame == 'msys2':
+          timeout = 5.0
+          mirrors = crossroad_get_msys2_mirrors(repo, arch)
+          retry = len(mirrors)
+        else:
+          retry = 4
+          timeout = 120.0
         last_error = None
         while retry >= 0:
+            sys.stdout.write('Downloading {} from {}\n'.format(package['filename'], package_url))
             try:
-                with urlopen(package['url'], timeout = 120.0) as remote_package:
+                with urlopen(package_url, timeout = timeout) as remote_package:
                     with open(localFilenameFull, 'wb') as local_file:
                         local_file.write(remote_package.read())
                 break
@@ -633,6 +683,8 @@ def packagesDownload(packageNames, arch,
                 #logging.warning('Retrying…')
                 retry -= 1
                 last_error = e
+                if reponame == 'msys2':
+                  package_url = package['url'].replace(repo, mirrors[retry])
                 continue
         else:
             # Errors occured at every attempt.
@@ -921,7 +973,8 @@ if __name__ == "__main__":
   # Open repository
   try:
     if reponame in [ 'msys2' ]:
-      OpenArchRepository(repo, options.arch)
+      if not OpenArchRepository(repo, options.arch):
+        sys.exit(os.EX_UNAVAILABLE)
     else:
       OpenRPMRepository(repo, options.arch)
   except Exception as e:
@@ -930,7 +983,8 @@ if __name__ == "__main__":
   if options.update:
     try:
       if reponame in [ 'msys2' ]:
-        UpdateArchRepository(repo, options.arch, force=True)
+        if not UpdateArchRepository(repo, options.arch, force=True):
+          sys.exit(os.EX_UNAVAILABLE)
       else:
         # Nothing to do for the RPM repo. It'll update by itself when
         # needed.
@@ -1243,6 +1297,7 @@ if __name__ == "__main__":
     masked_packages = []
   try:
     (packages, package_files) = packagesDownload(packages, options.arch,
+                                                 repo, reponame,
                                                  installed_packages,
                                                  masked_packages,
                                                  options.withdeps,
