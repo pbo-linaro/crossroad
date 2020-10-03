@@ -120,10 +120,31 @@ def prepare(prefix):
     except PermissionError:
         sys.stderr.write('"{}" cannot be created. Please verify your permissions. Aborting.\n'.format(env_path))
         return False
+
     gcc_libs = subprocess.check_output(['i686-w64-mingw32-gcc', '-print-file-name='], universal_newlines=True)
-    for dll in glob.glob(gcc_libs.strip() + '/*.dll'):
+
+    sysroot = subprocess.check_output(['i686-w64-mingw32-gcc', '-print-sysroot'], universal_newlines=True)
+    sysroot_dlls = []
+    if sysroot.strip() != '':
+        # On Fedora, the system MinGW DLLs (libgcc*, libstdc*,
+        # libwinpthread* and more) are installed in sysroot, whereas on
+        # a Debian, they are installed in the directory returned by
+        # -print-file-name= (and --print-sysroot returned an empty
+        # result).
+        sysroot_bin = os.path.join(sysroot.strip(), 'mingw/bin')
+        sysroot_dlls = glob.glob(sysroot_bin + '/*.dll')
+    for dll in glob.glob(gcc_libs.strip() + '/*.dll') + sysroot_dlls:
         try:
-            os.symlink(dll, os.path.join(os.path.join(env_bin, os.path.basename(dll))))
+            # I used to symlink, which was enough for doing archive
+            # (which would dereference the symlink for us) or for
+            # virtual machine usage. But when doing a copy or more of
+            # the whole folder, the link could break (typically in a CI
+            # usage where our prefix is the artifacts and the linked
+            # file doesn't exist anymore in subsequent CI jobs).
+            # So let's just copy.
+            shutil.copy(dll,
+                        os.path.join(os.path.join(env_bin, os.path.basename(dll))),
+                        follow_symlinks=True)
         except OSError:
             # A failed symlink is not necessarily a no-go. Let's just output a warning.
             sys.stderr.write('Warning: crossroad failed to symlink {} in {}.\n'.format(dll, env_bin))
