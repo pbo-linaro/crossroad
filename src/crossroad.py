@@ -604,6 +604,11 @@ if __name__ == "__main__":
         # where I make sure to first run the user rc files.
         bashrc_path = os.path.join(install_datadir, 'crossroad/scripts/shells/bash/bashrc.' + available_platforms[target].name)
 
+        if not os.path.exists(bashrc_path):
+          sys.stderr.write("Error: Crossroad bashrc file does not exist.\n")
+          sys.stderr.write("This is most likely because of an installation error.\n")
+          sys.exit(os.EX_SOFTWARE)
+
         # Initially I was always running as --rcfile and just exiting
         # inside our custom rcfile, but this became a problem in some
         # environment like the gitlab-CI one. For some reason, a bash
@@ -623,6 +628,12 @@ if __name__ == "__main__":
             command = [shell, bash_run_option, bash_run_value]
     elif shell[-3:] == 'zsh':
         zdotdir = os.path.join(install_datadir, 'crossroad/scripts/shells/zsh.' + available_platforms[target].name)
+
+        if not os.path.exists(zdotdir):
+          sys.stderr.write("Error: Crossroad zsh file does not exist.\n")
+          sys.stderr.write("This is most likely because of an installation error.\n")
+          sys.exit(os.EX_SOFTWARE)
+
         # SETUP the $ZDOTDIR env.
         # If already set, save the old value and set it back at the end.
         # I could not find a way in zsh to run another zshrc and still end up in an interactive shell.
