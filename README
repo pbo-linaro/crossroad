@@ -582,6 +582,17 @@ And clone it with::
 
 Then send your `git-format`-ed patches by email to crossroad <at> girinstud.io.
 
+They use Crossroad
+==================
+
+* [GIMP](https://www.gimp.org/) in its [Continous
+  Integration](https://gitlab.gnome.org/GNOME/gimp/-/blob/master/.gitlab-ci.yml)
+* [Siril](http://www.siril.org/) (astronomical image processing tool) in
+  its [Continuous
+  Integration](https://gitlab.com/free-astro/siril/-/blob/master/.gitlab-ci.yml).
+* [BellePoule](http://betton.escrime.free.fr/fencing-tournament-software/)
+  (Fencing tournament management)
+
 About the name
 ==============
 
