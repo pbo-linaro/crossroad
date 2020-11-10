@@ -6,21 +6,21 @@
 # The contents of this file are subject to the Mozilla Public License Version 1.1; you may not use this file except in
 # compliance with the License. You may obtain a copy of the License at http://www.mozilla.org/MPL/
 
+import fnmatch
+import glob
+import logging
+import marshal
+import os.path
+import re
+import shutil
+import socket
+import subprocess
+import sys
+import tarfile
+import time
 from urllib.request import urlretrieve, urlopen
 import urllib.error
-import fnmatch
-import logging
-import os.path
-import sys
-import shutil
-import tarfile
-import re
 import zipfile
-import time
-import mimetypes
-import subprocess
-import glob
-import marshal
 
 _packages = []
 _package_filelists = {}
@@ -329,8 +329,11 @@ def UpdateArchRepository(repositoryLocation, arch, force=True):
       with urlopen(repositoryLocation + db_name, timeout = 5.0) as db_file:
         with open(db_tar, 'wb') as local_file:
           local_file.write(db_file.read())
-    except urllib.error.URLError as err:
-      sys.stderr.write('\tDownload failed with reason: {}\n'.format(err.reason))
+    except (urllib.error.URLError, socket.timeout) as err:
+      if isinstance(err, urllib.error.URLError):
+        sys.stderr.write('\tDownload failed with reason: {}\n'.format(err.reason))
+      else:
+        sys.stderr.write('\tDownload failed from timeout.\n')
       mirrors = crossroad_get_msys2_mirrors(repositoryLocation, arch)
       for mirror in mirrors:
         sys.stderr.write('Attempting to update with alternative mirror: {}\n'.format(mirror))
@@ -339,8 +342,11 @@ def UpdateArchRepository(repositoryLocation, arch, force=True):
             with open(db_tar, 'wb') as local_file:
               local_file.write(db_file.read())
               break
-        except urllib.error.URLError as err:
-          sys.stderr.write('\tDownload failed with reason: {}\n'.format(err.reason))
+        except (urllib.error.URLError, socket.timeout) as err:
+          if isinstance(err, urllib.error.URLError):
+            sys.stderr.write('\tDownload failed with reason: {}\n'.format(err.reason))
+          else:
+            sys.stderr.write('\tDownload failed from timeout.\n')
       else:
         sys.stderr.write('Error: no mirrors could be reached.\n')
         return False
@@ -677,8 +683,11 @@ def packagesDownload(packageNames, arch,
                     with open(localFilenameFull, 'wb') as local_file:
                         local_file.write(remote_package.read())
                 break
-            except urllib.error.URLError as e:
-                logging.warning('Download failed: {} (errno: {})'.format(e.reason, e.errno))
+            except (urllib.error.URLError, socket.timeout) as e:
+                if isinstance(err, urllib.error.URLError):
+                  sys.stderr.write('\tDownload failed with reason: {}\n'.format(e.reason))
+                else:
+                  sys.stderr.write('\tDownload failed from timeout.\n')
                 #if e.errno == 110: # ETIMEDOUT
                 #logging.warning('Retrying…')
                 retry -= 1
