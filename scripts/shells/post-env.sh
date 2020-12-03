@@ -44,7 +44,7 @@ if [ X"`id -u`" = "X0" ]; then
     printf "\033[0;31mWARNING: you are running crossroad as root. This is a very bad idea.\n"
     printf "Crossroad is a developer tool. Whatever your needs, if you think that you need to be root at any point, "
     printf "then it is likely you are doing something wrong.\n"
-    printf "This said, you are the boss. This warning will be the only one from crossroad.\033[00m\n"
+    printf "This said, you are the boss. This warning will be the only one from crossroad.\033[0m\n"
 fi
 
 # Run a user script. We do it like this through an interactive shell,

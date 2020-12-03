@@ -17,4 +17,4 @@
 # along with crossroad.  If not, see <http://www.gnu.org/licenses/>.
 
 RED="\[\033[0;31m\]"
-NORMAL="\[\033[00m\]"
+NORMAL="\[\033[0m\]"
