@@ -72,10 +72,7 @@ repositories = {
     'http://download.opensuse.org/repositories/windows:/mingw:/ARCH/openSUSE_Leap_42.3/'
 }
 
-msys2_mirrorlist = {
-  'w32': 'https://raw.githubusercontent.com/msys2/MSYS2-packages/master/pacman-mirrors/mirrorlist.mingw32',
-  'w64': 'https://raw.githubusercontent.com/msys2/MSYS2-packages/master/pacman-mirrors/mirrorlist.mingw64'
-}
+msys2_mirrorlist = 'https://raw.githubusercontent.com/msys2/MSYS2-packages/master/pacman-mirrors/mirrorlist.mingw'
 
 def detect_distribution_repo (options):
   '''
@@ -421,8 +418,7 @@ def OpenArchRepository(repositoryLocation, arch):
 
 def crossroad_get_msys2_mirrors(main_repo, arch):
   mirrors = []
-  mirrorlist = msys2_mirrorlist[arch]
-  f = urlopen(mirrorlist, timeout = 5.0)
+  f = urlopen(msys2_mirrorlist, timeout = 5.0)
   lines = f.readlines()
   for line in lines:
     line = line.decode('utf-8')
@@ -431,7 +427,9 @@ def crossroad_get_msys2_mirrors(main_repo, arch):
     else:
       kv = line.strip().split('=', maxsplit=1)
       if kv[0].strip() == 'Server':
-        mirror = kv[1].strip()
+        mirror = kv[1].strip().replace("$repo",
+                                       "x86_64" if arch == 'w64'
+                                                else 'i686')
         if mirror != main_repo.strip():
           mirrors += [kv[1].strip()]
   return mirrors
