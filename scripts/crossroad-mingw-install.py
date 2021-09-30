@@ -62,12 +62,12 @@ _extractedFilesDirectory = os.path.join(xdg_cache_home, 'crossroad', 'prefix')
 repositories = {
   'msys2':
     'http://repo.msys2.org/mingw/ARCH/',
-  'fedora30':
-    'https://download.fedoraproject.org/pub/fedora/linux/releases/30/Everything/x86_64/os/',
-  'fedora31':
-    'https://download.fedoraproject.org/pub/fedora/linux/releases/31/Everything/x86_64/os/',
   'fedora32':
     'https://download.fedoraproject.org/pub/fedora/linux/releases/32/Everything/x86_64/os/',
+  'fedora33':
+    'https://download.fedoraproject.org/pub/fedora/linux/releases/33/Everything/x86_64/os/',
+  'fedora34':
+    'https://download.fedoraproject.org/pub/fedora/linux/releases/34/Everything/x86_64/os/',
   'suse':
     'http://download.opensuse.org/repositories/windows:/mingw:/ARCH/openSUSE_Leap_42.3/'
 }
@@ -108,15 +108,15 @@ def detect_distribution_repo (options):
         release = None
         with open('/etc/fedora-release', 'r') as f:
           release = f.read().strip()
-          if release.find('Fedora release 30') != -1:
-            reponame = 'fedora30'
-          elif release.find('Fedora release 31') != -1:
-            reponame = 'fedora31'
+          match = re.search('Fedora release ([0-9]*)', release)
+          if match is not None:
+            fedora_version = match.group(1)
+            reponame = 'fedora{}'.format(fedora_version)
       elif os.path.isfile('/etc/SuSE-release'):
         reponame = 'suse'
 
   # Default to msys2 repo.
-  if reponame is None:
+  if reponame is None or reponame not in repositories:
     reponame = 'msys2'
 
   repo = repositories[reponame]
