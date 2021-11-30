@@ -17,10 +17,12 @@ import socket
 import subprocess
 import sys
 import tarfile
+import tempfile
 import time
 from urllib.request import urlretrieve, urlopen
 import urllib.error
 import zipfile
+import zstandard
 
 _packages = []
 _package_filelists = {}
@@ -357,9 +359,19 @@ def UpdateArchRepository(repositoryLocation, arch, force=True):
       os.rmdir(os.path.join(db_dir, f))
 
   logging.warning('Extracting repository data: {}'.format(db_tar))
-  tar = tarfile.open(db_tar, 'r:gz')
-  tar.extractall(path=db_dir)
-  tar.close()
+  try:
+    tar = tarfile.open(db_tar, 'r:gz')
+    tar.extractall(path=db_dir)
+    tar.close()
+  except tarfile.ReadError as e:
+    # The file used to be gz-compressed. Now it's in zstd.
+    decomp = zstandard.ZstdDecompressor()
+    with open(db_tar, 'rb') as inp, tempfile.TemporaryFile() as out:
+      decomp.copy_stream(inp, out)
+      out.seek(0)
+      tar = tarfile.open(fileobj=out, mode='r|')
+      tar.extractall(path=db_dir)
+      tar.close()
 
   for package_name in os.listdir(path=db_dir):
     package_dir = os.path.join(db_dir, package_name)
@@ -761,8 +773,6 @@ def packagesExtractTAR(packageFilename, srcpkg=False):
       tar.extractall(path=_extractedFilesDirectory)
       tar.close()
   elif tar_path.endswith('tar.zst'):
-      import zstandard
-      import tempfile
       decomp = zstandard.ZstdDecompressor()
       with open(tar_path, 'rb') as inp, tempfile.TemporaryFile() as out:
           decomp.copy_stream(inp, out)
