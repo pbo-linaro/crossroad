@@ -21,6 +21,12 @@ export CROSSROAD_BUILD=`@DATADIR@/share/crossroad/scripts/config.guess`
 export CROSSROAD_CMAKE_TOOLCHAIN_FILE="@DATADIR@/share/crossroad/scripts/cmake/toolchain-${CROSSROAD_PLATFORM}.cmake"
 export CROSSROAD_MESON_TOOLCHAIN_FILE="@DATADIR@/share/crossroad/scripts/meson/toolchain-${CROSSROAD_PLATFORM}.meson"
 
+if [ -f "$CROSSROAD_HOME/.depends.crossroad" ]; then
+  export CROSSROAD_DEPENDENCIES=$(<"$CROSSROAD_HOME/.depends.crossroad")
+else
+  export CROSSROAD_DEPENDENCIES=
+fi
+
 # Compute the platform word-size for the "native" platform.
 if [ x"$CROSSROAD_PLATFORM" = x"native" ]; then
   LONG_BIT=`getconf LONG_BIT`
@@ -30,19 +36,84 @@ if [ x"$CROSSROAD_PLATFORM" = x"native" ]; then
   fi
 fi
 
+if [ x"$CROSSROAD_PLATFORM" = x"native" ]; then
+  GCC="gcc"
+else
+  GCC="${CROSSROAD_HOST}-gcc"
+fi
+
+DEPS_LD_LIBRARY_PATH=
+DEPS_GI_TYPELIB_PATH=
+while IFS= read -r dep;
+do
+  if [ -n "$dep" ]; then
+    dep_prefix="$CROSSROAD_PREFIX/../$dep"
+
+    export PATH="$dep_prefix/bin:$PATH"
+
+    if [ -n "$DEPS_LD_LIBRARY_PATH" ]; then
+      DEPS_LD_LIBRARY_PATH=$dep_prefix/lib:$DEPS_LD_LIBRARY_PATH
+    else
+      DEPS_LD_LIBRARY_PATH=$dep_prefix/lib
+    fi
+    if [ -n "$DEPS_GI_TYPELIB_PATH" ]; then
+      DEPS_GI_TYPELIB_PATH=$dep_prefix/lib/girepository-1.0/:$DEPS_GI_TYPELIB_PATH
+    else
+      DEPS_GI_TYPELIB_PATH=$dep_prefix/lib/girepository-1.0/
+    fi
+
+    if [ "x$CROSSROAD_WORD_SIZE" != "x" ]; then
+      DEPS_LD_LIBRARY_PATH=$dep_prefix/lib${CROSSROAD_WORD_SIZE}:$DEPS_LD_LIBRARY_PATH
+      DEPS_GI_TYPELIB_PATH=$dep_prefix/lib${CROSSROAD_WORD_SIZE}/girepository-1.0/:$DEPS_GI_TYPELIB_PATH
+    fi
+
+    if [ "x`$GCC -print-multiarch`" != "x" ]; then
+      DEPS_LD_LIBRARY_PATH=$dep_prefix/lib/`$GCC -print-multiarch`:$DEPS_LD_LIBRARY_PATH
+      DEPS_GI_TYPELIB_PATH=$dep_prefix/lib/`$GCC -print-multiarch`/girepository-1.0/:$DEPS_GI_TYPELIB_PATH
+    fi
+
+    if [ x"$CROSSROAD_PLATFORM" = x"native" ]; then
+      PKG_CONFIG_PATH=$dep_prefix/lib/pkgconfig:$dep_prefix/share/pkgconfig:$PKG_CONFIG_PATH
+      if [ "x$CROSSROAD_WORD_SIZE" != "x" ]; then
+        PKG_CONFIG_PATH=$dep_prefix/lib${CROSSROAD_WORD_SIZE}/pkgconfig:$PKG_CONFIG_PATH
+      fi
+      if [ "x`$GCC -print-multiarch`" != "x" ]; then
+        PKG_CONFIG_PATH=$dep_prefix/lib/`$GCC -print-multiarch`/pkgconfig/:$PKG_CONFIG_PATH
+      fi
+    fi
+
+    for dir in $(find $dep_prefix/lib/ $dep_prefix/lib${CROSSROAD_WORD_SIZE}/ -maxdepth 1 -name 'python3.*' 2>/dev/null);
+    do
+      export PYTHONPATH=${dir}/site-packages:$PYTHONPATH
+    done;
+    export PYTHONPATH=$dep_prefix/share/glib-2.0/:$PYTHONPATH
+
+    unset dep_prefix
+  fi
+done <<< "$CROSSROAD_DEPENDENCIES";
+
 export PATH="$CROSSROAD_PREFIX/bin:$PATH"
 
 if [ x"$CROSSROAD_PLATFORM" = x"native" ]; then
-  export LD_LIBRARY_PATH=$CROSSROAD_PREFIX/lib:$LD_LIBRARY_PATH
-  export GI_TYPELIB_PATH=$CROSSROAD_PREFIX/lib/girepository-1.0/:$GI_TYPELIB_PATH
-
-  GCC="gcc"
+  if [ -n "$DEPS_LD_LIBRARY_PATH" ]; then
+    DEPS_LD_LIBRARY_PATH=":$DEPS_LD_LIBRARY_PATH:$LD_LIBRARY_PATH"
+    DEPS_GI_TYPELIB_PATH=":$DEPS_GI_TYPELIB_PATH:$GI_TYPELIB_PATH"
+  else
+    DEPS_LD_LIBRARY_PATH=":$LD_LIBRARY_PATH"
+    DEPS_GI_TYPELIB_PATH=":$GI_TYPELIB_PATH"
+  fi
 else
-  export LD_LIBRARY_PATH=$CROSSROAD_PREFIX/lib
-  export GI_TYPELIB_PATH=$CROSSROAD_PREFIX/lib/girepository-1.0/
-
-  GCC="${CROSSROAD_HOST}-gcc"
+  if [ -n "$DEPS_LD_LIBRARY_PATH" ]; then
+    DEPS_LD_LIBRARY_PATH=":$DEPS_LD_LIBRARY_PATH"
+    DEPS_GI_TYPELIB_PATH=":$DEPS_GI_TYPELIB_PATH"
+  fi
 fi
+
+export LD_LIBRARY_PATH="$CROSSROAD_PREFIX/lib$DEPS_LD_LIBRARY_PATH"
+export GI_TYPELIB_PATH="$CROSSROAD_PREFIX/lib/girepository-1.0/$DEPS_GI_TYPELIB_PATH"
+
+unset DEPS_LD_LIBRARY_PATH
+unset DEPS_GI_TYPELIB_PATH
 
 if [ "x$CROSSROAD_WORD_SIZE" != "x" ]; then
   export LD_LIBRARY_PATH=$CROSSROAD_PREFIX/lib${CROSSROAD_WORD_SIZE}:$LD_LIBRARY_PATH
