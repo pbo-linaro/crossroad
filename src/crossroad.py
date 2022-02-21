@@ -400,64 +400,6 @@ if __name__ == "__main__":
             project = None
         sys.exit(os.EX_OK)
 
-    if options.depends:
-        if len(args) < 3:
-            sys.stderr.write('You must specify the platform, project and dependent projects for --depends.\n')
-            sys.exit(os.EX_USAGE)
-
-        platform     = None
-        project      = None
-        dependencies = []
-        for platform_project in args:
-            if platform is None:
-                platform = platform_project
-                continue
-            if project is None:
-                project  = platform_project
-                continue
-            dependencies += [platform_project]
-
-        if platform not in available_platforms:
-            sys.stderr.write('Not a valid platform: {}\n'.format(platform))
-            sys.exit(os.EX_UNAVAILABLE)
-
-        project_path = os.path.join(xdg_data_home, 'crossroad/roads/', platform, project)
-        if not os.access(project_path, os.R_OK):
-            sys.stderr.write('Project {} for {} is not built, or unreadable.\n'.format(project, platform))
-            sys.exit(os.EX_NOPERM)
-
-        for p in dependencies:
-            dep_path = os.path.join(xdg_data_home, 'crossroad/roads/', platform, p)
-            if not os.access(dep_path, os.R_OK):
-                sys.stderr.write('Project {} for {} is not built, or unreadable.\n'.format(p, platform))
-                sys.exit(os.EX_NOPERM)
-
-        artifacts_path = os.path.join(xdg_data_home, 'crossroad/artifacts', platform, project)
-        depends_file = os.path.join(artifacts_path, '.depends.crossroad')
-
-        try:
-            with open(depends_file, 'r') as f:
-                old_dependencies = f.readlines()
-
-            for d in dependencies:
-                # Removing duplicates without using dict or OrderedDict
-                # to stay compatible with older Python while keeping
-                # item order.
-                # Also when a new dependency is added again, the old one
-                # is popped out, allowing to sort items by re-adding
-                # them in a different order.
-                if d in old_dependencies:
-                  old_dependencies.remove(d)
-
-            dependencies = old_dependencies + dependencies
-        except FileNotFoundError:
-            pass
-
-        dependencies = [l.strip() for l in dependencies if l.strip() != '']
-        with open(depends_file, 'w') as f:
-            f.write("\n".join(dependencies))
-        sys.exit(os.EX_OK)
-
     if options.list_dependencies:
         if len(args) != 2:
             sys.stderr.write('You must specify the platform and project for --list-dependencies.\n')
@@ -641,6 +583,64 @@ if __name__ == "__main__":
             sys.exit(os.EX_UNAVAILABLE)
 
     # If we are here, it means we want to enter a crossroad environment.
+
+    if options.depends:
+        if len(args) < 3:
+            sys.stderr.write('You must specify the platform, project and dependent projects for --depends.\n')
+            sys.exit(os.EX_USAGE)
+
+        platform     = None
+        project      = None
+        dependencies = []
+        for platform_project in args:
+            if platform is None:
+                platform = platform_project
+                continue
+            if project is None:
+                project  = platform_project
+                continue
+            dependencies += [platform_project]
+
+        if platform not in available_platforms:
+            sys.stderr.write('Not a valid platform: {}\n'.format(platform))
+            sys.exit(os.EX_UNAVAILABLE)
+
+        project_path = os.path.join(xdg_data_home, 'crossroad/roads/', platform, project)
+        if not os.access(project_path, os.R_OK):
+            sys.stderr.write('Project {} for {} is not built, or unreadable.\n'.format(project, platform))
+            sys.exit(os.EX_NOPERM)
+
+        for p in dependencies:
+            dep_path = os.path.join(xdg_data_home, 'crossroad/roads/', platform, p)
+            if not os.access(dep_path, os.R_OK):
+                sys.stderr.write('Project {} for {} is not built, or unreadable.\n'.format(p, platform))
+                sys.exit(os.EX_NOPERM)
+
+        artifacts_path = os.path.join(xdg_data_home, 'crossroad/artifacts', platform, project)
+        depends_file = os.path.join(artifacts_path, '.depends.crossroad')
+
+        try:
+            with open(depends_file, 'r') as f:
+                old_dependencies = f.readlines()
+
+            for d in dependencies:
+                # Removing duplicates without using dict or OrderedDict
+                # to stay compatible with older Python while keeping
+                # item order.
+                # Also when a new dependency is added again, the old one
+                # is popped out, allowing to sort items by re-adding
+                # them in a different order.
+                if d in old_dependencies:
+                  old_dependencies.remove(d)
+
+            dependencies = old_dependencies + dependencies
+        except FileNotFoundError:
+            pass
+
+        dependencies = [l.strip() for l in dependencies if l.strip() != '']
+        with open(depends_file, 'w') as f:
+            f.write("\n".join(dependencies))
+
     if len(args) == 1:
         projects = get_projects(args[0])
         if len(projects) == 0:
@@ -672,7 +672,7 @@ if __name__ == "__main__":
             except KeyboardInterrupt:
                 sys.stderr.write('\nCancelling. Bye!\n')
                 sys.exit(os.EX_USAGE)
-    elif len(args) == 2:
+    elif len(args) == 2 or (len(args) > 2 and options.depends):
         project = args[1]
     else:
         cmdline.print_version()
