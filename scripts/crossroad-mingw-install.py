@@ -64,12 +64,12 @@ _extractedFilesDirectory = os.path.join(xdg_cache_home, 'crossroad', 'prefix')
 repositories = {
   'msys2':
     'http://repo.msys2.org/mingw/ARCH/',
-  'fedora32':
-    'https://download.fedoraproject.org/pub/fedora/linux/releases/32/Everything/x86_64/os/',
-  'fedora33':
-    'https://download.fedoraproject.org/pub/fedora/linux/releases/33/Everything/x86_64/os/',
   'fedora34':
     'https://download.fedoraproject.org/pub/fedora/linux/releases/34/Everything/x86_64/os/',
+  'fedora35':
+    'https://download.fedoraproject.org/pub/fedora/linux/releases/35/Everything/x86_64/os/',
+  'fedora36':
+    'https://download.fedoraproject.org/pub/fedora/linux/releases/36/Everything/x86_64/os/',
   'suse':
     'http://download.opensuse.org/repositories/windows:/mingw:/ARCH/openSUSE_Leap_42.3/'
 }
