@@ -720,17 +720,21 @@ def _extractFile(filename, output_dir=_extractedCacheDirectory):
   try:
     logfile_name = '_crossroad-mingw-install_extractFile.log'
     with open(logfile_name, 'w') as logfile:
-      if filename[-5:] == '.cpio':
+      cwd = os.getcwd()
+      os.makedirs(output_dir, exist_ok=True)
+      if filename.endswith('.cpio.zstd'):
+        os.chdir (output_dir)
+        decomp = zstandard.ZstdDecompressor()
+        with open(filename, 'rb') as inp, open(os.path.splitext(filename)[0], 'wb') as out:
+          decomp.copy_stream(inp, out)
+        os.chdir (cwd)
+      elif filename[-5:] == '.cpio':
         # 7z loses links and I can't find an option to change this behavior.
         # So I use the cpio command for cpio files, even though it might create broken links.
-        cwd = os.getcwd()
-        os.makedirs(output_dir, exist_ok=True)
         os.chdir (output_dir)
         subprocess.check_call('cpio -i --make-directories <' + filename, stderr=logfile, stdout=logfile, shell = True)
         os.chdir (cwd)
       elif filename[-4:] == '.rpm' and shutil.which('rpm2cpio') is not None:
-        cwd = os.getcwd()
-        os.makedirs(output_dir, exist_ok=True)
         os.chdir (output_dir)
         subprocess.check_call('rpm2cpio "{}" | cpio -i --make-directories '.format(filename), stderr=logfile, stdout=logfile, shell = True)
         os.chdir (cwd)
@@ -740,6 +744,8 @@ def _extractFile(filename, output_dir=_extractedCacheDirectory):
     return True
   except:
     logging.error('Failed to extract %s', filename)
+    if shutil.which('rpm2cpio') is None:
+      logging.error('Note: installing the rmp2cpio tool might help.')
     return False
 
 def GetBaseDirectory(repo, arch):
@@ -791,16 +797,32 @@ def packagesExtractTAR(packageFilename, srcpkg=False):
 def packagesExtractRPM(packageFilename, srcpkg=False):
   rpm_path = os.path.join(_packageCacheDirectory, packageFilename)
   if shutil.which('rpm2cpio') is None:
-      # If using 7z, we have to make an intermediary step.
+      # If using 7z, we have to make an intermediary step, possibly 2.
+
+      # First intermediary step.
       cpioFilename = os.path.join(_extractedCacheDirectory, os.path.splitext(packageFilename)[0] + '.cpio')
       if not os.path.exists(cpioFilename) and not _extractFile(rpm_path, _extractedCacheDirectory):
           return False
+
+      # Second (optional) intermediary step.
+      cpioZstdFilename = os.path.join(_extractedCacheDirectory, os.path.splitext(packageFilename)[0] + '.cpio.zstd')
+      if os.path.exists(cpioZstdFilename):
+        if not _extractFile(cpioZstdFilename, _extractedCacheDirectory):
+          return False
+
+      # Final step.
       if srcpkg:
         if not _extractFile(cpioFilename, os.path.join(_extractedFilesDirectory, os.path.splitext(packageFilename)[0])):
             return False
       else:
         if not _extractFile(cpioFilename, _extractedFilesDirectory):
             return False
+
+      # Cleaning.
+      if os.path.exists(cpioZstdFilename):
+        os.remove(cpioZstdFilename)
+      if os.path.exists(cpioFilename):
+        os.remove(cpioFilename)
   elif srcpkg:
       if not _extractFile(rpm_path, os.path.join(_extractedFilesDirectory, os.path.splitext(packageFilename)[0])):
           return False
