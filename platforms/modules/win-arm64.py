@@ -1,0 +1,276 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+#
+# This file is part of crossroad.
+# Copyright (C) 2022 Jehan <jehan at girinstud.io>
+#
+# crossroad is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Affero General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# crossroad is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Affero General Public License for more details.
+#
+# You should have received a copy of the GNU Affero General Public License
+# along with crossroad.  If not, see <http://www.gnu.org/licenses/>.
+
+'''
+Setups a cross-compilation environment for Microsoft Windows operating systems (Arm 64-bit).
+'''
+
+# Require python 3.3 for shutil.which
+import shutil
+import subprocess
+import glob
+import os.path
+import sys
+
+install_datadir = os.path.join(os.path.abspath('@DATADIR@'), 'share')
+
+name = 'win-arm64'
+
+short_description = 'Windows Arm 64-bit'
+
+if os.path.isfile('/etc/redhat-release'):
+    mandatory_binaries = {
+        'aarch64-w64-mingw32-gcc': 'mingw32-gcc',
+        'aarch64-w64-mingw32-ld': 'mingw32-binutils'
+        }
+
+    languages = {
+        'C' : {'aarch64-w64-mingw32-gcc': 'mingw32-gcc'},
+        'C++': {'aarch64-w64-mingw32-c++': 'mingw32-gcc-c++'},
+        'Ada': {'aarch64-w64-mingw32-gnat': 'mingw32-gcc-gnat?'},
+        'OCaml': {'aarch64-w64-mingw32-ocamlc': 'mingw32-gcc-ocaml?'},
+        'fortran': {'aarch64-w64-mingw32-gfortran': 'mingw32-gcc-gfortran'},
+        'Objective C' : {'aarch64-w64-mingw32-gobjc': 'mingw32-gcc-objc'},
+        'Objective C' : {'aarch64-w64-mingw32-gobjc++': 'mingw32-gcc-objc++'}
+        }
+else:
+    mandatory_binaries = {
+        'aarch64-w64-mingw32-gcc': 'gcc-mingw-w64-aarch64',
+        'aarch64-w64-mingw32-ld': 'binutils-mingw-w64-aarch64'
+        }
+
+    languages = {
+        'C' : {'aarch64-w64-mingw32-gcc': 'gcc-mingw-w64-aarch64'},
+        'C++': {'aarch64-w64-mingw32-c++': 'g++-mingw-w64-aarch64'},
+        'Ada': {'aarch64-w64-mingw32-gnat': 'gnat-mingw-w64-aarch64'},
+        'OCaml': {'aarch64-w64-mingw32-ocamlc': 'mingw-ocaml'},
+        'fortran': {'aarch64-w64-mingw32-gfortran': 'gfortran-mingw-w64-aarch64'},
+        'Objective C' : {'aarch64-w64-mingw32-gobjc': 'gobjc-mingw-w64-aarch64'},
+        'Objective C' : {'aarch64-w64-mingw32-gobjc++': 'gobjc++-mingw-w64-aarch64'}
+        }
+
+def is_available():
+    '''
+    Is it possible on this computer?
+    '''
+    for bin in mandatory_binaries:
+        if shutil.which(bin) is None:
+            return False
+    return True
+
+def requires():
+    '''
+    Output on standard output necessary packages and what is missing on
+    the current installation.
+    '''
+    requirements = ''
+    for bin in mandatory_binaries:
+        requirements += '- {} [package "{}"]'.format(bin, mandatory_binaries[bin])
+        if shutil.which(bin) is None:
+            requirements += " (missing)\n"
+        else:
+            requirements += " (ok)\n"
+    return requirements
+
+def language_list():
+    '''
+    Return a couple of (installed, uninstalled) language lists.
+    '''
+    uninstalled_languages = {}
+    installed_languages = []
+    for name in languages:
+        for bin in languages[name]:
+            if shutil.which(bin) is None:
+                # List of packages to install.
+                uninstalled_languages[name] = [languages[name][f] for f in languages[name]]
+                # Removing duplicate packages.
+                uninstalled_languages[name] = list(set(uninstalled_languages[name]))
+                break
+        else:
+            installed_languages.append(name)
+    return (installed_languages, uninstalled_languages)
+
+def prepare(prefix):
+    '''
+    Prepare the environment.
+    Note that copying these libs is unnecessary for building, since the
+    system can find these at build time. But when moving the prefix to a
+    Windows machine, if ever we linked against these dll and they are
+    absent, the executable won't run.
+    '''
+    try:
+        env_bin = os.path.join(prefix, 'bin')
+        os.makedirs(env_bin, exist_ok = True)
+    except PermissionError:
+        sys.stderr.write('"{}" cannot be created. Please verify your permissions. Aborting.\n'.format(env_path))
+        return False
+
+    # llvm-mingw is installed directly from release tarballs, so we can
+    # expect a deterministic structure for it.
+    cc = shutil.which("aarch64-w64-mingw32-gcc")
+    sysroot = os.path.join(os.path.dirname(cc), '..')
+    sysroot_bin = os.path.join(sysroot, 'aarch64-w64-mingw32', 'bin')
+    sysroot_dlls = glob.glob(sysroot_bin + '/*.dll')
+
+    for dll in sysroot_dlls:
+        try:
+            # I used to symlink, which was enough for doing archive
+            # (which would dereference the symlink for us) or for
+            # virtual machine usage. But when doing a copy or more of
+            # the whole folder, the link could break (typically in a CI
+            # usage where our prefix is the artifacts and the linked
+            # file doesn't exist anymore in subsequent CI jobs).
+            # So let's just copy.
+            shutil.copy(dll,
+                        os.path.join(os.path.join(env_bin, os.path.basename(dll))),
+                        follow_symlinks=True)
+        except OSError:
+            # A failed symlink is not necessarily a no-go. Let's just output a warning.
+            sys.stderr.write('Warning: crossroad failed to symlink {} in {}.\n'.format(dll, env_bin))
+    return True
+
+def crossroad_install(*packages:list, src:bool = False):
+    '''
+    Install the list of packages and all their dependencies.
+    If --src is provided, it installs the source packages, and not the main packages.
+    '''
+    if len(packages) == 0:
+        sys.stderr.write('Please provide at least one package name to install.\n')
+        sys.exit(os.EX_USAGE)
+
+    command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
+               '-a', name, '--deps']
+    if src:
+        command += ['--src']
+    command += list(packages)
+    return subprocess.call(command, shell=False)
+
+def crossroad_update():
+    '''
+    Update the repository information.
+    '''
+    command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
+               '-a', name, '--update']
+    return subprocess.call(command, shell=False)
+
+def crossroad_list_files(*packages, src:bool = False):
+    '''
+    List files provided by packages.
+    '''
+    if len(packages) == 0:
+        sys.stderr.write('Please provide at least one package name.\n')
+        sys.exit(os.EX_USAGE)
+
+    command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
+               '-a', name, '--list-files']
+    if src:
+        command += ['--src']
+    command += packages
+    return subprocess.call(command, shell=False)
+
+def crossroad_info(*packages, src:bool = False):
+    '''
+    Display package details.
+    '''
+    if len(packages) == 0:
+        sys.stderr.write('Please provide at least one package name.\n')
+        sys.exit(os.EX_USAGE)
+
+    command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
+               '-a', name, '--info']
+    if src:
+        command += ['--src']
+    command += list(packages)
+    return subprocess.call(command, shell=False)
+
+def crossroad_uninstall(*packages, src:bool = False):
+    '''
+    Uninstall packages.
+    '''
+    if len(packages) == 0:
+        sys.stderr.write('Please provide at least one package name.\n')
+        sys.exit(os.EX_USAGE)
+
+    command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
+               '-a', name, '--uninstall']
+    if src:
+        command += ['--src']
+    command += list(packages)
+    return subprocess.call(command, shell=False)
+
+def crossroad_search(*keywords, src:bool = False, search_files:bool = False):
+    '''
+    Search keywords in package names.
+    If --search-files is also set, also search in files.
+    '''
+    if len(keywords) == 0:
+        sys.stderr.write('Please provide at least one package name.\n')
+        sys.exit(os.EX_USAGE)
+
+    command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
+               '-a', name, '--search']
+    if src:
+        command += ['--src']
+    if search_files:
+        command += ['--list-files']
+    command += list(keywords)
+    return subprocess.call(command, shell=False)
+
+def crossroad_mask(*packages, src:bool = False):
+    '''
+    Mask packages.
+    '''
+    if len(packages) == 0:
+        sys.stderr.write('Please provide at least one package name.\n')
+        sys.exit(os.EX_USAGE)
+
+    command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
+               '-a', name, '--mask']
+    if src:
+        command += ['--src']
+    command += list(packages)
+    return subprocess.call(command, shell=False)
+
+def crossroad_unmask(*packages, src:bool = False):
+    '''
+    Unmask packages.
+    '''
+    if len(packages) == 0:
+        sys.stderr.write('Please provide at least one package name.\n')
+        sys.exit(os.EX_USAGE)
+
+    command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
+               '-a', name, '--unmask']
+    if src:
+        command += ['--src']
+    command += list(packages)
+    return subprocess.call(command, shell=False)
+
+def crossroad_source(set:str = None):
+    '''
+    List or set repository sources.
+    '''
+    if set is None:
+      command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
+                 '-a', name, '--list-sources']
+      return subprocess.call(command, shell=False)
+    else:
+      command = [os.path.join(install_datadir, 'crossroad/scripts/crossroad-mingw-install.py'),
+                 '-a', name, '--set-source', set]
+      return subprocess.call(command, shell=False)
